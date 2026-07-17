@@ -323,6 +323,85 @@ export default function Home() {
           </motion.div>
         </section>
 
+        {/* Upcoming Events Teaser — right below the hero */}
+        <section className="border-t border-border/40 bg-card/20 py-10 md:py-14">
+          <div className="container mx-auto px-4 md:px-8">
+            <FadeIn>
+              <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                  <span className="text-sm font-semibold text-primary uppercase tracking-widest">What's on</span>
+                </div>
+                <a
+                  href="#events"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
+                >
+                  View all events
+                  <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </a>
+              </div>
+
+              {/* Event strip — horizontally scrollable on mobile */}
+              <div className="flex gap-4 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:grid md:grid-cols-3 md:overflow-visible">
+                {events.slice(0, 3).map((ev, i) => (
+                  <a
+                    key={i}
+                    href="#events"
+                    className="flex-shrink-0 w-72 md:w-auto snap-start group flex flex-col gap-3 p-5 rounded-2xl border border-border bg-card/50 hover:bg-card hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+                  >
+                    {/* Status + price row */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
+                          ev.status === "available"
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {ev.status === "available" ? (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                            {ev.spotsLeft} spots left
+                          </>
+                        ) : (
+                          "Opening soon"
+                        )}
+                      </span>
+                      <span className="text-xs font-bold text-foreground">
+                        £{ev.price}
+                        <span className="text-muted-foreground font-normal line-through ml-1">£{ev.fullPrice}</span>
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
+                      {ev.title}
+                    </h3>
+
+                    {/* Date + venue */}
+                    <div className="flex flex-col gap-1.5 mt-auto">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{ev.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{ev.venue} · {ev.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Sponsor tag */}
+                    <div className="pt-3 border-t border-border/60 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <BadgePercent className="h-3.5 w-3.5 text-primary/60 flex-shrink-0" />
+                      Sponsored by {ev.sponsor}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
         {/* Ethos Section — "What it is" */}
         <section className="py-24 md:py-32 border-t border-border/50 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3" />
