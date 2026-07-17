@@ -249,10 +249,14 @@ export default function Home() {
       {/* Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl">
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
-          <div className="font-sans font-bold text-xl tracking-tight text-foreground flex items-center gap-2">
-            <div className="w-6 h-6 bg-primary rounded-full" />
-            The Padel Exchange
-          </div>
+          <a href="/" className="pc-logo" aria-label="P Cubed — People, Padel, Places">
+            <span className="pc-mark" aria-hidden="true">P<sup>3</sup></span>
+            <span className="pc-word" aria-hidden="true">
+              <span className="pc-line"><b>P</b>eople<i>.</i></span>
+              <span className="pc-line"><b>P</b>adel<i>.</i></span>
+              <span className="pc-line"><b>P</b>laces<i>.</i></span>
+            </span>
+          </a>
           <nav className="hidden md:flex items-center gap-8">
             <button onClick={scrollToHow} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               How it works
@@ -967,11 +971,15 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
             <div>
-              <div className="font-bold text-xl tracking-tight text-foreground flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 bg-primary rounded-full" />
-                The Padel Exchange
-              </div>
-              <p className="text-muted-foreground text-sm">Trade ideas, energy and the occasional smash.</p>
+              <a href="/" className="pc-logo pc-on-light mb-2 inline-flex" aria-label="P Cubed — People, Padel, Places">
+                <span className="pc-mark" aria-hidden="true">P<sup>3</sup></span>
+                <span className="pc-word" aria-hidden="true">
+                  <span className="pc-line"><b>P</b>eople<i>.</i></span>
+                  <span className="pc-line"><b>P</b>adel<i>.</i></span>
+                  <span className="pc-line"><b>P</b>laces<i>.</i></span>
+                </span>
+              </a>
+              <p className="text-muted-foreground text-sm">The best padel, best people, best places.</p>
             </div>
 
             <div className="flex flex-wrap gap-6 text-sm font-medium">

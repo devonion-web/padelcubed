@@ -1,0 +1,94 @@
+# Replit Prompt — Update the site logo to "P Cubed · People. Padel. Places."
+
+> Paste the **PROMPT** block below into the Replit Agent for the existing site project.
+> No image uploads needed — the logo is built from live HTML/CSS, so it's crisp at any size and works as the favicon too.
+
+---
+
+## PROMPT
+
+Replace the current site logo/brand in the header with a new logo lockup for **"P Cubed"**. The lockup is a **navy P³ mark** on the left and the **stacked wordmark "People. Padel. Places."** on the right. Also update the footer logo and the favicon to match. Keep everything else — layout, spacing, existing design system — intact; only swap the logo.
+
+**Brand colours & font (use exactly):**
+- Navy `#0E1B2C` · Deep navy gradient `#153052 → #0b1626`
+- Court turquoise (accent) `#19C3B0`
+- Off-white `#F4F7FB`
+- Font: **Inter** (already used on the site). If not loaded, add weights 800 & 900.
+
+**1) Header logo — replace the existing brand element with this markup:**
+
+```html
+<a href="/" class="pc-logo" aria-label="P Cubed — People, Padel, Places">
+  <span class="pc-mark" aria-hidden="true">P<sup>3</sup></span>
+  <span class="pc-word" aria-hidden="true">
+    <span class="pc-line"><b>P</b>eople<i>.</i></span>
+    <span class="pc-line"><b>P</b>adel<i>.</i></span>
+    <span class="pc-line"><b>P</b>laces<i>.</i></span>
+  </span>
+</a>
+```
+
+**2) CSS — add this (adjust the two sizes if the header is taller/shorter):**
+
+```css
+.pc-logo{
+  display:inline-flex; align-items:center; gap:12px;
+  text-decoration:none; line-height:1;
+}
+/* Navy P³ mark */
+.pc-mark{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:46px; height:46px; border-radius:12px;
+  background:linear-gradient(155deg,#153052,#0b1626);
+  color:#F4F7FB; font-family:'Inter',sans-serif;
+  font-weight:900; font-size:23px; letter-spacing:-.04em;
+  box-shadow:0 6px 16px rgba(0,0,0,.28);
+  flex:0 0 auto;
+}
+.pc-mark sup{ color:#19C3B0; font-size:.5em; font-weight:800; top:-.15em; }
+/* Stacked "People. Padel. Places." wordmark */
+.pc-word{
+  display:inline-flex; flex-direction:column;
+  font-family:'Inter',sans-serif; font-weight:800;
+  font-size:15px; line-height:1.06; letter-spacing:-.01em;
+  color:#F4F7FB;                 /* dark header: off-white text */
+}
+.pc-word .pc-line b{ color:#19C3B0; font-weight:800; }  /* the capital P */
+.pc-word .pc-line i{ color:#19C3B0; font-style:normal; }/* the full stop  */
+
+/* If the header background is LIGHT, use this instead for the text: */
+/* .pc-word{ color:#0E1B2C; } */
+
+/* Mobile: show the mark only under 480px to save space */
+@media (max-width:480px){ .pc-word{ display:none; } }
+```
+
+**3) Footer logo:** use the same `.pc-logo` markup in the footer. If the footer sits on a light background, add `class="pc-logo pc-on-light"` and include:
+```css
+.pc-on-light .pc-word{ color:#0E1B2C; }
+```
+
+**4) Favicon:** replace the current favicon with this SVG (create `public/favicon.svg` and link it in `<head>` with `<link rel="icon" type="image/svg+xml" href="/favicon.svg">`):
+
+```html
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="24" fill="#0E1B2C"/>
+  <text x="46" y="70" font-family="Inter, Arial, sans-serif" font-weight="900"
+        font-size="60" letter-spacing="-3" fill="#F4F7FB" text-anchor="middle">P</text>
+  <text x="74" y="46" font-family="Inter, Arial, sans-serif" font-weight="800"
+        font-size="30" fill="#19C3B0" text-anchor="middle">3</text>
+</svg>
+```
+
+**5) Also update:** the browser tab `<title>` and any `og:title` / `og:site_name` to **"P Cubed — People. Padel. Places."**
+
+**Notes**
+- Keep the mark's superscript "3" in turquoise and the P white — that contrast is the whole logo.
+- Don't add new dependencies; reuse the site's existing CSS approach.
+- After building, show me the header on desktop and mobile so I can check the lockup and spacing.
+
+---
+
+## Note for Dev (not part of the prompt)
+- This assumes a **dark header** (off-white wordmark). If your header is light, un-comment the light-text line in the CSS (one line) — the prompt tells the Agent where.
+- The logo is text-based, so there's nothing to upload and it'll never look blurry. When we finalise, I can also export static SVG/PNG versions for LinkedIn/Instagram profile pictures and merch.

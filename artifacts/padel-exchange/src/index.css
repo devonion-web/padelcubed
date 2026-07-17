@@ -148,6 +148,32 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0.5);
 }
 
+/* ── P Cubed logo ─────────────────────────────────────────────────────────── */
+.pc-logo {
+  display: inline-flex; align-items: center; gap: 12px;
+  text-decoration: none; line-height: 1;
+}
+.pc-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; border-radius: 12px;
+  background: linear-gradient(155deg, #153052, #0b1626);
+  color: #F4F7FB; font-family: 'Inter', sans-serif;
+  font-weight: 900; font-size: 23px; letter-spacing: -.04em;
+  box-shadow: 0 6px 16px rgba(0,0,0,.28);
+  flex: 0 0 auto;
+}
+.pc-mark sup { color: #19C3B0; font-size: .5em; font-weight: 800; top: -.15em; }
+.pc-word {
+  display: inline-flex; flex-direction: column;
+  font-family: 'Inter', sans-serif; font-weight: 800;
+  font-size: 15px; line-height: 1.06; letter-spacing: -.01em;
+  color: #F4F7FB;
+}
+.pc-word .pc-line b { color: #19C3B0; font-weight: 800; }
+.pc-word .pc-line i { color: #19C3B0; font-style: normal; }
+.pc-on-light .pc-word { color: #0E1B2C; }
+@media (max-width: 480px) { .pc-word { display: none; } }
+
 @keyframes kenBurns {
   0%   { transform: scale(1.0) translate(0%, 0%); }
   33%  { transform: scale(1.08) translate(-1%, -0.5%); }
