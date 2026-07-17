@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: The Padel Exchange API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: registrations
+    description: Registration operations
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,90 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /registrations:
+    post:
+      operationId: submitRegistration
+      tags: [registrations]
+      summary: Submit a registration of interest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationInput"
+      responses:
+        "201":
+          description: Registration created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/registrations:
+    get:
+      operationId: listRegistrations
+      tags: [admin]
+      summary: List all registrations (admin only)
+      parameters:
+        - name: adminPassword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Registration"
+        "401":
+          description: Unauthorised
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/registrations/export:
+    get:
+      operationId: exportRegistrations
+      tags: [admin]
+      summary: Export registrations as CSV (admin only)
+      parameters:
+        - name: adminPassword
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          description: Unauthorised
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +122,108 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    RegistrationInput:
+      type: object
+      required: [fullName, email, gdprConsent]
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        company:
+          type: string
+        jobTitle:
+          type: string
+        industry:
+          type: string
+          enum:
+            - Technology
+            - Financial Services
+            - Professional Services
+            - Cyber / Security
+            - Legal
+            - Consulting
+            - Healthcare
+            - Other
+        function:
+          type: string
+          enum:
+            - Founder / CEO
+            - Risk / Compliance / GRC
+            - Security / CISO
+            - Product / Engineering
+            - Sales / Marketing
+            - Operations
+            - Investor
+            - Other
+        seniority:
+          type: string
+          enum:
+            - Founder / Owner
+            - C-suite
+            - VP / Head of
+            - Director / Manager
+            - Other
+        padelLevel:
+          type: string
+          enum:
+            - Never played
+            - Beginner
+            - Intermediate
+            - Advanced
+        interests:
+          type: array
+          items:
+            type: string
+            enum:
+              - Playing / fitness
+              - Meeting other founders
+              - Industry peers & ideas
+              - Just trying padel
+        linkedinUrl:
+          type: string
+        gdprConsent:
+          type: boolean
+
+    Registration:
+      type: object
+      required: [id, fullName, email, gdprConsent, createdAt]
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        company:
+          type: ["string", "null"]
+        jobTitle:
+          type: ["string", "null"]
+        industry:
+          type: ["string", "null"]
+        function:
+          type: ["string", "null"]
+        seniority:
+          type: ["string", "null"]
+        padelLevel:
+          type: ["string", "null"]
+        interests:
+          type: ["array", "null"]
+          items:
+            type: string
+        linkedinUrl:
+          type: ["string", "null"]
+        gdprConsent:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time

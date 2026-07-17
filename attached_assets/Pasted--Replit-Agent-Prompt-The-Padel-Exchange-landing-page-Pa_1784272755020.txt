@@ -1,0 +1,76 @@
+# Replit Agent Prompt — "The Padel Exchange" landing page
+
+Paste everything in the box below into Replit's AI Agent.
+
+---
+
+Build me a modern, fast, single-page marketing website with a seamless "register interest" flow for a members' community called **The Padel Exchange**.
+
+## What The Padel Exchange is
+A founders-led padel community based in and around the City of London. It brings together founders and senior professionals from different companies and industries to play padel and **exchange ideas, views, passions and fitness** — not to be pitched at. It is a curated, subsidised community: members pay a small fee per event (which keeps commitment high and is partly covered by sponsors). All abilities are welcome, including complete beginners.
+
+**Brand name:** The Padel Exchange
+**Tagline (use as hero subtitle):** "Trade ideas, energy and the occasional smash. A founders' padel community in the City."
+**Ethos line (use somewhere prominent):** "An exchange is where people trade. Here we trade perspectives, introductions, energy and a good game."
+
+## Design direction
+- Premium, clean, confident — think a modern private-members' club meets a sports brand. Sophisticated, not corporate, not laddish.
+- Mobile-first and fully responsive. Fast-loading. Accessible (WCAG AA contrast, semantic HTML, keyboard-navigable).
+- Palette: a deep base (charcoal / near-black or deep navy) with ONE vibrant padel-court accent (electric turquoise or lime). Generous white space. Large, bold display headings; a clean sans-serif for body (e.g. Inter).
+- Use tasteful motion (subtle fade/slide on scroll), full-width imagery placeholders for padel action shots, and rounded, tactile buttons.
+- No stock-cheesy vibe. Editorial and premium.
+
+## Page sections (single scrolling page, sticky top nav with a "Register interest" button)
+1. **Hero** — brand name/logo, the tagline, one primary CTA button ("Register your interest") and a subtle secondary ("How it works"). Background: a striking padel image placeholder with a dark overlay. Include a small social-proof line I can edit, e.g. "Join 120+ founders already on the list."
+2. **What it is** — 2–3 short sentences on the community and the "exchange" ethos. Warm, confident, human.
+3. **Benefits — "Why join"** — a grid of 5–6 benefit cards, each with an icon, a short heading and one line:
+   - *A real peer circle* — founders and senior leaders across tech, finance and professional services.
+   - *Exchange, don't pitch* — ideas, perspectives and introductions, over a game.
+   - *All levels welcome* — never played? Neither had half the room. Kit provided.
+   - *Curated & small* — quality events, not noise.
+   - *Subsidised* — sponsor-backed, so great padel at better value.
+   - *Get off the desk* — fitness, fresh air and fun, built into your week.
+4. **How it works** — 4 numbered steps:
+   1. Register your interest (30 seconds).
+   2. We match you to events that fit your industry, level and interests.
+   3. Reserve your spot with a small upfront payment (keeps it committed, covers the court).
+   4. Turn up, play, connect.
+5. **Who it's for** — one short paragraph: "Founders and senior leaders in tech, finance, professional services and beyond, in and around the City of London, who love padel — or want to start."
+6. **Register interest form** (the most important part — see below).
+7. **FAQ** — accordion with 4–5 items: Do I need to be good at padel? (No — beginners welcome, kit provided.) How much does it cost? (Small per-event fee, partly sponsor-subsidised; details sent on registration.) Where are events held? (Central London padel venues.) Who's it for? (Founders and senior professionals across industries.) Is my data safe? (Yes — see privacy note.)
+8. **Footer** — brand, a one-line mission, contact email placeholder, social links placeholder, privacy policy link.
+
+## The register-interest form (make this genuinely seamless)
+- Keep it on the page (no redirect). Single clean form; only **Name** and **Email** are required — everything else optional but encouraged, so friction is minimal. Inline, real-time validation. Large tap targets. Autofocus first field.
+- Fields:
+  - Full name* (text)
+  - Email* (email, validated)
+  - Company (text)
+  - Role / job title (text)
+  - Industry (dropdown: Technology, Financial Services, Professional Services, Cyber / Security, Legal, Consulting, Healthcare, Other)
+  - Function (dropdown: Founder / CEO, Risk / Compliance / GRC, Security / CISO, Product / Engineering, Sales / Marketing, Operations, Investor, Other)
+  - Seniority (dropdown: Founder / Owner, C-suite, VP / Head of, Director / Manager, Other)
+  - Padel level (radio: Never played, Beginner, Intermediate, Advanced)
+  - What are you most interested in? (multi-select checkboxes: Playing / fitness, Meeting other founders, Industry peers & ideas, Just trying padel)
+  - LinkedIn URL (optional)
+  - GDPR consent* (required checkbox): "I'm happy for The Padel Exchange to contact me about events. We'll never sell your data. See our privacy policy."
+- On submit: show a friendly success state ("You're on the list — welcome. We'll be in touch with the next event.") with no page reload. Handle errors gracefully.
+
+## Data & backend (keep it simple and self-contained)
+- Store each submission in a database (use Replit's database or a lightweight SQLite table). Capture a timestamp.
+- Provide a simple, password-protected **/admin** page that lists submissions in a table and lets me **export them to CSV** (so I can segment the audience later).
+- Optional but nice: send the registrant a confirmation email if email sending is easy to configure; otherwise skip and just store the record.
+- Do not add real payment yet — this is interest capture only. But structure the code so a "reserve your spot" payment step (e.g. Stripe) can be added later.
+
+## Tech
+- Use a simple, reliable stack you can run on Replit out of the box (a lightweight full-stack setup — e.g. a Node/Express or Python backend serving a React or plain HTML/CSS/JS front end). Prioritise something that just works and is easy for a non-developer to run and edit.
+- Clean, commented code. A short README explaining how to run it, where submissions are stored, and how to view/export them.
+
+## Copy tone
+Confident, warm, a little playful, never corporate or salesy. Short sentences. British English. Make the "exchange" idea (trading ideas, energy, introductions) run through the whole page.
+
+Build it, then tell me how to run it and where to find the registrations.
+
+---
+
+*(After Replit builds it: check the form on mobile, do a test submission, confirm it appears in /admin and exports to CSV. Then swap the placeholder images and the "120+ founders" number for real ones before you share the link.)*
