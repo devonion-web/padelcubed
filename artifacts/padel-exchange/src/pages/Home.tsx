@@ -207,6 +207,17 @@ function FounderCard({ founder }: { founder: typeof founders[number] }) {
 
 import heroImage from "@/assets/hero-court.jpg";
 
+// AI-generated padel action photos (in /public/padel/)
+const padelPhotos = [
+  { src: "/padel/social-game.jpg",      alt: "Professionals playing padel doubles" },
+  { src: "/padel/action-smash.jpg",     alt: "Padel player making a smash" },
+  { src: "/padel/celebrate.jpg",        alt: "Players celebrating at the net" },
+  { src: "/padel/aerial-court.jpg",     alt: "Aerial view of padel court" },
+  { src: "/padel/post-match-social.jpg",alt: "Post-match social and networking" },
+  { src: "/padel/racket-ball.jpg",      alt: "Padel racket and ball close-up" },
+  { src: "/padel/hero-video-poster.jpg",alt: "Padel doubles match in progress" },
+];
+
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -268,12 +279,22 @@ export default function Home() {
       <main>
         {/* Hero Section */}
         <section className="relative min-h-[100dvh] flex items-center pt-20">
-          <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            {/* Ken Burns animated hero image */}
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-45"
+              style={{
+                backgroundImage: `url(/padel/hero-video-poster.jpg)`,
+                animation: "kenBurns 24s ease-in-out infinite alternate",
+                willChange: "transform",
+              }}
+            />
+            {/* Fallback in case generated image hasn't loaded yet */}
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25"
               style={{ backgroundImage: `url(${heroImage})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/20" />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
           </div>
 
@@ -402,8 +423,37 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Photo Strip — infinite auto-scrolling marquee */}
+        <div className="overflow-hidden border-y border-border/40 bg-background py-0 select-none" aria-hidden="true">
+          <div
+            className="flex gap-3 w-max"
+            style={{ animation: "marquee 40s linear infinite" }}
+          >
+            {/* Duplicate for seamless loop */}
+            {[...padelPhotos, ...padelPhotos].map((photo, i) => (
+              <div
+                key={i}
+                className="flex-shrink-0 h-52 w-80 rounded-xl overflow-hidden relative"
+              >
+                <img
+                  src={photo.src}
+                  alt={photo.alt}
+                  className="h-full w-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Ethos Section — "What it is" */}
         <section className="py-24 md:py-32 border-t border-border/50 relative overflow-hidden">
+          {/* Subtle aerial court image background */}
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
+            style={{ backgroundImage: "url(/padel/aerial-court.jpg)" }}
+          />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
