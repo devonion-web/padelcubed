@@ -21,7 +21,81 @@ import {
   BadgePercent,
   Trophy,
   Linkedin,
+  MapPin,
+  Clock,
+  Ticket,
 } from "lucide-react";
+
+// ─── Events data ──────────────────────────────────────────────────────────────
+// To add, remove or edit upcoming events, update this array only.
+// status: "available" | "limited" | "soon"
+const events = [
+  {
+    title: "The City Kickoff",
+    date: "Thursday 6 August 2026",
+    time: "6:30pm – 9:30pm",
+    venue: "Racketeer",
+    location: "Acton, London W3",
+    format: "Americano · 16 players",
+    sponsor: "Corlytics",
+    price: 28,
+    fullPrice: 65,
+    status: "available" as const,
+    spotsLeft: 6,
+  },
+  {
+    title: "The Finance Edition",
+    date: "Thursday 10 September 2026",
+    time: "6:30pm – 9:30pm",
+    venue: "Padium",
+    location: "London",
+    format: "Americano · 12 players",
+    sponsor: "Acuity Risk Partners",
+    price: 32,
+    fullPrice: 75,
+    status: "soon" as const,
+    spotsLeft: null,
+  },
+  {
+    title: "The GRC Exchange",
+    date: "Thursday 8 October 2026",
+    time: "6:30pm – 9:30pm",
+    venue: "Racketeer",
+    location: "Acton, London W3",
+    format: "Americano · 16 players",
+    sponsor: "Nexus Advisory",
+    price: 28,
+    fullPrice: 65,
+    status: "soon" as const,
+    spotsLeft: null,
+  },
+  {
+    title: "The October Smash",
+    date: "Thursday 29 October 2026",
+    time: "6:30pm – 9:30pm",
+    venue: "Padium",
+    location: "London",
+    format: "Americano · 12 players",
+    sponsor: "Clarity Capital",
+    price: 32,
+    fullPrice: 75,
+    status: "soon" as const,
+    spotsLeft: null,
+  },
+  {
+    title: "The Year Closer",
+    date: "Thursday 3 December 2026",
+    time: "6:30pm – 9:30pm",
+    venue: "Racketeer",
+    location: "Acton, London W3",
+    format: "Americano · 16 players",
+    sponsor: "Vektor GRC",
+    price: 28,
+    fullPrice: 65,
+    status: "soon" as const,
+    spotsLeft: null,
+  },
+];
 
 // ─── Founders data ────────────────────────────────────────────────────────────
 // To add or remove founders, edit this array only. Each entry maps to one card.
@@ -174,6 +248,9 @@ export default function Home() {
             </button>
             <a href="#who" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Who it's for
+            </a>
+            <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Events
             </a>
             <a href="#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               The Founders
@@ -478,6 +555,116 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Upcoming Events Section */}
+        <section id="events" className="py-24 md:py-32 border-t border-border/50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/4 rounded-full blur-[140px] translate-x-1/3 -translate-y-1/4 pointer-events-none" />
+          <div className="container mx-auto px-4 md:px-8 relative z-10">
+            <FadeIn>
+              <div className="mb-4">
+                <span className="text-primary text-sm font-semibold tracking-widest uppercase">Upcoming events</span>
+              </div>
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+                <div>
+                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Reserve your spot</h2>
+                  <p className="text-lg text-muted-foreground max-w-xl">
+                    Group events at London's best padel venues — sponsor-backed so you pay a fraction of the going rate. Kit included, all levels welcome.
+                  </p>
+                </div>
+                <div className="flex-shrink-0 text-right hidden md:block">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Typical saving</p>
+                  <p className="text-3xl font-bold text-primary">~55%</p>
+                  <p className="text-xs text-muted-foreground">vs walk-in court rate</p>
+                </div>
+              </div>
+            </FadeIn>
+
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {events.map((ev, i) => {
+                const statusConfig = {
+                  available: { dot: "bg-emerald-400", label: "Spaces available", labelClass: "text-emerald-400" },
+                  limited:   { dot: "bg-amber-400",   label: "Limited spaces",   labelClass: "text-amber-400" },
+                  soon:      { dot: "bg-muted-foreground/40", label: "Opening soon", labelClass: "text-muted-foreground" },
+                }[ev.status];
+
+                return (
+                  <FadeIn key={ev.title} delay={i * 0.07}>
+                    <div className="group flex flex-col h-full rounded-3xl border border-border bg-card/50 hover:bg-card hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                      {/* Top accent bar */}
+                      <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
+
+                      <div className="flex flex-col flex-1 p-7">
+                        {/* Status + sponsor row */}
+                        <div className="flex items-center justify-between mb-5">
+                          <div className="flex items-center gap-2">
+                            <span className={`flex h-2 w-2 rounded-full ${statusConfig.dot}`} />
+                            <span className={`text-xs font-semibold ${statusConfig.labelClass}`}>
+                              {statusConfig.label}
+                              {ev.spotsLeft !== null && ` · ${ev.spotsLeft} left`}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-medium text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border">
+                            Sponsored by {ev.sponsor}
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-foreground mb-5 leading-tight">{ev.title}</h3>
+
+                        {/* Meta */}
+                        <div className="space-y-2.5 mb-6 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2.5">
+                            <Calendar className="h-4 w-4 text-primary/60 flex-shrink-0" />
+                            <span>{ev.date}</span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Clock className="h-4 w-4 text-primary/60 flex-shrink-0" />
+                            <span>{ev.time} &nbsp;·&nbsp; {ev.format}</span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <MapPin className="h-4 w-4 text-primary/60 flex-shrink-0" />
+                            <span><span className="text-foreground font-medium">{ev.venue}</span> &nbsp;·&nbsp; {ev.location}</span>
+                          </div>
+                        </div>
+
+                        {/* Spacer */}
+                        <div className="flex-1" />
+
+                        {/* Price + CTA */}
+                        <div className="pt-5 border-t border-border flex items-center justify-between gap-4">
+                          <div>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-2xl font-bold text-foreground">£{ev.price}</span>
+                              <span className="text-sm text-muted-foreground">/person</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              <Ticket className="inline h-3 w-3 mr-1 opacity-60" />
+                              Full rate ~£{ev.fullPrice} · sponsor subsidy applied
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={scrollToForm}
+                            disabled={ev.status === "soon"}
+                            className="rounded-full px-5 text-sm font-semibold flex-shrink-0 disabled:opacity-40"
+                          >
+                            {ev.status === "soon" ? "Notify me" : "Reserve spot"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </FadeIn>
+                );
+              })}
+            </div>
+
+            <FadeIn delay={0.4}>
+              <p className="mt-10 text-center text-sm text-muted-foreground">
+                Not seeing the right date? <button onClick={scrollToForm} className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity">Register your interest</button> and we'll match you to the next suitable event.
+              </p>
+            </FadeIn>
+          </div>
+        </section>
+
         {/* Founders Section */}
         <section id="founders" className="py-24 md:py-32 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
@@ -603,6 +790,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-6 text-sm font-medium">
+              <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
               <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
