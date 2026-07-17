@@ -1,0 +1,108 @@
+# Replit Prompt — Add a "Founders" section to The Padel Exchange site
+
+> Paste everything in the **PROMPT** block below into the Replit Agent for the existing *Padel Exchange* project.
+> First, upload the founder photos (see **Before you paste** underneath).
+
+---
+
+## Before you paste — upload the photos
+
+1. In your Replit file tree, create a folder: `public/founders/` (or `attached_assets/founders/` — whichever your project already uses for images; tell the Agent which one if unsure).
+2. Upload each founder's photo there, named **exactly** as below (square/portrait crops work best; the site will circle-crop them):
+   - `dev.jpg`
+   - `rash.jpg`
+   - `jahangez.jpg`  *(no LinkedIn photo yet — leave out for now; the section will show his initials automatically until you add it)*
+   - `james.jpg`
+   - `christian.jpg`
+   - `lee.jpg`
+3. Then paste the prompt.
+
+---
+
+## PROMPT
+
+Add a **"Founders"** section to our existing Padel Exchange landing page. Keep it fully consistent with the site's current design system — do not restyle or break anything already there.
+
+**Placement & nav**
+- Add the section to the main landing page with `id="founders"` so it can be linked to as an anchor (`/#founders`).
+- Add a "Founders" link to the site's nav/header that scrolls to it. Also add it to the footer nav if one exists.
+- Place the section after the "What happens at an event" section and before the final register/CTA section (adjust if that ordering doesn't exist — put it in a sensible spot above the footer).
+
+**Design (match the existing brand)**
+- Brand feel: premium, private-members'-club-meets-sports-brand. Deep charcoal/navy background section, one vibrant padel-court accent (turquoise/lime) used sparingly for hovers/dividers, generous white space, bold display heading + clean sans (Inter). Mobile-first.
+- Section heading: **"The founders"** with a short intro line underneath: *"Six people who'd rather make the introduction on court than across a boardroom. This is who you're playing with."*
+- Layout: a responsive card grid — **1 column on mobile, 2 on tablet, 3 on desktop.** Equal-height cards, comfortable spacing.
+- Each card: a **circular photo** at the top, then the founder's **name** (bold), their **role · company** (accent or muted colour, smaller), then a short **bio** (2–3 lines), and an optional **LinkedIn icon link** in the corner that opens in a new tab (`rel="noopener noreferrer"`).
+- Photo handling: load from the `founders/` image folder. **If an image is missing or fails to load, show a circular avatar with the founder's initials** on a brand-accent background instead (so it never shows a broken image). Use the initials given in the data below.
+- Subtle, tasteful hover: slight lift/shadow on the card and a thin accent underline or ring on the photo. Nothing flashy.
+- Accessibility: every photo needs descriptive `alt` text (e.g. "Dev O'Nion"), links must be keyboard-focusable with a visible focus state, and colour contrast must stay AA.
+
+**Make it data-driven**
+Render the cards from a single array/config so we can edit founders in one place. Use exactly this data:
+
+```js
+const founders = [
+  {
+    name: "Dev O'Nion",
+    initials: "DO",
+    role: "Director, Risk Rising",
+    photo: "founders/dev.jpg",
+    linkedin: "https://www.linkedin.com/in/devairr",
+    bio: "The spark behind the Exchange. Dev builds technology that moves GRC forward — and started this community because the best introductions happen mid-rally, not across a boardroom."
+  },
+  {
+    name: "Rash Phullar",
+    initials: "RP",
+    role: "Chief Strategic Growth Officer, Corlytics",
+    photo: "founders/rash.jpg",
+    linkedin: "",
+    bio: "Growth strategist by day, relentless competitor on court. Rash helps fast-scaling companies find their edge, and brings the same energy to every rally."
+  },
+  {
+    name: "Jahangez Chaudhery",
+    initials: "JC",
+    role: "Executive Underwriter, Apollo 1971",
+    photo: "founders/jahangez.jpg",
+    linkedin: "",
+    bio: "A specialty insurance mind with a serious appetite for a game. Jahangez underwrites risk at Lloyd's — then happily takes plenty of it at the net."
+  },
+  {
+    name: "James Pickles",
+    initials: "JP",
+    role: "Performance & Wellbeing Consultant, byrne·dean",
+    photo: "founders/james.jpg",
+    linkedin: "",
+    bio: "Award-winning performance coach, speaker, dad of two and unashamed padel enthusiast. James keeps high-performing teams — and this community — healthy, happy and firing."
+  },
+  {
+    name: "Christian Roelofs",
+    initials: "CR",
+    role: "CEO, Finativ",
+    photo: "founders/christian.jpg",
+    linkedin: "",
+    bio: "Finance specialist with a builder's instinct. Christian advises on corporate finance, transformation and ESG — and reckons a good doubles partnership tells you everything about someone."
+  },
+  {
+    name: "Lee Edge",
+    initials: "LE",
+    role: "Principal, GRC Edge",
+    photo: "founders/lee.jpg",
+    linkedin: "",
+    bio: "GRC, cyber and AI governance are Lee's world — helping organisations navigate complexity without losing their nerve. On court, he brings the same calm under pressure."
+  }
+];
+```
+
+**Notes**
+- Keep the copy in British English and the site's existing tone (confident, warm, a little playful, never corporate).
+- Use the folder/path convention this project already uses for images; if it differs from `founders/`, adjust the `photo` paths to match.
+- Don't add any new dependencies or CSS frameworks — reuse the styling approach already in the project.
+- After building, show me the section on desktop and mobile widths so I can check the layout.
+
+---
+
+## Bios — a note for Dev (not part of the prompt)
+
+The six bios above are **drafts in the Padel Exchange voice**, written from the LinkedIn headlines. They're guesses at flavour (the padel lines especially) — swap any that don't ring true. Two quick fill-ins when you have them:
+- **LinkedIn URLs** for Rash, Jahangez, James, Christian and Lee (only Dev's was on the screenshot).
+- **Jahangez's photo** — his LinkedIn had no profile picture, so the section will show "JC" initials until you drop in `jahangez.jpg`.

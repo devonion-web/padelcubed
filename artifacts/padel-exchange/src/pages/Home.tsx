@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import {
@@ -20,7 +20,116 @@ import {
   Building2,
   BadgePercent,
   Trophy,
+  Linkedin,
 } from "lucide-react";
+
+// ─── Founders data ────────────────────────────────────────────────────────────
+// To add or remove founders, edit this array only. Each entry maps to one card.
+// Bio guidance — three short threads in the brand voice (confident, warm, British English):
+//   1. Work   — who they are / what they do (one line).
+//   2. Padel  — their passion for the game.
+//   3. Connection — what they value about meeting people.
+// Add real headshots by dropping a file into artifacts/padel-exchange/public/founders/
+// (e.g. dev.jpg) and setting photo: "founders/dev.jpg". Leave photo: "" to show initials.
+const founders = [
+  {
+    name: "Dev O'Nion",
+    initials: "DO",
+    role: "Director, Risk Rising",
+    photo: "founders/dev.jpg",
+    linkedin: "https://www.linkedin.com/in/devairr",
+    bio: "The spark behind the Exchange. Dev builds technology that moves GRC forward — and started this community because the best introductions happen mid-rally, not across a boardroom.",
+  },
+  {
+    name: "Rash Phullar",
+    initials: "RP",
+    role: "Chief Strategic Growth Officer, Corlytics",
+    photo: "founders/rash.jpg",
+    linkedin: "",
+    bio: "Growth strategist by day, relentless competitor on court. Rash helps fast-scaling companies find their edge, and brings the same energy to every rally.",
+  },
+  {
+    name: "Jahangez Chaudhery",
+    initials: "JC",
+    role: "Executive Underwriter, Apollo 1971",
+    photo: "founders/jahangez.jpg",
+    linkedin: "",
+    bio: "A specialty insurance mind with a serious appetite for a game. Jahangez underwrites risk at Lloyd's — then happily takes plenty of it at the net.",
+  },
+  {
+    name: "James Pickles",
+    initials: "JP",
+    role: "Performance & Wellbeing Consultant, byrne·dean",
+    photo: "founders/james.jpg",
+    linkedin: "",
+    bio: "Award-winning performance coach, speaker, dad of two and unashamed padel enthusiast. James keeps high-performing teams — and this community — healthy, happy and firing.",
+  },
+  {
+    name: "Christian Roelofs",
+    initials: "CR",
+    role: "CEO, Finativ",
+    photo: "founders/christian.jpg",
+    linkedin: "",
+    bio: "Finance specialist with a builder's instinct. Christian advises on corporate finance, transformation and ESG — and reckons a good doubles partnership tells you everything about someone.",
+  },
+  {
+    name: "Lee Edge",
+    initials: "LE",
+    role: "Principal, GRC Edge",
+    photo: "founders/lee.jpg",
+    linkedin: "",
+    bio: "GRC, cyber and AI governance are Lee's world — helping organisations navigate complexity without losing their nerve. On court, he brings the same calm under pressure.",
+  },
+];
+
+function FounderCard({ founder }: { founder: typeof founders[number] }) {
+  const [imgError, setImgError] = useState(false);
+  const showInitials = !founder.photo || imgError;
+
+  return (
+    <div className="group relative flex flex-col items-center text-center p-8 rounded-3xl border border-border bg-card/50 hover:bg-card hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300">
+      {/* LinkedIn badge — top-right corner */}
+      {founder.linkedin && (
+        <a
+          href={founder.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${founder.name} on LinkedIn`}
+          className="absolute top-5 right-5 text-muted-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card rounded transition-colors"
+        >
+          <Linkedin className="h-4 w-4" />
+        </a>
+      )}
+
+      {/* Photo / initials avatar */}
+      <div className="mb-6 relative">
+        <div className="w-24 h-24 rounded-full overflow-hidden ring-2 ring-border group-hover:ring-primary/50 transition-all duration-300">
+          {showInitials ? (
+            <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold text-2xl tracking-tight select-none">
+                {founder.initials}
+              </span>
+            </div>
+          ) : (
+            <img
+              src={`/${founder.photo}`}
+              alt={founder.name}
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Name & role */}
+      <h3 className="text-lg font-bold text-foreground mb-1 leading-tight">{founder.name}</h3>
+      <p className="text-xs font-medium text-primary/80 mb-4 leading-snug max-w-[200px]">{founder.role}</p>
+
+      {/* Bio */}
+      <p className="text-sm text-muted-foreground leading-relaxed">{founder.bio}</p>
+    </div>
+  );
+}
 
 import heroImage from "@/assets/hero-court.jpg";
 
@@ -65,6 +174,9 @@ export default function Home() {
             </button>
             <a href="#who" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Who it's for
+            </a>
+            <a href="#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              The Founders
             </a>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               FAQ
@@ -366,6 +478,38 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Founders Section */}
+        <section id="founders" className="py-24 md:py-32 bg-card/30 border-y border-border/50">
+          <div className="container mx-auto px-4 md:px-8">
+            <FadeIn>
+              <div className="mb-16 text-center max-w-2xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">The founders</h2>
+                <p className="text-lg text-muted-foreground">
+                  Six people who'd rather make the introduction on court than across a boardroom. This is who you're playing with.
+                </p>
+              </div>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {founders.map((founder, i) => (
+                <FadeIn key={founder.name} delay={i * 0.08}>
+                  <FounderCard founder={founder} />
+                </FadeIn>
+              ))}
+            </div>
+
+            <FadeIn delay={0.3}>
+              <div className="mt-16 text-center">
+                <p className="text-muted-foreground mb-6">Want to be part of it?</p>
+                <Button size="lg" onClick={() => document.getElementById("register")?.scrollIntoView({ behavior: "smooth" })} className="rounded-full px-8 h-14 text-base font-semibold group">
+                  Register your interest
+                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
         {/* Form Section */}
         <section id="register" className="py-24 md:py-32 relative">
           <div className="absolute top-1/4 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-x-1/2" />
@@ -458,7 +602,8 @@ export default function Home() {
               <p className="text-muted-foreground text-sm">Trade ideas, energy and the occasional smash.</p>
             </div>
 
-            <div className="flex gap-6 text-sm font-medium">
+            <div className="flex flex-wrap gap-6 text-sm font-medium">
+              <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
