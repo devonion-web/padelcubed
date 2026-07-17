@@ -310,11 +310,11 @@ export default function Home() {
                   Join 120+ professionals already on the list
                 </div>
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-6">
-                  Trade ideas, energy <br className="hidden md:block" />
-                  <span className="text-muted-foreground">and the occasional smash.</span>
+                  The best padel, <br className="hidden md:block" />
+                  <span className="text-muted-foreground">best people, best places.</span>
                 </h1>
                 <p className="text-lg md:text-xl text-primary font-semibold max-w-2xl mb-4 leading-relaxed">
-                  Social padel events where you play with everyone — trade ideas, energy and the occasional smash.
+                  Curated padel events for senior professionals and founders. Premium venues, top-level play, real connections.
                 </p>
                 <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mb-10 leading-relaxed">
                   A founders' padel community. Because the best networking doesn't happen at a networking event.
