@@ -313,15 +313,13 @@ export default function Home() {
                   <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
                   Join 120+ professionals already on the list
                 </div>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-6">
-                  The best padel, <br className="hidden md:block" />
-                  <span className="text-muted-foreground">best people, best places.</span>
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-4">
+                  People,{" "}
+                  <span className="text-muted-foreground">Padel,{" "}</span>
+                  <span className="text-primary/80">Places.</span>
                 </h1>
-                <p className="text-lg md:text-xl text-primary font-semibold max-w-2xl mb-4 leading-relaxed">
-                  Curated padel events for senior professionals and founders. Premium venues, top-level play, real connections.
-                </p>
-                <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mb-10 leading-relaxed">
-                  A founders' padel community. Because the best networking doesn't happen at a networking event.
+                <p className="text-xl md:text-2xl text-foreground/70 font-medium max-w-2xl mb-10 leading-relaxed">
+                  Curated padel events for senior professionals and founders — premium venues, top-level play, real connections.
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Button size="lg" onClick={scrollToForm} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group">
