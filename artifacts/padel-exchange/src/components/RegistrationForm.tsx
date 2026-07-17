@@ -23,7 +23,32 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// ── Padel level descriptions shown in the info popover ────────────────────────
+const padelLevelDescriptions: Record<string, { emoji: string; description: string }> = {
+  "Never played": {
+    emoji: "🎾",
+    description: "You've never picked up a padel racket — or only tried it once or twice. No worries at all; our Americano format pairs all levels together and everyone learns fast.",
+  },
+  "Beginner": {
+    emoji: "🟢",
+    description: "You've played a handful of times and understand the basics — serving, scoring, and using the glass walls. You're still building consistency but you're keen to play more.",
+  },
+  "Intermediate": {
+    emoji: "🟡",
+    description: "You play regularly (at least monthly) and are comfortable with rallies, lobs, and basic wall play. You've got your own racket and know your way around the court.",
+  },
+  "Advanced": {
+    emoji: "🔴",
+    description: "You play competitively or train regularly. You're confident with bandeja, vibora, and tactical wall play. You may have entered tournaments or play at club level.",
+  },
+};
 
 // Using the exact enums expected by the API
 const IndustryEnum = z.enum([
@@ -310,7 +335,40 @@ export function RegistrationForm() {
               name="padelLevel"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className="text-foreground">Padel Level</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormLabel className="text-foreground">Padel Level</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="What do the padel levels mean?"
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0 overflow-hidden" align="start">
+                        <div className="bg-card border-b border-border px-4 py-3">
+                          <p className="text-sm font-semibold text-foreground">What level am I?</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">All levels are welcome — this helps us balance teams.</p>
+                        </div>
+                        <div className="divide-y divide-border">
+                          {PadelLevelEnum.options.map((level) => {
+                            const info = padelLevelDescriptions[level];
+                            return (
+                              <div key={level} className="px-4 py-3 flex gap-3">
+                                <span className="text-lg leading-none mt-0.5 flex-shrink-0">{info.emoji}</span>
+                                <div>
+                                  <p className="text-sm font-semibold text-foreground">{level}</p>
+                                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{info.description}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
