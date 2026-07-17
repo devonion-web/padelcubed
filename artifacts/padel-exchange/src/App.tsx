@@ -5,6 +5,8 @@ import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Home from '@/pages/Home';
 import Admin from '@/pages/Admin';
+import Privacy from '@/pages/Privacy';
+import { CookieBanner } from '@/components/CookieBanner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +22,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/admin" component={Admin} />
+      <Route path="/privacy" component={Privacy} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -31,6 +34,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Router />
+          <CookieBanner />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

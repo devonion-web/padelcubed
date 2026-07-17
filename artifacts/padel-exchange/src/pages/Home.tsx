@@ -794,7 +794,7 @@ export default function Home() {
               <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
+              <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
             </div>
           </div>
 
