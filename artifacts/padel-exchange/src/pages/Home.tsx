@@ -17,6 +17,9 @@ import {
   Shield,
   Zap,
   ChevronRight,
+  Building2,
+  BadgePercent,
+  Trophy,
 } from "lucide-react";
 
 import heroImage from "@/assets/hero-court.jpg";
@@ -184,7 +187,7 @@ export default function Home() {
                 {
                   icon: Shield,
                   title: "Curated & subsidised",
-                  desc: "Sponsor-backed, quality rooms, better value. We curate the room so you don't have to filter the conversation."
+                  desc: "Padel is an expensive sport. Sponsor backing means you access top-tier venues at a fraction of the walk-in rate — you pay for a produced event, not court hire."
                 },
                 {
                   icon: Zap,
@@ -202,6 +205,56 @@ export default function Home() {
                   </div>
                 </FadeIn>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Access Section */}
+        <section className="py-24 md:py-32 relative overflow-hidden border-t border-border/50">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
+          <div className="container mx-auto px-4 md:px-8 relative z-10">
+            <div className="max-w-5xl mx-auto">
+              <FadeIn>
+                <div className="mb-4">
+                  <span className="text-primary text-sm font-semibold tracking-widest uppercase">Why this matters</span>
+                </div>
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6 max-w-3xl">
+                  Padel is one of the UK's fastest-growing sports. It's also one of the most expensive.
+                </h2>
+                <p className="text-xl text-muted-foreground max-w-3xl leading-relaxed mb-16">
+                  Premium court time at the best venues in London can cost £60–£100 an hour. Add a quality experience on top — an MC, a format, a leaderboard, drinks — and you're looking at serious money. The Padel Exchange changes that through sponsor backing. You get access to the best facilities at a fraction of the real cost, and sponsors get access to a room full of exactly the right people.
+                </p>
+              </FadeIn>
+
+              <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+                {[
+                  {
+                    icon: Building2,
+                    title: "The best venues",
+                    desc: "We work with the top padel clubs in the UK — the courts you've heard of but wouldn't normally book solo. Starting in London, expanding nationally."
+                  },
+                  {
+                    icon: BadgePercent,
+                    title: "Sponsor-backed pricing",
+                    desc: "Sponsors cover the cost gap. You pay for a produced social event — not court hire at rack rate. Great padel, fair price, no compromise on quality."
+                  },
+                  {
+                    icon: Trophy,
+                    title: "A real experience",
+                    desc: "Not a shared booking with strangers. A produced evening: MC, Americano format, live leaderboard, prizes and drinks — at a venue worth going to."
+                  }
+                ].map((card, i) => (
+                  <FadeIn key={i} delay={i * 0.1}>
+                    <div className="group p-8 rounded-3xl border border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300">
+                      <div className="h-12 w-12 rounded-2xl bg-primary/15 flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+                        <card.icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-3 text-foreground">{card.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{card.desc}</p>
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
             </div>
           </div>
         </section>
