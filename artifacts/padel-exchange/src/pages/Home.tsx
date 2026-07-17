@@ -307,7 +307,7 @@ export default function Home() {
               >
                 <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-8 backdrop-blur-sm">
                   <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
-                  Join 120+ founders already on the list
+                  Join 120+ professionals already on the list
                 </div>
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-6">
                   Trade ideas, energy <br className="hidden md:block" />
