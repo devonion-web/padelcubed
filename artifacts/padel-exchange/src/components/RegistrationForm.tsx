@@ -68,6 +68,7 @@ const InterestsEnum = z.enum([
   "Meeting other founders",
   "Industry peers & ideas",
   "Just trying padel",
+  "Social play (Americano events)",
 ]);
 
 const formSchema = z.object({
@@ -163,6 +164,7 @@ export function RegistrationForm() {
     "Meeting other founders",
     "Industry peers & ideas",
     "Just trying padel",
+    "Social play (Americano events)",
   ] as const;
 
   return (

@@ -70,6 +70,7 @@ export const RegistrationInputInterestsItem = {
   Meeting_other_founders: 'Meeting other founders',
   'Industry_peers_&_ideas': 'Industry peers & ideas',
   Just_trying_padel: 'Just trying padel',
+  'Social_play_(Americano_events)': 'Social play (Americano events)',
 } as const;
 
 export interface RegistrationInput {

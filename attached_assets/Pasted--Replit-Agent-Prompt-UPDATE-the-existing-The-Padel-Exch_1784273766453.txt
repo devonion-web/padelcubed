@@ -1,0 +1,62 @@
+# Replit Agent Prompt — UPDATE the existing "The Padel Exchange" site
+
+Paste this into the same Replit project (the one that already has the landing page). It edits the existing site — keep all current functionality unless told otherwise.
+
+---
+
+Update my existing **The Padel Exchange** landing page with the changes below. **Do not change the registration form fields, the database, the /admin page, or the CSV export — keep all of that working exactly as it is.** These changes are about the messaging and adding one new section, to reflect that The Padel Exchange runs **structured social events (Americano-style), not single games of padel**.
+
+## 1. Reframe the whole page around "events, not games"
+The core idea to land everywhere: The Padel Exchange runs **produced social events lasting 1.5–3 hours**, where you **rotate partners and play with everyone** — so you arrive solo (or with a colleague) and leave having met the whole room. It is hosted by an MC, includes a format, a moment to exchange ideas, and drinks. It is NOT court hire or a single match.
+
+## 2. Update the hero
+- Keep the name and the tagline, but add a short supporting line beneath the tagline: **"Social padel events where you play with everyone — trade ideas, energy and the occasional smash."**
+
+## 3. Update the "What it is" section
+Replace the copy with: *"The Padel Exchange runs curated social padel events for founders and senior professionals. Using rotating formats like the Americano, you play with and against everyone in the room over 1.5–3 hours — so a single evening turns into a dozen real connections. It's an exchange: of ideas, perspectives, introductions, energy and a good game. All levels welcome — we're starting in London and growing across the UK."*
+
+## 4. Update the "Why join" benefit cards
+Use these six:
+- **Play with everyone** — Americano-style rotation means new partners every round. Arrive solo, leave having met the room.
+- **Produced events, not court hire** — hosted by an MC, 1.5–3 hours, format, leaderboard and drinks.
+- **Exchange, don't pitch** — a built-in moment to trade ideas, views and introductions.
+- **All levels welcome** — never played? Neither had half the room. Kit provided.
+- **Curated & subsidised** — sponsor-backed, quality rooms, better value.
+- **Fitness + connection** — get off the desk and meet great people in one evening.
+
+## 5. Add a NEW section: "What happens at an event"
+Place it after "Why join" and before "How it works". Show the flow as a simple horizontal stepper or vertical timeline:
+1. **Welcome** — arrival, name badges (name + company), a quick intro from your host.
+2. **Warm-up** — a few minutes to find your feet (all levels).
+3. **The Americano** — rotating rounds; you partner and play against different people each time, points build to a live leaderboard.
+4. **The Exchange** — a short moment for ideas and introductions (at some events, a guest insight).
+5. **Drinks & prizes** — leaderboard, a winner, a photo, and time to connect.
+
+Add a short line under the section: *"Events run 1.5 to 3 hours. Come on your own or bring a colleague — the format does the introductions for you."*
+
+## 6. Update "How it works" (the 4 steps)
+Replace with:
+1. **Register your interest** (30 seconds).
+2. **We match you** to events that fit your level and interests.
+3. **Reserve your spot** with a small upfront payment — you're booking a produced event, not a court.
+4. **Turn up, play with everyone, connect.**
+
+## 7. Update the FAQ
+- Add: **"Is it just single games of padel?"** → *"No — these are structured social events. Using formats like the Americano you rotate partners and play with everyone, over 1.5–3 hours, hosted by an MC."*
+- Add: **"Can I come on my own?"** → *"Absolutely — the format is designed for it. You'll be playing with different people all evening."*
+- Keep the existing FAQ items (beginners welcome, cost, venues, data/privacy).
+
+## 8. Small form tweak (only this — leave everything else on the form untouched)
+In the existing "What are you most interested in?" checkboxes, add one option: **"Social play (Americano events)"**. Do not change any other field, the validation, the database, or the export.
+
+## 9. Make it UK-wide, not London-only
+Remove or soften any London-specific wording currently on the site (e.g. "in and around the City of London", "central London venues"). The Padel Exchange is a **UK community starting in London and expanding nationally**. Use phrasing like "starting in London, growing across the UK" and, for venues, "premium padel venues (London first, more UK cities soon)". Keep it welcoming to future members outside London so the brand doesn't feel London-locked.
+
+## 10. Keep the design language consistent
+Match the existing premium look, palette, fonts and spacing. Reuse existing components/icons for the new section. Keep it fast, responsive and accessible.
+
+After the changes, show me the updated page and confirm the registration form and /admin export still work.
+
+---
+
+*(After it updates: re-test a submission and the CSV export, and check the new "What happens at an event" section looks right on mobile.)*

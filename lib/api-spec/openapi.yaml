@@ -189,6 +189,7 @@ components:
               - Meeting other founders
               - Industry peers & ideas
               - Just trying padel
+              - Social play (Americano events)
         linkedinUrl:
           type: string
         gdprConsent:

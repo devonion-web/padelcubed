@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { Link } from "wouter";
 import { motion, useInView } from "framer-motion";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import {
@@ -10,10 +9,16 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 
-import { CheckCircle2, Users, Network, TrendingUp, ChevronRight } from "lucide-react";
+import {
+  CheckCircle2,
+  Users,
+  MessageSquare,
+  Calendar,
+  Shield,
+  Zap,
+  ChevronRight,
+} from "lucide-react";
 
-// For realistic placeholder imagery in the absence of a real image, we will use a CSS gradient overlay
-// combined with the generated hero image if it's available.
 import heroImage from "@/assets/hero-court.jpg";
 
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) {
@@ -72,8 +77,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative min-h-[100dvh] flex items-center pt-20">
           <div className="absolute inset-0 z-0">
-            {/* Background Image / Overlay */}
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
               style={{ backgroundImage: `url(${heroImage})` }}
             />
@@ -92,12 +96,15 @@ export default function Home() {
                   <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
                   Join 120+ founders already on the list
                 </div>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-8">
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-6">
                   Trade ideas, energy <br className="hidden md:block" />
                   <span className="text-muted-foreground">and the occasional smash.</span>
                 </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground font-medium max-w-2xl mb-10 leading-relaxed">
-                  A founders' padel community in the City. Because the best networking doesn't happen at a networking event.
+                <p className="text-lg md:text-xl text-primary font-semibold max-w-2xl mb-4 leading-relaxed">
+                  Social padel events where you play with everyone — trade ideas, energy and the occasional smash.
+                </p>
+                <p className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mb-10 leading-relaxed">
+                  A founders' padel community. Because the best networking doesn't happen at a networking event.
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Button size="lg" onClick={scrollToForm} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group">
@@ -111,11 +118,11 @@ export default function Home() {
               </motion.div>
             </div>
           </div>
-          
+
           {/* Scroll Indicator */}
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 1.5, duration: 1 }}
             className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground"
           >
@@ -124,15 +131,18 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* Ethos Section */}
+        {/* Ethos Section — "What it is" */}
         <section className="py-24 md:py-32 border-t border-border/50 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
               <FadeIn>
-                <h2 className="text-3xl md:text-5xl font-medium tracking-tight leading-tight text-foreground">
-                  An exchange is where people trade. Here we trade perspectives, introductions, energy and a good game.
-                </h2>
+                <p className="text-3xl md:text-5xl font-medium tracking-tight leading-tight text-foreground">
+                  The Padel Exchange runs curated social padel events for founders and senior professionals. Using rotating formats like the Americano, you play with and against everyone in the room over 1.5–3 hours — so a single evening turns into a dozen real connections.
+                </p>
+                <p className="mt-8 text-xl md:text-2xl text-muted-foreground leading-relaxed">
+                  It's an exchange: of ideas, perspectives, introductions, energy and a good game. All levels welcome — starting in London and growing across the UK.
+                </p>
                 <div className="mt-12 h-1 w-24 bg-primary mx-auto rounded-full" />
               </FadeIn>
             </div>
@@ -144,8 +154,8 @@ export default function Home() {
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
               <div className="mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Why we built this</h2>
-                <p className="text-lg text-muted-foreground max-w-2xl">The typical London networking scene is tired. We wanted something active, curated, and genuinely valuable.</p>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Why join</h2>
+                <p className="text-lg text-muted-foreground max-w-2xl">Produced social events designed to make real connections — not another awkward room with name badges and canapés.</p>
               </div>
             </FadeIn>
 
@@ -153,23 +163,33 @@ export default function Home() {
               {[
                 {
                   icon: Users,
-                  title: "A true peer circle",
-                  desc: "We curate heavily. You'll play alongside other founders, CEOs, and senior leaders navigating similar challenges."
+                  title: "Play with everyone",
+                  desc: "Americano-style rotation means new partners every round. Arrive solo, leave having met the room."
                 },
                 {
-                  icon: Network,
+                  icon: Calendar,
+                  title: "Produced events, not court hire",
+                  desc: "Hosted by an MC, 1.5–3 hours, format, leaderboard and drinks. You're booking an experience, not a court."
+                },
+                {
+                  icon: MessageSquare,
                   title: "Exchange, don't pitch",
-                  desc: "Leave the slide deck at home. This is about building genuine relationships over sport, not hard selling."
+                  desc: "A built-in moment to trade ideas, views and introductions — no slide decks required."
                 },
                 {
                   icon: CheckCircle2,
                   title: "All levels welcome",
-                  desc: "Never held a racket? No problem. Ex-tennis pro? We've got matches for you. We grade and pair accordingly."
+                  desc: "Never played? Neither had half the room. Kit provided. We make sure everyone gets a fair, enjoyable game."
                 },
                 {
-                  icon: TrendingUp,
-                  title: "Get off the desk",
-                  desc: "Building a company is a sedentary sport. Get out of the office, get moving, and clear your head."
+                  icon: Shield,
+                  title: "Curated & subsidised",
+                  desc: "Sponsor-backed, quality rooms, better value. We curate the room so you don't have to filter the conversation."
+                },
+                {
+                  icon: Zap,
+                  title: "Fitness + connection",
+                  desc: "Get off the desk and meet great people in one evening. Building a company is sedentary enough."
                 }
               ].map((card, i) => (
                 <FadeIn key={i} delay={i * 0.1}>
@@ -186,19 +206,84 @@ export default function Home() {
           </div>
         </section>
 
+        {/* What Happens at an Event */}
+        <section className="py-24 md:py-32 relative overflow-hidden">
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] translate-y-1/3 -translate-x-1/4" />
+          <div className="container mx-auto px-4 md:px-8 relative z-10">
+            <FadeIn>
+              <div className="mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">What happens at an event</h2>
+                <p className="text-lg text-muted-foreground max-w-2xl">From arrival to the final drink — here's how a typical evening runs.</p>
+              </div>
+            </FadeIn>
+
+            <div className="max-w-3xl">
+              {[
+                {
+                  num: "1",
+                  title: "Welcome",
+                  desc: "Arrival, name badges (name + company), and a quick intro from your host. No awkward standing around."
+                },
+                {
+                  num: "2",
+                  title: "Warm-up",
+                  desc: "A few minutes to find your feet — all levels, no judgement. We ease everyone in together."
+                },
+                {
+                  num: "3",
+                  title: "The Americano",
+                  desc: "Rotating rounds — you partner and play against different people each time. Points build to a live leaderboard on the night."
+                },
+                {
+                  num: "4",
+                  title: "The Exchange",
+                  desc: "A short moment for ideas and introductions. At some events, a guest insight from someone in the room."
+                },
+                {
+                  num: "5",
+                  title: "Drinks & prizes",
+                  desc: "Leaderboard, a winner, a photo, and time to connect properly. The game did the introductions — now just enjoy the conversation."
+                }
+              ].map((step, i) => (
+                <FadeIn key={i} delay={i * 0.1}>
+                  <div className="flex gap-6 md:gap-8 pb-10 last:pb-0 relative">
+                    {/* Vertical line connector */}
+                    {i < 4 && (
+                      <div className="absolute left-[22px] top-12 bottom-0 w-[2px] bg-border" />
+                    )}
+                    <div className="flex-shrink-0 w-11 h-11 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-sm z-10">
+                      {step.num}
+                    </div>
+                    <div className="pt-2 pb-2">
+                      <h3 className="text-xl font-semibold mb-2 text-foreground">{step.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{step.desc}</p>
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+
+            <FadeIn delay={0.5}>
+              <p className="mt-12 text-muted-foreground text-base italic max-w-xl border-l-2 border-primary/40 pl-4">
+                Events run 1.5 to 3 hours. Come on your own or bring a colleague — the format does the introductions for you.
+              </p>
+            </FadeIn>
+          </div>
+        </section>
+
         {/* How It Works */}
-        <section id="how-it-works" className="py-24 md:py-32">
+        <section id="how-it-works" className="py-24 md:py-32 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-16">How the exchange works</h2>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-16">How it works</h2>
             </FadeIn>
 
             <div className="grid md:grid-cols-4 gap-8">
               {[
-                { step: "01", title: "Register interest", desc: "Fill out the short form below to join the waitlist. We review every application." },
-                { step: "02", title: "We match you", desc: "Based on your industry, seniority and padel level, we curate games of 4." },
-                { step: "03", title: "Reserve your spot", desc: "When a game matches your profile, you'll receive an invite. First come, first served." },
-                { step: "04", title: "Turn up & play", desc: "Meet at the court, play for 60-90 minutes, and grab a coffee or drink after." }
+                { step: "01", title: "Register your interest", desc: "Fill out the short form below — takes 30 seconds." },
+                { step: "02", title: "We match you", desc: "We match you to events that fit your level and interests." },
+                { step: "03", title: "Reserve your spot", desc: "A small upfront payment secures your place — you're booking a produced event, not a court." },
+                { step: "04", title: "Turn up & connect", desc: "Play with everyone, trade ideas, leave with new connections." }
               ].map((item, i) => (
                 <FadeIn key={i} delay={i * 0.1} className="relative">
                   {i < 3 && <div className="hidden md:block absolute top-8 left-16 right-0 h-[1px] bg-border" />}
@@ -221,7 +306,7 @@ export default function Home() {
               <FadeIn>
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">Who is this for?</h2>
                 <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-90">
-                  Founders, operators, and senior leaders working in and around the City of London. It's for the intellectually curious who want to expand their network horizontally — outside their immediate industry bubble — while breaking a sweat.
+                  Founders, operators, and senior leaders who want to expand their network outside their immediate industry bubble — while breaking a sweat. Starting in London and growing across the UK, The Padel Exchange is open to anyone who values real connection over forced small talk.
                 </p>
               </FadeIn>
             </div>
@@ -235,13 +320,13 @@ export default function Home() {
             <div className="max-w-3xl mx-auto">
               <FadeIn>
                 <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Request Access</h2>
+                  <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Register your interest</h2>
                   <p className="text-lg text-muted-foreground">
-                    Join the waitlist. We approve new members weekly to ensure the community remains balanced and high-quality.
+                    Join the list. We'll match you to events that fit your level and interests — starting in London, more UK cities soon.
                   </p>
                 </div>
               </FadeIn>
-              
+
               <FadeIn delay={0.2}>
                 <RegistrationForm />
               </FadeIn>
@@ -256,25 +341,37 @@ export default function Home() {
               <FadeIn>
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-12 text-center">Frequently asked questions</h2>
               </FadeIn>
-              
+
               <FadeIn delay={0.2}>
                 <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-0" className="border-border">
+                    <AccordionTrigger className="text-lg hover:text-primary transition-colors">Is it just single games of padel?</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground text-base">
+                      No — these are structured social events. Using formats like the Americano you rotate partners and play with everyone, over 1.5–3 hours, hosted by an MC. It's much more than a game of padel.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-solo" className="border-border">
+                    <AccordionTrigger className="text-lg hover:text-primary transition-colors">Can I come on my own?</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground text-base">
+                      Absolutely — the format is designed for it. You'll be playing with different people all evening, so arriving solo is entirely normal. Most people do.
+                    </AccordionContent>
+                  </AccordionItem>
                   <AccordionItem value="item-1" className="border-border">
                     <AccordionTrigger className="text-lg hover:text-primary transition-colors">Do I need to be good at padel?</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground text-base">
-                      Not at all. We have members who play competitively and members who have never stepped on a court. We organise matches based on skill level so everyone gets a fair, enjoyable game.
+                      Not at all. We have members who play competitively and members who have never stepped on a court. We organise events based on skill level so everyone gets a fair, enjoyable game.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-2" className="border-border">
                     <AccordionTrigger className="text-lg hover:text-primary transition-colors">What is the cost?</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground text-base">
-                      Joining the community and waitlist is free. You only pay when you play. Court costs and balls are split equally among the 4 players, typically around £15-£25 per person depending on the venue and time.
+                      Registering your interest is free. You only pay when you reserve a spot at an event. Costs are kept competitive thanks to sponsor support — you're paying for a produced social event, not just court hire.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-3" className="border-border">
-                    <AccordionTrigger className="text-lg hover:text-primary transition-colors">Where do you play?</AccordionTrigger>
+                    <AccordionTrigger className="text-lg hover:text-primary transition-colors">Where do events take place?</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground text-base">
-                      We primarily use courts in and around central London / the City (e.g., Stratford, Canary Wharf, Earls Court). Venues are specified when game invitations are sent out.
+                      We use premium padel venues — London first, with more UK cities coming soon. Venue details are provided when you're matched to an event.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-4" className="border-border">
@@ -286,7 +383,7 @@ export default function Home() {
                   <AccordionItem value="item-5" className="border-border">
                     <AccordionTrigger className="text-lg hover:text-primary transition-colors">How is my data used?</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground text-base">
-                      Strictly for organising games and community communication. We never sell data to third parties. We hate spam as much as you do.
+                      Strictly for organising events and community communication. We never sell data to third parties. We hate spam as much as you do.
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -307,17 +404,17 @@ export default function Home() {
               </div>
               <p className="text-muted-foreground text-sm">Trade ideas, energy and the occasional smash.</p>
             </div>
-            
+
             <div className="flex gap-6 text-sm font-medium">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
             </div>
           </div>
-          
+
           <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground flex flex-col md:flex-row justify-between items-center gap-4">
             <p>&copy; {new Date().getFullYear()} The Padel Exchange. All rights reserved.</p>
-            <p className="text-xs opacity-50">London, UK</p>
+            <p className="text-xs opacity-50">Starting in London · Growing across the UK</p>
           </div>
         </div>
       </footer>
