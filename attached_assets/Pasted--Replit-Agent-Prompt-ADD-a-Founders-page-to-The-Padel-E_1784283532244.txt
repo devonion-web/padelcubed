@@ -1,0 +1,50 @@
+# Replit Agent Prompt — ADD a "Founders" page to The Padel Exchange site
+
+Paste into the same Replit project. It adds a new page; keep all existing pages, the registration form, the database and the /admin export working exactly as they are.
+
+---
+
+Add a new **"Founders"** page to my existing The Padel Exchange site, and a link to it in the top navigation (label: "The Founders").
+
+## Purpose of the page
+Introduce the small founding group behind The Padel Exchange and build trust. These are people from **different industries** who share a passion for padel, good conversation and connection — which is the whole point of the community. The page should make a visitor think "these are people I'd want to play and network with."
+
+## Page structure
+1. **Intro header** — heading "The Founders" with a short line beneath: *"The Padel Exchange was started by a small group of founders and senior professionals from different industries — united by a love of padel, good people and the exchange of ideas. They curate the community and host the events."*
+2. **Founder grid** — a responsive grid of founder cards (2–3 per row on desktop, 1 on mobile). It must be **easy to add or remove founders** (5 to 10 total), so drive the grid from a simple data array/list in the code — I'll edit that array to add people.
+3. Each **founder card** shows: a circular photo, full name, role & company, location, an optional short "Why padel" pull-quote, a 2–3 sentence bio, and a small LinkedIn icon/link.
+4. **Footer CTA** — under the grid, a line + button: *"Want to be part of it? Register your interest"* linking to the register-interest form.
+
+## Data model for founders (pre-seed with the entries below)
+Create the grid from an array of objects like:
+`{ name, role, company, location, photo, linkedin, whyPadel, bio }`
+
+Pre-seed these founders (headers are confirmed; the `bio` and `whyPadel` fields are DRAFT placeholders I will replace with each founder's own approved words — keep them clearly editable):
+
+- **Dev O'Nion** — Director, Risk Rising — London, UK — linkedin: linkedin.com/in/devairr — whyPadel: "[DRAFT – confirm]" — bio: "[DRAFT – founder to confirm: a line on their work in GRC/technology, their passion for padel, and what they value about bringing people together.]"
+- **Rash Phullar** — Chief Strategic Growth Officer, Corlytics — UK — whyPadel: "[DRAFT – confirm]" — bio: "[DRAFT – confirm]"
+- **Jahangez Chaudhery** — Executive Underwriter, Apollo 1971 — UK — whyPadel: "[DRAFT – confirm]" — bio: "[DRAFT – confirm]"
+- **James Pickles** — Performance & Wellbeing Consultant / Speaker — Surbiton, UK — whyPadel: "[DRAFT – confirm]" — bio: "[DRAFT – confirm]"
+- **Christian Roelofs** — CEO, Finativ (Finance Industry Specialist) — UK — whyPadel: "[DRAFT – confirm]" — bio: "[DRAFT – confirm]"
+- **Lee Edge** — Principal, GRC Edge (GRC, Cyber & AI Governance) — London, UK — whyPadel: "[DRAFT – confirm]" — bio: "[DRAFT – confirm]"
+
+Use a neutral placeholder avatar where no photo is supplied yet, so the layout looks right before real photos are added. Make the LinkedIn field optional (hide the icon if empty).
+
+## Bio guidance (put this as a comment in the code so I fill each one consistently)
+Each bio should cover three short threads, in the brand voice (confident, warm, a little playful, British English):
+1. **Work** — who they are / what they do (one line).
+2. **Padel** — their passion for the game (how they got into it, what they love about it).
+3. **Connection** — what they value about meeting people and exchanging ideas.
+Optionally a one-line **"Why padel"** quote for the pull-quote (e.g. "Best hour of my week — you meet everyone.").
+
+## Design
+Match the existing premium look, palette, fonts and spacing. Cards should feel clean and tactile (rounded corners, subtle hover lift). Fully responsive and accessible. Fast-loading; optimise photos.
+
+## Keep intact
+Do not change the registration form, its fields, the database, the /admin page or the CSV export. This is an additive page only.
+
+After building, show me the Founders page and confirm the rest of the site still works. Tell me where in the code to edit the founders array and paste each person's photo.
+
+---
+
+*(Before publishing: get each founder's sign-off on their bio, photo and LinkedIn link — it's their likeness on a public page. Swap the placeholder avatars for real headshots.)*
