@@ -251,11 +251,6 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
           <a href="/" className="pc-logo" aria-label="P Cubed — People, Padel, Places">
             <span className="pc-mark" aria-hidden="true">P<sup>3</sup></span>
-            <span className="pc-word" aria-hidden="true">
-              <span className="pc-line"><b>P</b>eople<i>.</i></span>
-              <span className="pc-line"><b>P</b>adel<i>.</i></span>
-              <span className="pc-line"><b>P</b>laces<i>.</i></span>
-            </span>
           </a>
           <nav className="hidden md:flex items-center gap-8">
             <button onClick={scrollToHow} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
