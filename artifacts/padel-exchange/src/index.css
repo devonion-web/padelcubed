@@ -67,39 +67,39 @@
 }
 
 :root, .dark {
-  --button-outline: rgba(100, 140, 255, 0.15);
-  --badge-outline: rgba(100, 140, 255, 0.07);
+  --button-outline: rgba(255, 255, 255, 0.18);
+  --badge-outline: rgba(255, 255, 255, 0.08);
 
   --opaque-button-border-intensity: 9;
 
-  --elevate-1: rgba(100, 140, 255, 0.05);
-  --elevate-2: rgba(100, 140, 255, 0.10);
+  --elevate-1: rgba(255, 255, 255, 0.06);
+  --elevate-2: rgba(255, 255, 255, 0.12);
 
-  /* Royal blue base */
-  --background: 225 65% 9%;
+  /* Risk Rising Royal Blue — #4169E1 = hsl(225, 73%, 57%) */
+  --background: 225 73% 57%;
   --foreground: 0 0% 98%;
 
-  --card: 225 58% 13%;
+  --card: 225 68% 50%;
   --card-foreground: 0 0% 98%;
-  --card-border: 225 42% 22%;
+  --card-border: 225 58% 44%;
 
-  --popover: 225 58% 13%;
+  --popover: 225 68% 50%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 225 42% 22%;
+  --popover-border: 225 58% 44%;
 
-  --border: 225 42% 22%;
-  --input: 225 38% 20%;
+  --border: 225 58% 44%;
+  --input: 225 55% 40%;
   --ring: 180 85% 50%;
 
   /* Electric turquoise */
   --primary: 180 85% 50%;
   --primary-foreground: 0 0% 0%;
 
-  --secondary: 225 42% 20%;
+  --secondary: 225 58% 44%;
   --secondary-foreground: 0 0% 98%;
 
-  --muted: 225 40% 18%;
-  --muted-foreground: 225 18% 65%;
+  --muted: 225 55% 48%;
+  --muted-foreground: 225 60% 88%;
 
   --accent: 180 85% 50%;
   --accent-foreground: 0 0% 0%;
@@ -107,12 +107,12 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --sidebar: 225 58% 13%;
+  --sidebar: 225 68% 50%;
   --sidebar-foreground: 0 0% 98%;
-  --sidebar-border: 225 42% 22%;
+  --sidebar-border: 225 58% 44%;
   --sidebar-primary: 180 85% 50%;
   --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 225 42% 20%;
+  --sidebar-accent: 225 58% 44%;
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-ring: 180 85% 50%;
 
