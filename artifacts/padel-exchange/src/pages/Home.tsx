@@ -304,9 +304,11 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
               >
-                <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-8 backdrop-blur-sm">
-                  <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
-                  Join 120+ professionals already on the list
+                <div className="flex justify-center mb-8">
+                  <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm">
+                    <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
+                    Join 120+ professionals already on the list
+                  </div>
                 </div>
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-4">
                   People,{" "}
