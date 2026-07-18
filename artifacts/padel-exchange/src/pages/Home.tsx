@@ -189,7 +189,7 @@ function FounderCard({ founder }: { founder: typeof founders[number] }) {
               src={`/${founder.photo}`}
               alt={founder.name}
               onError={() => setImgError(true)}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover grayscale"
             />
           )}
         </div>
