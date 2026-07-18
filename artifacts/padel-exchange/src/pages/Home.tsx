@@ -135,7 +135,7 @@ const founders = [
     initials: "JP",
     role: "Performance & Wellbeing Consultant, byrne·dean",
     photo: "founders/james.jpg",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/jamespicklescoaching/",
     bio: "Award-winning performance coach, speaker, dad of two and unashamed padel enthusiast. James keeps high-performing teams — and this community — healthy, happy and firing.",
   },
   {
