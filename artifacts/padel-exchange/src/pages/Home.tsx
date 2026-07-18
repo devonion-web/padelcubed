@@ -127,7 +127,7 @@ const founders = [
     initials: "JC",
     role: "Executive Underwriter, Apollo 1971",
     photo: "founders/jahangez.jpg",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/jahangez-chaudhery-7793312a/",
     bio: "A specialty insurance mind with a serious appetite for a game. Jahangez underwrites risk at Lloyd's — then happily takes plenty of it at the net.",
   },
   {
