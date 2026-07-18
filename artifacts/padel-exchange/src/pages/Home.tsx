@@ -186,7 +186,7 @@ function FounderCard({ founder }: { founder: typeof founders[number] }) {
             </div>
           ) : (
             <img
-              src={`/${founder.photo}`}
+              src={`${import.meta.env.BASE_URL}${founder.photo}`}
               alt={founder.name}
               onError={() => setImgError(true)}
               className="w-full h-full object-cover grayscale"
@@ -209,13 +209,13 @@ import heroImage from "@/assets/hero-court.jpg";
 
 // AI-generated padel action photos (in /public/padel/)
 const padelPhotos = [
-  { src: "/padel/social-game.jpg",      alt: "Professionals playing padel doubles" },
-  { src: "/padel/action-smash.jpg",     alt: "Padel player making a smash" },
-  { src: "/padel/celebrate.jpg",        alt: "Players celebrating at the net" },
-  { src: "/padel/aerial-court.jpg",     alt: "Aerial view of padel court" },
-  { src: "/padel/post-match-social.jpg",alt: "Post-match social and networking" },
-  { src: "/padel/racket-ball.jpg",      alt: "Padel racket and ball close-up" },
-  { src: "/padel/hero-video-poster.jpg",alt: "Padel doubles match in progress" },
+  { src: import.meta.env.BASE_URL + "padel/social-game.jpg",      alt: "Professionals playing padel doubles" },
+  { src: import.meta.env.BASE_URL + "padel/action-smash.jpg",     alt: "Padel player making a smash" },
+  { src: import.meta.env.BASE_URL + "padel/celebrate.jpg",        alt: "Players celebrating at the net" },
+  { src: import.meta.env.BASE_URL + "padel/aerial-court.jpg",     alt: "Aerial view of padel court" },
+  { src: import.meta.env.BASE_URL + "padel/post-match-social.jpg",alt: "Post-match social and networking" },
+  { src: import.meta.env.BASE_URL + "padel/racket-ball.jpg",      alt: "Padel racket and ball close-up" },
+  { src: import.meta.env.BASE_URL + "padel/hero-video-poster.jpg",alt: "Padel doubles match in progress" },
 ];
 
 function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) {
@@ -283,7 +283,7 @@ export default function Home() {
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-45"
               style={{
-                backgroundImage: `url(/padel/hero-video-poster.jpg)`,
+                backgroundImage: `url(${import.meta.env.BASE_URL}padel/hero-video-poster.jpg)`,
                 animation: "kenBurns 24s ease-in-out infinite alternate",
                 willChange: "transform",
               }}
@@ -376,7 +376,7 @@ export default function Home() {
                       {/* Photo background */}
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.03]"
-                        style={{ backgroundImage: "url(/padel/social-game.jpg)" }}
+                        style={{ backgroundImage: `url(${import.meta.env.BASE_URL}padel/social-game.jpg)` }}
                       />
                       {/* Dark gradient so text is legible */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
@@ -507,7 +507,7 @@ export default function Home() {
           {/* Subtle aerial court image background */}
           <div
             className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
-            style={{ backgroundImage: "url(/padel/aerial-court.jpg)" }}
+            style={{ backgroundImage: `url(${import.meta.env.BASE_URL}padel/aerial-court.jpg)` }}
           />
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
