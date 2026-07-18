@@ -143,7 +143,7 @@ const founders = [
     initials: "CR",
     role: "CEO, Finativ",
     photo: "founders/christian.jpg",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/christianroelofs/",
     bio: "Finance specialist with a builder's instinct. Christian advises on corporate finance, transformation and ESG — and reckons a good doubles partnership tells you everything about someone.",
   },
   {
