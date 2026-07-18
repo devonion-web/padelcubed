@@ -277,7 +277,7 @@ export default function Home() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[100dvh] flex items-start pt-20">
+        <section className="relative flex items-start pt-20">
           <div className="absolute inset-0 z-0 overflow-hidden">
             {/* Ken Burns animated hero image */}
             <div
@@ -297,7 +297,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
           </div>
 
-          <div className="container relative z-10 mx-auto px-4 md:px-8 pt-1 md:pt-2 pb-20">
+          <div className="container relative z-10 mx-auto px-4 md:px-8 pt-1 md:pt-2 pb-12">
             <div className="max-w-4xl">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
