@@ -327,7 +327,7 @@ export default function Home() {
                     How it works
                   </Button>
                 </div>
-                <p className="text-sm text-foreground/50 mt-3">Registration is free — no commitment required.</p>
+                <p className="text-sm text-foreground/50 mt-3 text-center">Registration is free — no commitment required.</p>
               </motion.div>
             </div>
           </div>
