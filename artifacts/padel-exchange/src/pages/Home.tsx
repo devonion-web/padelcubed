@@ -119,7 +119,7 @@ const founders = [
     initials: "RP",
     role: "Chief Strategic Growth Officer, Corlytics",
     photo: "founders/rash.jpg",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/rash-phullar-12628847/",
     bio: "Growth strategist by day, relentless competitor on court. Rash helps fast-scaling companies find their edge, and brings the same energy to every rally.",
   },
   {
