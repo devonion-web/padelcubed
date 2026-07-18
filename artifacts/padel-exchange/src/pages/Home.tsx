@@ -151,7 +151,7 @@ const founders = [
     initials: "LE",
     role: "Principal, GRC Edge",
     photo: "founders/lee.jpg",
-    linkedin: "",
+    linkedin: "https://www.linkedin.com/in/lee-edge/",
     bio: "GRC, cyber and AI governance are Lee's world — helping organisations navigate complexity without losing their nerve. On court, he brings the same calm under pressure.",
   },
 ];
