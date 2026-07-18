@@ -503,7 +503,7 @@ export default function Home() {
         </div>
 
         {/* Ethos Section — "What it is" */}
-        <section className="py-24 md:py-32 border-t border-border/50 relative overflow-hidden">
+        <section className="py-12 md:py-16 border-t border-border/50 relative overflow-hidden">
           {/* Subtle aerial court image background */}
           <div
             className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
@@ -526,7 +526,7 @@ export default function Home() {
         </section>
 
         {/* Why Join Section */}
-        <section className="py-24 md:py-32 bg-card/30 border-y border-border/50">
+        <section className="py-12 md:py-16 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
               <div className="mb-16">
@@ -583,7 +583,7 @@ export default function Home() {
         </section>
 
         {/* Access Section */}
-        <section className="py-24 md:py-32 relative overflow-hidden border-t border-border/50">
+        <section className="py-12 md:py-16 relative overflow-hidden border-t border-border/50">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <div className="max-w-5xl mx-auto">
@@ -633,7 +633,7 @@ export default function Home() {
         </section>
 
         {/* What Happens at an Event */}
-        <section className="py-24 md:py-32 relative overflow-hidden">
+        <section className="py-12 md:py-16 relative overflow-hidden">
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] translate-y-1/3 -translate-x-1/4" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <FadeIn>
@@ -698,7 +698,7 @@ export default function Home() {
         </section>
 
         {/* How It Works */}
-        <section id="how-it-works" className="py-24 md:py-32 bg-card/30 border-y border-border/50">
+        <section id="how-it-works" className="py-12 md:py-16 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-16">How it works</h2>
@@ -725,7 +725,7 @@ export default function Home() {
         </section>
 
         {/* Who it's for */}
-        <section id="who" className="py-24 md:py-32 bg-primary text-primary-foreground relative overflow-hidden">
+        <section id="who" className="py-12 md:py-16 bg-primary text-primary-foreground relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay pointer-events-none" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <div className="max-w-3xl mx-auto text-center">
@@ -740,7 +740,7 @@ export default function Home() {
         </section>
 
         {/* Upcoming Events Section */}
-        <section id="events" className="py-24 md:py-32 border-t border-border/50 relative overflow-hidden">
+        <section id="events" className="py-12 md:py-16 border-t border-border/50 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/4 rounded-full blur-[140px] translate-x-1/3 -translate-y-1/4 pointer-events-none" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <FadeIn>
@@ -850,7 +850,7 @@ export default function Home() {
         </section>
 
         {/* Founders Section */}
-        <section id="founders" className="py-24 md:py-32 bg-card/30 border-y border-border/50">
+        <section id="founders" className="py-12 md:py-16 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
               <div className="mb-16 text-center max-w-2xl mx-auto">
@@ -882,7 +882,7 @@ export default function Home() {
         </section>
 
         {/* Form Section */}
-        <section id="register" className="py-24 md:py-32 relative">
+        <section id="register" className="py-12 md:py-16 relative">
           <div className="absolute top-1/4 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-x-1/2" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <div className="max-w-3xl mx-auto">
@@ -903,7 +903,7 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section id="faq" className="py-24 md:py-32 border-t border-border/50 bg-card/20">
+        <section id="faq" className="py-12 md:py-16 border-t border-border/50 bg-card/20">
           <div className="container mx-auto px-4 md:px-8">
             <div className="max-w-3xl mx-auto">
               <FadeIn>
