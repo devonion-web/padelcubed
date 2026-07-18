@@ -714,7 +714,7 @@ export default function Home() {
                 <FadeIn key={i} delay={i * 0.1} className="relative">
                   {i < 3 && <div className="hidden md:block absolute top-8 left-16 right-0 h-[1px] bg-border" />}
                   <div className="relative z-10 flex flex-col items-start">
-                    <div className="text-5xl font-bold text-muted/50 mb-6 font-mono">{item.step}</div>
+                    <div className="text-5xl font-bold text-primary mb-6 font-mono">{item.step}</div>
                     <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
                     <p className="text-muted-foreground">{item.desc}</p>
                   </div>
