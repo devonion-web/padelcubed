@@ -277,7 +277,7 @@ export default function Home() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-[100dvh] flex items-center pt-5">
+        <section className="relative min-h-[100dvh] flex items-start pt-20">
           <div className="absolute inset-0 z-0 overflow-hidden">
             {/* Ken Burns animated hero image */}
             <div
