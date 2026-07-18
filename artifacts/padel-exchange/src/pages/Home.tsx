@@ -512,7 +512,7 @@ export default function Home() {
             <div className="max-w-4xl mx-auto text-center">
               <FadeIn>
                 <p className="text-3xl md:text-5xl font-medium tracking-tight leading-tight text-foreground">
-                  The Padel Exchange runs curated social padel events for founders and senior professionals. Using rotating formats like the Americano, you play with and against everyone in the room over 1.5–3 hours — so a single evening turns into a dozen real connections.
+                  People, Padel, Places runs curated social padel events for founders and senior professionals. Using rotating formats like the Americano, you play with and against everyone in the room over 1.5–3 hours — so a single evening turns into a dozen real connections.
                 </p>
                 <p className="mt-8 text-xl md:text-2xl text-muted-foreground leading-relaxed">
                   It's an exchange: of ideas, perspectives, introductions, energy and a good game. All levels welcome — starting in London and growing across the UK.
@@ -593,7 +593,7 @@ export default function Home() {
                   Padel is one of the UK's fastest-growing sports. It's also one of the most expensive.
                 </h2>
                 <p className="text-xl text-muted-foreground max-w-3xl leading-relaxed mb-16">
-                  Premium court time at the best venues in London can cost £60–£100 an hour. Add a quality experience on top — an MC, a format, a leaderboard, drinks — and you're looking at serious money. The Padel Exchange changes that through sponsor backing. You get access to the best facilities at a fraction of the real cost, and sponsors get access to a room full of exactly the right people.
+                  Premium court time at the best venues in London can cost £60–£100 an hour. Add a quality experience on top — an MC, a format, a leaderboard, drinks — and you're looking at serious money. People, Padel, Places changes that through sponsor backing. You get access to the best facilities at a fraction of the real cost, and sponsors get access to a room full of exactly the right people.
                 </p>
               </FadeIn>
 
@@ -660,7 +660,7 @@ export default function Home() {
                 },
                 {
                   num: "4",
-                  title: "The Exchange",
+                  title: "People, Padel, Places",
                   desc: "A short moment for ideas and introductions. At some events, a guest insight from someone in the room."
                 },
                 {
@@ -730,7 +730,7 @@ export default function Home() {
               <FadeIn>
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">Who is this for?</h2>
                 <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-90">
-                  Founders, operators, and senior leaders who want to expand their network outside their immediate industry bubble — while breaking a sweat. Starting in London and growing across the UK, The Padel Exchange is open to anyone who values real connection over forced small talk.
+                  Founders, operators, and senior leaders who want to expand their network outside their immediate industry bubble — while breaking a sweat. Starting in London and growing across the UK, People, Padel, Places is open to anyone who values real connection over forced small talk.
                 </p>
               </FadeIn>
             </div>
@@ -985,7 +985,7 @@ export default function Home() {
           </div>
 
           <div className="mt-12 pt-8 border-t border-border text-sm text-muted-foreground flex flex-col md:flex-row justify-between items-center gap-4">
-            <p>&copy; {new Date().getFullYear()} The Padel Exchange. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} People, Padel, Places. All rights reserved.</p>
             <p className="text-xs opacity-50">Starting in London · Growing across the UK</p>
           </div>
         </div>

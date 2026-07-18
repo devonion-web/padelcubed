@@ -20,7 +20,7 @@ export default function Privacy() {
           <Link href="/">
             <div className="font-bold text-xl tracking-tight text-foreground flex items-center gap-2 cursor-pointer">
               <div className="w-6 h-6 bg-primary rounded-full" />
-              The Padel Exchange
+              People, Padel, Places
             </div>
           </Link>
           <Link href="/">
@@ -42,7 +42,7 @@ export default function Privacy() {
 
         <Section title="1. Who we are">
           <p>
-            The Padel Exchange is operated by Risk Rising Ltd ("we", "us", "our"). For the purposes of
+            People, Padel, Places is operated by Risk Rising Ltd ("we", "us", "our"). For the purposes of
             UK data protection law, we are the <strong className="text-foreground">data controller</strong> in respect of
             personal data collected through this website.
           </p>
@@ -109,7 +109,7 @@ export default function Privacy() {
 
         <Section title="5. How long we keep your data">
           <p>
-            We retain your registration data for as long as you remain an active member of The Padel Exchange
+            We retain your registration data for as long as you remain an active member of People, Padel, Places
             community, or until you ask us to delete it — whichever comes first.
           </p>
           <p>
@@ -206,7 +206,7 @@ export default function Privacy() {
           <p>
             We take appropriate technical and organisational measures to protect your personal data against
             unauthorised access, loss, or disclosure. Access to registration data is restricted to
-            authorised members of The Padel Exchange team and is protected by password authentication.
+            authorised members of the People, Padel, Places team and is protected by password authentication.
           </p>
           <p>
             If we become aware of a personal data breach that is likely to result in a risk to your
@@ -246,14 +246,14 @@ export default function Privacy() {
 
         <div className="mt-12 pt-8 border-t border-border text-center">
           <Link href="/">
-            <Button className="rounded-full px-8">Back to The Padel Exchange</Button>
+            <Button className="rounded-full px-8">Back to People, Padel, Places</Button>
           </Link>
         </div>
       </main>
 
       <footer className="border-t border-border bg-card/50 py-8 mt-8">
         <div className="container mx-auto px-4 md:px-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} The Padel Exchange · Risk Rising Ltd. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} People, Padel, Places · Risk Rising Ltd. All rights reserved.</p>
         </div>
       </footer>
     </div>

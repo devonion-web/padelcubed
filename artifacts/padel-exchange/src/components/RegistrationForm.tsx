@@ -470,7 +470,7 @@ export function RegistrationForm() {
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="cursor-pointer text-sm font-medium text-foreground">
-                      I consent to The Padel Exchange (operated by Risk Rising Ltd) processing my personal data to match me to events and send me community updates. I understand I can withdraw consent at any time by emailing{" "}
+                      I consent to People, Padel, Places (operated by Risk Rising Ltd) processing my personal data to match me to events and send me community updates. I understand I can withdraw consent at any time by emailing{" "}
                       <a href="mailto:privacy@thepadelexchange.com" className="text-primary underline underline-offset-2">privacy@thepadelexchange.com</a>.
                       We will never sell your data. Read our{" "}
                       <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Policy</a>. *
