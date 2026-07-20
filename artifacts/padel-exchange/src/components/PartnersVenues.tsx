@@ -15,7 +15,7 @@ function trackPartnerClick(name: string) {
 }
 
 // ─── Partner logo tile ────────────────────────────────────────────────────────
-function PartnerLogo({ name, logoLight, url }: { name: string; logoLight: string; url: string }) {
+function PartnerLogo({ name, logoLight, url, logoClassName }: { name: string; logoLight: string; url: string; logoClassName?: string }) {
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   return (
     <a
@@ -33,7 +33,7 @@ function PartnerLogo({ name, logoLight, url }: { name: string; logoLight: string
         <img
           src={`${import.meta.env.BASE_URL}${logoLight}`}
           alt={name}
-          className="h-8 w-auto object-contain"
+          className={`${logoClassName ?? "h-8"} w-auto object-contain`}
           style={{ mixBlendMode: "screen" }}
           loading="lazy"
         />
@@ -97,13 +97,13 @@ export function PartnersSection() {
         >
           <div className="hidden motion-reduce:flex flex-wrap justify-center gap-4 px-4">
             {carouselPartners.map((p) => (
-              <PartnerLogo key={p.id} name={p.name} logoLight={p.logoLight} url={p.url} />
+              <PartnerLogo key={p.id} name={p.name} logoLight={p.logoLight} url={p.url} logoClassName={p.logoClassName} />
             ))}
           </div>
           <div className="motion-reduce:hidden flex">
             <div className="p3-carousel-track flex">
               {items.map((p, i) => (
-                <PartnerLogo key={`${p.id}-${i}`} name={p.name} logoLight={p.logoLight} url={p.url} />
+                <PartnerLogo key={`${p.id}-${i}`} name={p.name} logoLight={p.logoLight} url={p.url} logoClassName={p.logoClassName} />
               ))}
             </div>
           </div>

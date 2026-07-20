@@ -15,6 +15,7 @@ export interface Partner {
   url: string;
   blurb: string;
   showInCarousel: boolean;
+  logoClassName?: string;
 }
 
 const partners: Partner[] = [
@@ -39,6 +40,7 @@ const partners: Partner[] = [
     url: "https://www.panorays.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
     blurb: "End-to-end third-party cyber risk management, powered by native AI — helping enterprises secure their entire supply chain.",
     showInCarousel: true,
+    logoClassName: "h-11",
   },
   {
     id: "logicgate",
