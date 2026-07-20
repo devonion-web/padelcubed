@@ -122,7 +122,7 @@ export default function PartnerWithUs() {
           <nav className="hidden md:flex items-center gap-8">
             <a href="/#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
             <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
-            <a href="/#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
+            <a href="/#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
           </nav>
           <Button onClick={scrollToForm} className="rounded-full px-6 text-sm font-semibold">
             Enquire

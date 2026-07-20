@@ -266,7 +266,7 @@ export default function Home() {
               Events
             </a>
             <a href="#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              The Founders
+              Ambassadors
             </a>
             <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Partners
@@ -859,7 +859,7 @@ export default function Home() {
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
               <div className="mb-16 text-center max-w-2xl mx-auto">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">The founders</h2>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">The ambassadors</h2>
                 <p className="text-lg text-muted-foreground">
                   Six people who'd rather make the introduction on court than across a boardroom. This is who you're playing with.
                 </p>
@@ -989,7 +989,7 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-6 text-sm font-medium">
               <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
-              <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
+              <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
               <Link href="/partners" className="text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
               <Link href="/partner-with-us" className="text-muted-foreground hover:text-foreground transition-colors">Partner with us</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
