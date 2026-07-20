@@ -30,6 +30,17 @@ const partners: Partner[] = [
     showInCarousel: true,
   },
   {
+    id: "logicgate",
+    name: "LogicGate",
+    tier: "founding",
+    category: "GRC Platform",
+    logoLight: "partners/logicgate.svg",
+    logoDark: "partners/logicgate.svg",
+    url: "https://www.logicgate.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    blurb: "The leading AI GRC platform — helping enterprises manage governance, risk and compliance with powerful agents and applications.",
+    showInCarousel: true,
+  },
+  {
     id: "corlytics",
     name: "Corlytics",
     tier: "founding",
