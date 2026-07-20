@@ -111,8 +111,8 @@ export function PartnerCarousel() {
         }
       `}</style>
 
-      <section className="py-5 border-t border-border/40 overflow-hidden">
-        <div className="container mx-auto px-4 md:px-8 mb-4">
+      <section className="py-14 md:py-20 border-t border-border/40 overflow-hidden">
+        <div className="container mx-auto px-4 md:px-8 mb-10">
           <div className="flex items-center justify-between gap-4">
             <span className="text-primary text-xs font-semibold tracking-widest uppercase">
               Our partners
