@@ -265,7 +265,7 @@ export default function Home() {
             <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Events
             </a>
-            <a href="#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#ambassadors" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Ambassadors
             </a>
             <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -855,7 +855,7 @@ export default function Home() {
         </section>
 
         {/* Founders Section */}
-        <section id="founders" className="py-12 md:py-16 bg-card/30 border-y border-border/50">
+        <section id="ambassadors" className="py-12 md:py-16 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
               <div className="mb-16 text-center max-w-2xl mx-auto">
@@ -989,7 +989,7 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-6 text-sm font-medium">
               <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
-              <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
+              <a href="#ambassadors" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
               <Link href="/partners" className="text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
               <Link href="/partner-with-us" className="text-muted-foreground hover:text-foreground transition-colors">Partner with us</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>

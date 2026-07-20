@@ -36,7 +36,7 @@ export default function Partners() {
           <nav className="hidden md:flex items-center gap-8">
             <a href="/#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
             <Link href="/partners" className="text-sm font-medium text-foreground">Partners</Link>
-            <a href="/#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
+            <a href="/#ambassadors" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
           </nav>
           <Link
             href="/partner-with-us"
