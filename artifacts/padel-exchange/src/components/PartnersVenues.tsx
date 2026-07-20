@@ -26,8 +26,7 @@ function PartnerLogo({ name, logoLight, url }: { name: string; logoLight: string
       onClick={() => trackPartnerClick(name)}
       className="flex-shrink-0 flex items-center justify-center h-14 px-12 mx-5 rounded-2xl
                  border border-border/50 bg-card/40
-                 grayscale opacity-50
-                 hover:grayscale-0 hover:opacity-100 hover:border-primary/30 hover:bg-card
+                 hover:border-primary/30 hover:bg-card
                  transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
     >
       {logoLight ? (
