@@ -112,7 +112,7 @@ export function PartnerCarousel() {
       `}</style>
 
       <section className="pt-20 md:pt-24 pb-6 border-t border-border/40 overflow-hidden">
-        <div className="container mx-auto px-4 md:px-8 mb-10 text-center">
+        <div className="container mx-auto px-4 md:px-8 mb-4 text-center">
           <span className="text-primary text-xs font-semibold tracking-widest uppercase">
             Our partners
           </span>
@@ -146,7 +146,7 @@ export function PartnerCarousel() {
           </div>
         </div>
 
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center mt-4">
           <Link
             href="/partner-with-us"
             className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
