@@ -204,13 +204,23 @@ export function PartnersVenues() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className={`w-full h-full bg-gradient-to-br ${PLACEHOLDERS[venue.id] ?? "from-card to-background"} flex items-center justify-center`}>
-                    <svg viewBox="0 0 160 100" className="w-40 opacity-10" fill="none" stroke="white" strokeWidth="1.5">
-                      <rect x="10" y="10" width="140" height="80" />
-                      <line x1="80" y1="10" x2="80" y2="90" />
-                      <line x1="10" y1="50" x2="160" y2="50" />
-                      <rect x="30" y="25" width="100" height="50" />
-                    </svg>
+                  <div className={`w-full h-full bg-gradient-to-br ${PLACEHOLDERS[venue.id] ?? "from-card to-background"} flex items-center justify-center p-8`}>
+                    {venue.logo ? (
+                      <img
+                        src={`${import.meta.env.BASE_URL}${venue.logo}`}
+                        alt={`${venue.name} logo`}
+                        className="w-full max-w-[180px] h-auto object-contain"
+                        style={{ filter: "brightness(0) invert(1)", opacity: 0.85 }}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <svg viewBox="0 0 160 100" className="w-40 opacity-10" fill="none" stroke="white" strokeWidth="1.5">
+                        <rect x="10" y="10" width="140" height="80" />
+                        <line x1="80" y1="10" x2="80" y2="90" />
+                        <line x1="10" y1="50" x2="160" y2="50" />
+                        <rect x="30" y="25" width="100" height="50" />
+                      </svg>
+                    )}
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-card/90 to-transparent" />
