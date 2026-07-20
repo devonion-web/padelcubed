@@ -123,7 +123,7 @@ export default function ProfileScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: isWeb ? 84 + 20 : insets.bottom + 100 },
+            { paddingBottom: isWeb ? 84 + 60 : insets.bottom + 160 },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -218,36 +218,38 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          {/* Admin access */}
-          {isAdmin ? (
-            <TouchableOpacity
-              onPress={() => router.push('/admin' as never)}
-              activeOpacity={0.7}
-              style={[
-                styles.adminButton,
-                { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}44`, borderRadius: colors.radius },
-              ]}
-            >
-              <Feather name="shield" size={14} color={colors.primary} />
-              <Text style={[styles.adminButtonText, { color: colors.primary }]}>Admin dashboard</Text>
-              <Feather name="chevron-right" size={14} color={colors.primary} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={() => setShowAdminModal(true)}
-              activeOpacity={0.5}
-              style={styles.adminHiddenBtn}
-            >
-              <Feather name="shield" size={11} color={colors.mutedForeground} style={{ opacity: 0.4 }} />
-            </TouchableOpacity>
-          )}
-
           {/* Clear registration (dev/testing convenience) */}
           <TouchableOpacity onPress={handleClear} activeOpacity={0.7} style={styles.clearButton}>
             <Text style={[styles.clearText, { color: colors.destructive }]}>Remove my registration</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
+
+      {/* Admin access — fixed at bottom of screen, above tab bar, always visible */}
+      <View style={[styles.adminStrip, { paddingBottom: isWeb ? 90 : insets.bottom + 58 }]}>
+        {isAdmin ? (
+          <TouchableOpacity
+            onPress={() => router.push('/admin' as never)}
+            activeOpacity={0.7}
+            style={[
+              styles.adminButton,
+              { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}44`, borderRadius: colors.radius },
+            ]}
+          >
+            <Feather name="shield" size={14} color={colors.primary} />
+            <Text style={[styles.adminButtonText, { color: colors.primary }]}>Admin dashboard</Text>
+            <Feather name="chevron-right" size={14} color={colors.primary} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => setShowAdminModal(true)}
+            activeOpacity={0.5}
+            style={styles.adminHiddenBtn}
+          >
+            <Feather name="shield" size={13} color={colors.mutedForeground} style={{ opacity: 0.3 }} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Admin login modal — always mounted, visibility controlled by `visible` */}
       <Modal
@@ -495,6 +497,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingVertical: 8,
     paddingHorizontal: 20,
+  },
+  adminStrip: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
 
   // Admin modal
