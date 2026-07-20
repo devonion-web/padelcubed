@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { RegistrationForm } from "@/components/RegistrationForm";
-import { PartnersVenues } from "@/components/PartnersVenues";
+import { PartnersSection, VenuesSection } from "@/components/PartnersVenues";
 import { AdSlot } from "@/components/AdSlot";
 import {
   Accordion,
@@ -282,8 +282,8 @@ export default function Home() {
       </header>
 
       <main>
-        {/* Partners + Venues — sits directly under the nav */}
-        <PartnersVenues />
+        {/* Partners — sits directly under the nav */}
+        <PartnersSection />
 
         {/* Hero Section */}
         <section className="relative flex items-start pt-20">
@@ -342,6 +342,9 @@ export default function Home() {
           </div>
 
         </section>
+
+        {/* Venues — directly below hero */}
+        <VenuesSection />
 
         {/* ── Featured Events — prominent section below hero ─────────────────── */}
         <section className="border-t border-border/40 py-12 md:py-16">
