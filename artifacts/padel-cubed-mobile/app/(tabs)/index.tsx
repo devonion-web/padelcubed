@@ -12,12 +12,14 @@ import { useColors } from '@/hooks/useColors';
 import { EventCard } from '@/components/EventCard';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { EVENTS } from '@/constants/events';
+import { useBookings } from '@/context/BookingsContext';
 
 export default function EventsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isWeb = Platform.OS === 'web';
+  const { isBooked } = useBookings();
 
   const topPadding = isWeb ? 67 : insets.top;
 
@@ -53,6 +55,7 @@ export default function EventsScreen() {
         renderItem={({ item }) => (
           <EventCard
             event={item}
+            isBooked={isBooked(item.id)}
             onPress={() => router.push(`/event/${item.id}` as never)}
           />
         )}
@@ -66,7 +69,9 @@ export default function EventsScreen() {
             <Text style={[styles.listTitle, { color: colors.foreground }]}>
               Upcoming Events
             </Text>
-            <Text style={[styles.listSubtitle, { color: colors.mutedForeground }]}>
+            <Text
+              style={[styles.listSubtitle, { color: colors.mutedForeground }]}
+            >
               {EVENTS.length} events · City of London
             </Text>
           </View>
@@ -78,9 +83,7 @@ export default function EventsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -100,20 +103,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 0.2,
   },
-  listHeader: {
-    paddingBottom: 16,
-  },
+  listHeader: { paddingBottom: 16 },
   listTitle: {
     fontFamily: 'Inter_700Bold',
     fontSize: 22,
     letterSpacing: -0.5,
     marginBottom: 4,
   },
-  listSubtitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-  },
-  list: {
-    padding: 20,
-  },
+  listSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+  list: { padding: 20 },
 });

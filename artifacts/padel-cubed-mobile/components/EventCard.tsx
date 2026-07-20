@@ -7,9 +7,10 @@ import type { Event } from '@/constants/events';
 interface EventCardProps {
   event: Event;
   onPress: () => void;
+  isBooked?: boolean;
 }
 
-export function EventCard({ event, onPress }: EventCardProps) {
+export function EventCard({ event, onPress, isBooked = false }: EventCardProps) {
   const colors = useColors();
 
   const statusColor =
@@ -34,7 +35,7 @@ export function EventCard({ event, onPress }: EventCardProps) {
         styles.card,
         {
           backgroundColor: colors.card,
-          borderColor: colors.border,
+          borderColor: isBooked ? `${colors.primary}60` : colors.border,
           borderRadius: colors.radius,
         },
       ]}
@@ -52,12 +53,37 @@ export function EventCard({ event, onPress }: EventCardProps) {
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={1}>
+          <Text
+            style={[styles.title, { color: colors.foreground }]}
+            numberOfLines={1}
+          >
             {event.title}
           </Text>
-          <View style={[styles.statusPill, { borderColor: statusColor }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
-          </View>
+          {isBooked ? (
+            <View
+              style={[
+                styles.statusPill,
+                {
+                  borderColor: `${colors.primary}60`,
+                  backgroundColor: `${colors.primary}18`,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 3,
+                },
+              ]}
+            >
+              <Feather name="check" size={9} color={colors.primary} />
+              <Text style={[styles.statusText, { color: colors.primary }]}>
+                Going
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.statusPill, { borderColor: statusColor }]}>
+              <Text style={[styles.statusText, { color: statusColor }]}>
+                {statusLabel}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.venueRow}>
@@ -68,16 +94,27 @@ export function EventCard({ event, onPress }: EventCardProps) {
         </View>
 
         <View style={styles.footer}>
-          <View style={[styles.sponsorBadge, { backgroundColor: colors.secondary }]}>
+          <View
+            style={[
+              styles.sponsorBadge,
+              { backgroundColor: colors.secondary },
+            ]}
+          >
             <Text style={[styles.sponsorText, { color: colors.foreground }]}>
               {event.sponsor}
             </Text>
           </View>
           <View style={styles.timeRow}>
-            <Text style={[styles.formatText, { color: colors.mutedForeground }]}>
+            <Text
+              style={[styles.formatText, { color: colors.mutedForeground }]}
+            >
               {event.format}
             </Text>
-            <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
+            <Feather
+              name="chevron-right"
+              size={14}
+              color={colors.mutedForeground}
+            />
           </View>
         </View>
       </View>
@@ -110,11 +147,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     lineHeight: 14,
   },
-  content: {
-    flex: 1,
-    padding: 12,
-    gap: 5,
-  },
+  content: { flex: 1, padding: 12, gap: 5 },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -137,37 +170,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.2,
   },
-  venueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  venueText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-  },
+  venueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  venueText: { fontFamily: 'Inter_400Regular', fontSize: 12 },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 2,
   },
-  sponsorBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  sponsorText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  formatText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-  },
+  sponsorBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
+  sponsorText: { fontFamily: 'Inter_500Medium', fontSize: 11 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  formatText: { fontFamily: 'Inter_400Regular', fontSize: 12 },
 });
