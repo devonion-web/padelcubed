@@ -247,8 +247,9 @@ export default function ProfileScreen() {
             <Text style={[styles.clearText, { color: colors.destructive }]}>Remove my registration</Text>
           </TouchableOpacity>
         </ScrollView>
+      )}
 
-      {/* Admin login modal */}
+      {/* Admin login modal — always mounted, visibility controlled by `visible` */}
       <Modal
         visible={showAdminModal}
         animationType="slide"
@@ -314,7 +315,6 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
-      )}
     </View>
   );
 }
