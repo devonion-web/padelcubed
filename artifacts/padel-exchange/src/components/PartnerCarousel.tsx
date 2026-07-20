@@ -37,7 +37,7 @@ function PartnerLogo({ name, logoLight, url }: PartnerLogoProps) {
       rel="noopener noreferrer"
       aria-label={`Visit ${name}`}
       onClick={() => trackPartnerClick(name)}
-      className="flex-shrink-0 flex items-center justify-center h-12 px-8 mx-4 rounded-2xl
+      className="flex-shrink-0 flex items-center justify-center h-14 px-12 mx-5 rounded-2xl
                  border border-border/50 bg-card/40
                  grayscale opacity-50
                  hover:grayscale-0 hover:opacity-100 hover:border-primary/30 hover:bg-card
@@ -47,7 +47,7 @@ function PartnerLogo({ name, logoLight, url }: PartnerLogoProps) {
         <img
           src={`${import.meta.env.BASE_URL}${logoLight}`}
           alt={name}
-          className="h-6 w-auto object-contain"
+          className="h-8 w-auto object-contain"
           style={{ mixBlendMode: "screen" }}
           loading="lazy"
         />
