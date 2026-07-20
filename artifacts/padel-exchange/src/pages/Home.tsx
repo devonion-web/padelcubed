@@ -302,8 +302,8 @@ export default function Home() {
               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25"
               style={{ backgroundImage: `url(${heroImage})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/5" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-background/10 to-transparent" />
           </div>
 
           <div className="container relative z-10 mx-auto px-4 md:px-8 pt-1 md:pt-2 pb-12">
