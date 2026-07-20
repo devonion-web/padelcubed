@@ -12,7 +12,7 @@ export function HeaderLogo({ size = 'md' }: HeaderLogoProps) {
 
   // Dimensions scale with requested size
   const markSize    = size === 'sm' ? 36 : size === 'lg' ? 56 : 44;
-  const borderRadius = Math.round(markSize * 0.22);
+  const borderRadius = Math.round(markSize * 0.28);
   const pSize       = Math.round(markSize * 0.60);   // P fills ~60 % of the square
   const supSize     = Math.round(pSize  * 0.46);     // 3 is ~46 % of P
   const wordSize    = size === 'sm' ? 11 : size === 'lg' ? 15 : 13;

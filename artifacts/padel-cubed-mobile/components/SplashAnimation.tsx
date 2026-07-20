@@ -47,7 +47,7 @@ const FADE_MS    = 480;   // Fade-out of entire overlay
 
 const CARD_SIZE   = 136;
 const ICON_SIZE   = 70;
-const CARD_RADIUS = 28;
+const CARD_RADIUS = Math.round(CARD_SIZE * 0.28); // ~38 — matches HeaderLogo rounding
 
 function PadLogo() {
   // Inline P³ mark — matches HeaderLogo.tsx mark exactly
