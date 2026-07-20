@@ -110,20 +110,15 @@ export function PartnerCarousel() {
         }
       `}</style>
 
-      <section className="py-14 md:py-20 border-t border-border/40 overflow-hidden">
-        <div className="container mx-auto px-4 md:px-8 mb-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <span className="text-primary text-sm font-semibold tracking-widest uppercase block mb-2">
-                Our partners
-              </span>
-              <p className="text-muted-foreground text-base max-w-lg">
-                Backed by brands who believe in People. Padel. Places.
-              </p>
-            </div>
+      <section className="py-3 border-t border-border/40 overflow-hidden">
+        <div className="container mx-auto px-4 md:px-8 mb-3">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-primary text-xs font-semibold tracking-widest uppercase">
+              Our partners
+            </span>
             <Link
               href="/partner-with-us"
-              className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 flex-shrink-0"
+              className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 flex-shrink-0"
             >
               Partner with us
               <span aria-hidden="true">→</span>
