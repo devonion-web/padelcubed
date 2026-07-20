@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ActivityIndicator,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -17,7 +14,6 @@ import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { useProfile } from '@/context/ProfileContext';
-import { useAdmin } from '@/context/AdminContext';
 
 function ProfileRow({ icon, label, value }: { icon: string; label: string; value?: string | null }) {
   const colors = useColors();
@@ -38,33 +34,12 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isRegistered, profile, isLoading, clearProfile } = useProfile();
-  const { isAdmin, login } = useAdmin();
   const isWeb = Platform.OS === 'web';
   const topPadding = isWeb ? 67 : insets.top;
-
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminPw, setAdminPw] = useState('');
-  const [adminLogging, setAdminLogging] = useState(false);
-  const [adminError, setAdminError] = useState('');
 
   const handleClear = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     clearProfile();
-  };
-
-  const handleAdminLogin = async () => {
-    if (!adminPw) return;
-    setAdminLogging(true);
-    setAdminError('');
-    const ok = await login(adminPw);
-    setAdminLogging(false);
-    if (ok) {
-      setShowAdminModal(false);
-      setAdminPw('');
-      router.push('/admin' as never);
-    } else {
-      setAdminError('Incorrect password');
-    }
   };
 
   const registeredDate = profile?.registeredAt
@@ -218,105 +193,28 @@ export default function ProfileScreen() {
             )}
           </View>
 
+          {/* Admin access */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/admin-tab' as never)}
+            activeOpacity={0.7}
+            style={[
+              styles.adminRow,
+              { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius },
+            ]}
+          >
+            <View style={[styles.adminRowIcon, { backgroundColor: `${colors.primary}22` }]}>
+              <Feather name="shield" size={15} color={colors.primary} />
+            </View>
+            <Text style={[styles.adminRowText, { color: colors.foreground }]}>Admin dashboard</Text>
+            <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+
           {/* Clear registration (dev/testing convenience) */}
           <TouchableOpacity onPress={handleClear} activeOpacity={0.7} style={styles.clearButton}>
             <Text style={[styles.clearText, { color: colors.destructive }]}>Remove my registration</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
-
-      {/* Admin access — fixed at bottom of screen, above tab bar, always visible */}
-      <View style={[styles.adminStrip, { paddingBottom: isWeb ? 90 : insets.bottom + 58 }]}>
-        {isAdmin ? (
-          <TouchableOpacity
-            onPress={() => router.push('/admin' as never)}
-            activeOpacity={0.7}
-            style={[
-              styles.adminButton,
-              { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}44`, borderRadius: colors.radius },
-            ]}
-          >
-            <Feather name="shield" size={14} color={colors.primary} />
-            <Text style={[styles.adminButtonText, { color: colors.primary }]}>Admin dashboard</Text>
-            <Feather name="chevron-right" size={14} color={colors.primary} />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={() => setShowAdminModal(true)}
-            activeOpacity={0.5}
-            style={styles.adminHiddenBtn}
-          >
-            <Feather name="shield" size={13} color={colors.mutedForeground} style={{ opacity: 0.3 }} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Admin login modal — always mounted, visibility controlled by `visible` */}
-      <Modal
-        visible={showAdminModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => { setShowAdminModal(false); setAdminPw(''); setAdminError(''); }}
-      >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Admin access</Text>
-            <TouchableOpacity
-              onPress={() => { setShowAdminModal(false); setAdminPw(''); setAdminError(''); }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Feather name="x" size={22} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.modalBody}>
-            <TextInput
-              style={[
-                styles.modalInput,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: adminError ? '#EF4444' : colors.border,
-                  color: colors.foreground,
-                  borderRadius: colors.radius,
-                },
-              ]}
-              placeholder="Admin password"
-              placeholderTextColor={colors.mutedForeground}
-              secureTextEntry
-              value={adminPw}
-              onChangeText={(t) => { setAdminPw(t); setAdminError(''); }}
-              onSubmitEditing={handleAdminLogin}
-              returnKeyType="go"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoFocus
-            />
-            {adminError ? (
-              <Text style={styles.modalError}>{adminError}</Text>
-            ) : null}
-            <TouchableOpacity
-              onPress={handleAdminLogin}
-              disabled={adminLogging || !adminPw}
-              activeOpacity={0.8}
-              style={[
-                styles.modalBtn,
-                {
-                  backgroundColor: adminPw ? colors.primary : colors.card,
-                  borderRadius: colors.radius,
-                  opacity: adminLogging ? 0.7 : 1,
-                },
-              ]}
-            >
-              {adminLogging ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={[styles.modalBtnText, { color: adminPw ? colors.primaryForeground : colors.mutedForeground }]}>
-                  Sign in
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -479,66 +377,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // Admin access
-  adminButton: {
+  // Admin access row
+  adminRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
   },
-  adminButtonText: {
+  adminRowIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminRowText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     flex: 1,
   },
-  adminHiddenBtn: {
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  adminStrip: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-
-  // Admin modal
-  modalContainer: { flex: 1 },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    paddingTop: 28,
-  },
-  modalTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 20,
-    letterSpacing: -0.4,
-  },
-  modalBody: { padding: 20, gap: 12 },
-  modalInput: {
-    height: 52,
-    paddingHorizontal: 16,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    borderWidth: 1,
-  },
-  modalError: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: '#EF4444',
-  },
-  modalBtn: {
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
 });
