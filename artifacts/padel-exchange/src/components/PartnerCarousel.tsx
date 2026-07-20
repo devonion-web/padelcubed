@@ -111,7 +111,7 @@ export function PartnerCarousel() {
         }
       `}</style>
 
-      <section className="pt-14 md:pt-20 pb-6 border-t border-border/40 overflow-hidden">
+      <section className="pt-20 md:pt-24 pb-6 border-t border-border/40 overflow-hidden">
         <div className="container mx-auto px-4 md:px-8 mb-10">
           <div className="flex items-center justify-between gap-4">
             <span className="text-primary text-xs font-semibold tracking-widest uppercase">
