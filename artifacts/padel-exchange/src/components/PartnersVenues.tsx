@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "wouter";
-import { ChevronLeft, ChevronRight, MapPin, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, ExternalLink, Train, Sun, Building2, Layers } from "lucide-react";
 import partners from "@/data/partners";
 import venues from "@/data/venues";
 
@@ -233,11 +233,36 @@ export function VenuesSection() {
                 </h3>
                 <ExternalLink className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary/70 flex-shrink-0 mt-0.5 transition-colors" />
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
                 <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-primary/60" />
                 {venue.location}
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{venue.blurb}</p>
+              <div className="flex flex-wrap gap-2">
+                {/* Travel time */}
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
+                  <Train className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+                  {venue.travelTime}
+                </span>
+                {/* Indoor / outdoor */}
+                {venue.surface === "indoor" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+                    Indoor courts
+                  </span>
+                )}
+                {venue.surface === "outdoor" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
+                    <Sun className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+                    Outdoor courts
+                  </span>
+                )}
+                {venue.surface === "mixed" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
+                    <Layers className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+                    Indoor &amp; outdoor
+                  </span>
+                )}
+              </div>
             </div>
           </a>
         ))}

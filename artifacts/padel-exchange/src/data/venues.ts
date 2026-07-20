@@ -8,8 +8,10 @@ export interface Venue {
   location: string;
   city: string;
   courts: number;
-  photo: string;   // full-bleed venue photo (preferred)
-  logo: string;    // wordmark shown on gradient placeholder when no photo
+  surface: "indoor" | "outdoor" | "mixed";
+  travelTime: string;   // e.g. "25 min from Waterloo"
+  photo: string;        // full-bleed venue photo (preferred)
+  logo: string;         // wordmark shown on gradient placeholder when no photo
   url: string;
   blurb: string;
 }
@@ -21,6 +23,8 @@ const venues: Venue[] = [
     location: "Acton, London",
     city: "London",
     courts: 11,
+    surface: "indoor",
+    travelTime: "25 min from Waterloo",
     photo: "",
     logo: "venues/racketeer-logo.webp",
     url: "https://www.racketeer.club",
@@ -32,6 +36,8 @@ const venues: Venue[] = [
     location: "Surbiton, Surrey",
     city: "London",
     courts: 5,
+    surface: "outdoor",
+    travelTime: "30 min from Waterloo",
     photo: "",
     logo: "venues/surbiton-logo.png",
     url: "https://www.surbiton.org",
@@ -43,6 +49,8 @@ const venues: Venue[] = [
     location: "Canary Wharf, London",
     city: "London",
     courts: 9,
+    surface: "mixed",
+    travelTime: "10 min from Bank",
     photo: "",
     logo: "venues/padium-logo.svg",
     url: "https://padium.com/canary-wharf",
