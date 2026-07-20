@@ -2,6 +2,18 @@
 // Add or remove venues here. photo paths are relative to /public.
 // Leave photo: "" to show a gradient placeholder.
 
+export interface TransportLine {
+  name: string;
+  color: string; // TfL brand colour
+}
+
+export interface VenueTransport {
+  station: string;
+  travelTime: string;   // e.g. "~25 min"
+  from: string;         // e.g. "Waterloo"
+  lines: TransportLine[];
+}
+
 export interface Venue {
   id: string;
   name: string;
@@ -9,7 +21,7 @@ export interface Venue {
   city: string;
   courts: number;
   surface: "indoor" | "outdoor" | "mixed";
-  travelTime: string;   // e.g. "25 min from Waterloo"
+  transport: VenueTransport;
   photo: string;        // full-bleed venue photo (preferred)
   logo: string;         // wordmark shown on gradient placeholder when no photo
   url: string;
@@ -24,7 +36,15 @@ const venues: Venue[] = [
     city: "London",
     courts: 11,
     surface: "indoor",
-    travelTime: "25 min from Waterloo",
+    transport: {
+      station: "East Acton",
+      travelTime: "~25 min",
+      from: "Waterloo",
+      lines: [
+        { name: "Central", color: "#E32017" },
+        { name: "Overground", color: "#EE7C0E" },
+      ],
+    },
     photo: "",
     logo: "venues/racketeer-logo.webp",
     url: "https://www.racketeer.club",
@@ -37,7 +57,14 @@ const venues: Venue[] = [
     city: "London",
     courts: 5,
     surface: "outdoor",
-    travelTime: "30 min from Waterloo",
+    transport: {
+      station: "Surbiton",
+      travelTime: "~20 min",
+      from: "Waterloo",
+      lines: [
+        { name: "SWR", color: "#0099D4" },
+      ],
+    },
     photo: "",
     logo: "venues/surbiton-logo.png",
     url: "https://www.surbiton.org",
@@ -50,7 +77,16 @@ const venues: Venue[] = [
     city: "London",
     courts: 9,
     surface: "mixed",
-    travelTime: "10 min from Bank",
+    transport: {
+      station: "Canary Wharf",
+      travelTime: "~10 min",
+      from: "Bank",
+      lines: [
+        { name: "Jubilee", color: "#A0A5A9" },
+        { name: "Elizabeth", color: "#6950A1" },
+        { name: "DLR", color: "#00A4A7" },
+      ],
+    },
     photo: "",
     logo: "venues/padium-logo.svg",
     url: "https://padium.com/canary-wharf",

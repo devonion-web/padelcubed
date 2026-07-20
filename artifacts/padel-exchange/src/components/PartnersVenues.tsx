@@ -238,30 +238,53 @@ export function VenuesSection() {
                 {venue.location}
               </div>
               <div className="flex flex-wrap gap-2">
-                {/* Travel time */}
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
-                  <Train className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
-                  {venue.travelTime}
-                </span>
                 {/* Indoor / outdoor */}
                 {venue.surface === "indoor" && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
                     <Building2 className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
-                    Indoor courts
+                    Indoor
                   </span>
                 )}
                 {venue.surface === "outdoor" && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
                     <Sun className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
-                    Outdoor courts
+                    Outdoor
                   </span>
                 )}
                 {venue.surface === "mixed" && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
                     <Layers className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
-                    Indoor &amp; outdoor
+                    In &amp; outdoor
                   </span>
                 )}
+                {/* Travel time + station */}
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
+                  <Train className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+                  {venue.transport.travelTime} from {venue.transport.from}
+                </span>
+                {/* Nearest station */}
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/70 bg-muted/50 border border-border/60 rounded-full px-3 py-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+                  {venue.transport.station}
+                </span>
+                {/* Line pills */}
+                {venue.transport.lines.map((line) => (
+                  <span
+                    key={line.name}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1.5"
+                    style={{
+                      backgroundColor: `${line.color}22`,
+                      border: `1px solid ${line.color}55`,
+                      color: line.color,
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: line.color }}
+                    />
+                    {line.name}
+                  </span>
+                ))}
               </div>
             </div>
           </a>
