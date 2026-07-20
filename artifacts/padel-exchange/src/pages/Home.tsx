@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
-import { RegistrationForm } from "@/components/RegistrationForm";
 import { IntentModal } from "@/components/IntentModal";
 import { PartnersSection, VenuesSection } from "@/components/PartnersVenues";
 import { AdSlot } from "@/components/AdSlot";
@@ -244,10 +243,6 @@ export default function Home() {
 
   const openModal = () => setModalOpen(true);
 
-  const scrollToForm = () => {
-    document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const scrollToHow = () => {
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -332,7 +327,7 @@ export default function Home() {
                     How it works
                   </Button>
                 </div>
-                <p className="text-sm text-foreground/50 mt-3 text-center">Registration is free — no commitment required.</p>
+                <p className="text-sm text-foreground/50 mt-3 text-center">Get in touch — no commitment required.</p>
               </motion.div>
             </div>
           </div>
@@ -705,7 +700,7 @@ export default function Home() {
 
             <div className="grid md:grid-cols-4 gap-8">
               {[
-                { step: "01", title: "Register your interest", desc: "Fill out the short form below — takes 30 seconds." },
+                { step: "01", title: "Get in touch", desc: "Drop us a message — we'll come back to you quickly." },
                 { step: "02", title: "We match you", desc: "We match you to events that fit your level and interests." },
                 { step: "03", title: "Reserve your spot", desc: "A small upfront payment secures your place — you're booking a produced event, not a court." },
                 { step: "04", title: "Turn up & connect", desc: "Play with everyone, trade ideas, leave with new connections." }
@@ -826,7 +821,7 @@ export default function Home() {
                           </div>
                           <Button
                             size="sm"
-                            onClick={scrollToForm}
+                            onClick={openModal}
                             disabled={ev.status === "soon"}
                             className="rounded-full px-5 text-sm font-semibold flex-shrink-0 disabled:opacity-40"
                           >
@@ -842,7 +837,7 @@ export default function Home() {
 
             <FadeIn delay={0.4}>
               <p className="mt-10 text-center text-sm text-muted-foreground">
-                Not seeing the right date? <button onClick={scrollToForm} className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity">Register your interest</button> and we'll match you to the next suitable event.
+                Not seeing the right date? <a href="mailto:info@padelcubed.co.uk" className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity">Get in touch</a> and we'll match you to the next suitable event.
               </p>
             </FadeIn>
 
@@ -882,27 +877,6 @@ export default function Home() {
                 </Button>
               </div>
             </FadeIn>
-          </div>
-        </section>
-
-        {/* Form Section */}
-        <section id="register" className="py-12 md:py-16 relative">
-          <div className="absolute top-1/4 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-x-1/2" />
-          <div className="container mx-auto px-4 md:px-8 relative z-10">
-            <div className="max-w-3xl mx-auto">
-              <FadeIn>
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Register your interest</h2>
-                  <p className="text-lg text-muted-foreground">
-                    Join the list. We'll match you to events that fit your level and interests — starting in London, more UK cities soon.
-                  </p>
-                </div>
-              </FadeIn>
-
-              <FadeIn delay={0.2}>
-                <RegistrationForm />
-              </FadeIn>
-            </div>
           </div>
         </section>
 
@@ -1031,7 +1005,7 @@ export default function Home() {
         onClose={() => setModalOpen(false)}
         onIndividual={() => {
           setModalOpen(false);
-          setTimeout(() => scrollToForm(), 50);
+          window.location.href = "mailto:info@padelcubed.co.uk";
         }}
       />
     </div>
