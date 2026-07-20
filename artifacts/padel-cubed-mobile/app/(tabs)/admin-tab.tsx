@@ -31,18 +31,22 @@ function LoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { login } = useAdmin();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const passwordRef = React.useRef<any>(null);
+
+  const canSubmit = email.trim().length > 0 && password.length > 0;
 
   const handleLogin = async () => {
-    if (!password) return;
+    if (!canSubmit) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     setError('');
-    const ok = await login(password);
+    const result = await login(email, password);
     setLoading(false);
-    if (!ok) setError('Incorrect password');
+    if (!result.ok) setError(result.error ?? 'Sign in failed');
   };
 
   const isWeb = Platform.OS === 'web';
@@ -59,11 +63,12 @@ function LoginScreen() {
         <HeaderLogo size="md" />
         <Text style={[styles.loginTitle, { color: colors.foreground }]}>Admin</Text>
         <Text style={[styles.loginSub, { color: colors.mutedForeground }]}>
-          Enter your admin password to continue
+          Sign in with your admin account
         </Text>
       </LinearGradient>
 
       <View style={[styles.loginForm, { paddingBottom: insets.bottom + 24 }]}>
+        {/* Email */}
         <TextInput
           style={[
             styles.input,
@@ -74,25 +79,50 @@ function LoginScreen() {
               borderRadius: colors.radius,
             },
           ]}
-          placeholder="Admin password"
+          placeholder="Email address"
+          placeholderTextColor={colors.mutedForeground}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="next"
+          value={email}
+          onChangeText={(t) => { setEmail(t); setError(''); }}
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
+
+        {/* Password */}
+        <TextInput
+          ref={passwordRef}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.card,
+              borderColor: error ? '#EF4444' : colors.border,
+              color: colors.foreground,
+              borderRadius: colors.radius,
+            },
+          ]}
+          placeholder="Password"
           placeholderTextColor={colors.mutedForeground}
           secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="go"
           value={password}
           onChangeText={(t) => { setPassword(t); setError(''); }}
           onSubmitEditing={handleLogin}
-          returnKeyType="go"
-          autoCapitalize="none"
-          autoCorrect={false}
         />
+
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <TouchableOpacity
           onPress={handleLogin}
-          disabled={loading || !password}
+          disabled={loading || !canSubmit}
           activeOpacity={0.8}
           style={[
             styles.loginBtn,
             {
-              backgroundColor: password ? colors.primary : colors.card,
+              backgroundColor: canSubmit ? colors.primary : colors.card,
               borderRadius: colors.radius,
               opacity: loading ? 0.7 : 1,
             },
@@ -104,7 +134,7 @@ function LoginScreen() {
             <Text
               style={[
                 styles.loginBtnText,
-                { color: password ? colors.primaryForeground : colors.mutedForeground },
+                { color: canSubmit ? colors.primaryForeground : colors.mutedForeground },
               ]}
             >
               Sign in

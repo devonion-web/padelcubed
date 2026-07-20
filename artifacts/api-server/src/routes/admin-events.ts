@@ -2,26 +2,13 @@ import { Router, type IRouter } from "express";
 import { and, count, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, eventsTable, bookingsTable } from "@workspace/db";
+import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router: IRouter = Router();
 
-function checkAdmin(password: unknown): boolean {
-  return (
-    typeof password === "string" &&
-    password.length > 0 &&
-    password === process.env.ADMIN_PASSWORD
-  );
-}
-
 // ─── GET /admin/events ────────────────────────────────────────────────────────
-// Returns all events with confirmed booking count and check-in count.
 
-router.get("/admin/events", async (req, res): Promise<void> => {
-  if (!checkAdmin(req.query.adminPassword)) {
-    res.status(401).json({ error: "Unauthorised" });
-    return;
-  }
-
+router.get("/admin/events", requireAdmin, async (req, res): Promise<void> => {
   try {
     const events = await db.select().from(eventsTable).orderBy(eventsTable.id);
 
@@ -64,14 +51,8 @@ router.get("/admin/events", async (req, res): Promise<void> => {
 });
 
 // ─── GET /admin/events/:id/bookings ──────────────────────────────────────────
-// Returns all confirmed bookings for an event including check-in status.
 
-router.get("/admin/events/:id/bookings", async (req, res): Promise<void> => {
-  if (!checkAdmin(req.query.adminPassword)) {
-    res.status(401).json({ error: "Unauthorised" });
-    return;
-  }
-
+router.get("/admin/events/:id/bookings", requireAdmin, async (req, res): Promise<void> => {
   try {
     const bookings = await db
       .select()
@@ -92,22 +73,15 @@ router.get("/admin/events/:id/bookings", async (req, res): Promise<void> => {
 });
 
 // ─── POST /admin/events/:id/checkin ──────────────────────────────────────────
-// Mark a booking as checked in.
 
 const CheckInBody = z.object({
   bookingId: z.number().int().positive(),
-  adminPassword: z.string(),
 });
 
-router.post("/admin/events/:id/checkin", async (req, res): Promise<void> => {
+router.post("/admin/events/:id/checkin", requireAdmin, async (req, res): Promise<void> => {
   const parsed = CheckInBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  if (!checkAdmin(parsed.data.adminPassword)) {
-    res.status(401).json({ error: "Unauthorised" });
     return;
   }
 
@@ -137,22 +111,15 @@ router.post("/admin/events/:id/checkin", async (req, res): Promise<void> => {
 });
 
 // ─── DELETE /admin/events/:id/checkin ────────────────────────────────────────
-// Undo a check-in.
 
 const UndoCheckInBody = z.object({
   bookingId: z.number().int().positive(),
-  adminPassword: z.string(),
 });
 
-router.delete("/admin/events/:id/checkin", async (req, res): Promise<void> => {
+router.delete("/admin/events/:id/checkin", requireAdmin, async (req, res): Promise<void> => {
   const parsed = UndoCheckInBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  if (!checkAdmin(parsed.data.adminPassword)) {
-    res.status(401).json({ error: "Unauthorised" });
     return;
   }
 

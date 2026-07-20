@@ -1,5 +1,6 @@
 /**
- * Handwritten hooks for the admin events + check-in API endpoints.
+ * Admin API hooks — all calls use Authorization: Bearer <token>.
+ * adminPassword query params have been replaced with JWT bearer auth.
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -26,55 +27,63 @@ export interface AdminBooking extends ApiBooking {
 
 export interface CheckInInput {
   bookingId: number;
-  adminPassword: string;
+}
+
+export interface AdminUserInfo {
+  id: number;
+  email: string;
+  name: string;
+  role: "superadmin" | "admin";
+}
+
+// ─── Shared auth header helper ────────────────────────────────────────────────
+
+function authHeaders(token: string): Record<string, string> {
+  return { Authorization: `Bearer ${token}` };
 }
 
 // ─── GET /admin/events ────────────────────────────────────────────────────────
 
-export const getAdminEventsUrl = (adminPassword: string) =>
-  `/api/admin/events?adminPassword=${encodeURIComponent(adminPassword)}`;
-
-export const getAdminEventsQueryKey = (adminPassword: string) =>
-  ["/api/admin/events", adminPassword] as const;
+export const getAdminEventsQueryKey = (token: string) =>
+  ["/api/admin/events", token] as const;
 
 export function useAdminEvents<TData = AdminEvent[], TError = ErrorType<unknown>>(
-  adminPassword: string,
+  token: string,
   options?: { query?: UseQueryOptions<AdminEvent[], TError, TData> },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
-    queryKey: queryOptions?.queryKey ?? getAdminEventsQueryKey(adminPassword),
+    queryKey: queryOptions?.queryKey ?? getAdminEventsQueryKey(token),
     queryFn: ({ signal }) =>
-      customFetch<AdminEvent[]>(getAdminEventsUrl(adminPassword), { signal }),
-    enabled: Boolean(adminPassword),
+      customFetch<AdminEvent[]>("/api/admin/events", {
+        signal,
+        headers: authHeaders(token),
+      }),
+    enabled: Boolean(token),
     ...queryOptions,
   });
 }
 
 // ─── GET /admin/events/:id/bookings ──────────────────────────────────────────
 
-export const getAdminEventBookingsUrl = (id: string, adminPassword: string) =>
-  `/api/admin/events/${id}/bookings?adminPassword=${encodeURIComponent(adminPassword)}`;
-
-export const getAdminEventBookingsQueryKey = (id: string, adminPassword: string) =>
-  ["/api/admin/events", id, "bookings", adminPassword] as const;
+export const getAdminEventBookingsQueryKey = (id: string, token: string) =>
+  ["/api/admin/events", id, "bookings", token] as const;
 
 export function useAdminEventBookings<TData = AdminBooking[], TError = ErrorType<unknown>>(
   eventId: string,
-  adminPassword: string,
+  token: string,
   options?: { query?: UseQueryOptions<AdminBooking[], TError, TData> },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
     queryKey:
-      queryOptions?.queryKey ??
-      getAdminEventBookingsQueryKey(eventId, adminPassword),
+      queryOptions?.queryKey ?? getAdminEventBookingsQueryKey(eventId, token),
     queryFn: ({ signal }) =>
-      customFetch<AdminBooking[]>(
-        getAdminEventBookingsUrl(eventId, adminPassword),
-        { signal },
-      ),
-    enabled: Boolean(eventId) && Boolean(adminPassword),
+      customFetch<AdminBooking[]>(`/api/admin/events/${eventId}/bookings`, {
+        signal,
+        headers: authHeaders(token),
+      }),
+    enabled: Boolean(eventId) && Boolean(token),
     ...queryOptions,
   });
 }
@@ -82,16 +91,20 @@ export function useAdminEventBookings<TData = AdminBooking[], TError = ErrorType
 // ─── POST /admin/events/:id/checkin ──────────────────────────────────────────
 
 const checkInFn =
-  (eventId: string): MutationFunction<AdminBooking, { data: BodyType<CheckInInput> }> =>
+  (
+    eventId: string,
+    token: string,
+  ): MutationFunction<AdminBooking, { data: BodyType<CheckInInput> }> =>
   ({ data }) =>
     customFetch<AdminBooking>(`/api/admin/events/${eventId}/checkin`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders(token) },
       body: JSON.stringify(data),
     });
 
 export function useCheckIn<TError = ErrorType<{ error: string }>, TContext = unknown>(
   eventId: string,
+  token: string,
   options?: {
     mutation?: UseMutationOptions<
       AdminBooking,
@@ -101,22 +114,29 @@ export function useCheckIn<TError = ErrorType<{ error: string }>, TContext = unk
     >;
   },
 ): UseMutationResult<AdminBooking, TError, { data: BodyType<CheckInInput> }, TContext> {
-  return useMutation({ mutationFn: checkInFn(eventId), ...options?.mutation });
+  return useMutation({
+    mutationFn: checkInFn(eventId, token),
+    ...options?.mutation,
+  });
 }
 
 // ─── DELETE /admin/events/:id/checkin ────────────────────────────────────────
 
 const undoCheckInFn =
-  (eventId: string): MutationFunction<AdminBooking, { data: BodyType<CheckInInput> }> =>
+  (
+    eventId: string,
+    token: string,
+  ): MutationFunction<AdminBooking, { data: BodyType<CheckInInput> }> =>
   ({ data }) =>
     customFetch<AdminBooking>(`/api/admin/events/${eventId}/checkin`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders(token) },
       body: JSON.stringify(data),
     });
 
 export function useUndoCheckIn<TError = ErrorType<{ error: string }>, TContext = unknown>(
   eventId: string,
+  token: string,
   options?: {
     mutation?: UseMutationOptions<
       AdminBooking,
@@ -126,5 +146,8 @@ export function useUndoCheckIn<TError = ErrorType<{ error: string }>, TContext =
     >;
   },
 ): UseMutationResult<AdminBooking, TError, { data: BodyType<CheckInInput> }, TContext> {
-  return useMutation({ mutationFn: undoCheckInFn(eventId), ...options?.mutation });
+  return useMutation({
+    mutationFn: undoCheckInFn(eventId, token),
+    ...options?.mutation,
+  });
 }

@@ -87,12 +87,12 @@ export default function AdminScanScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { adminPassword } = useAdmin();
+  const { token } = useAdmin();
 
   const [state, setState] = useState<ScanState>({ status: 'scanning' });
   const lastScanned = useRef<string>('');
 
-  const checkInMutation = useCheckIn(id ?? '');
+  const checkInMutation = useCheckIn(id ?? '', token);
 
   // Permissions (native only)
   const permHook = useCameraPermissions?.();
@@ -129,12 +129,12 @@ export default function AdminScanScreen() {
 
       try {
         const booking = await checkInMutation.mutateAsync({
-          data: { bookingId: payload.bookingId, adminPassword },
+          data: { bookingId: payload.bookingId },
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Vibration.vibrate(100);
         queryClient.invalidateQueries({
-          queryKey: getAdminEventBookingsQueryKey(id ?? '', adminPassword),
+          queryKey: getAdminEventBookingsQueryKey(id ?? '', token),
         });
         setState({ status: 'success', booking });
       } catch (err: unknown) {
@@ -145,7 +145,7 @@ export default function AdminScanScreen() {
         setState({ status: 'error', message: msg });
       }
     },
-    [id, state.status, checkInMutation, adminPassword, queryClient],
+    [id, state.status, checkInMutation, token, queryClient],
   );
 
   const reset = () => {

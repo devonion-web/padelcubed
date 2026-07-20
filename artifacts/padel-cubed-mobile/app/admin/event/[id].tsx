@@ -115,17 +115,17 @@ export default function AdminEventDetailScreen() {
   const isWeb = Platform.OS === 'web';
   const queryClient = useQueryClient();
 
-  const { adminPassword } = useAdmin();
+  const { token } = useAdmin();
   const event = EVENTS.find((e) => e.id === id);
 
   const { data: bookings = [], isLoading } = useAdminEventBookings(
     id ?? '',
-    adminPassword,
+    token,
     { query: { refetchInterval: 10_000 } },
   );
 
-  const checkInMutation = useCheckIn(id ?? '');
-  const undoMutation = useUndoCheckIn(id ?? '');
+  const checkInMutation = useCheckIn(id ?? '', token);
+  const undoMutation = useUndoCheckIn(id ?? '', token);
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const checkedIn = bookings.filter((b) => b.checkedInAt).length;
@@ -134,14 +134,14 @@ export default function AdminEventDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTogglingId(booking.id);
     try {
-      const payload = { data: { bookingId: booking.id, adminPassword } };
+      const payload = { data: { bookingId: booking.id } };
       if (booking.checkedInAt) {
         await undoMutation.mutateAsync(payload);
       } else {
         await checkInMutation.mutateAsync(payload);
       }
       queryClient.invalidateQueries({
-        queryKey: getAdminEventBookingsQueryKey(id ?? '', adminPassword),
+        queryKey: getAdminEventBookingsQueryKey(id ?? '', token),
       });
     } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
