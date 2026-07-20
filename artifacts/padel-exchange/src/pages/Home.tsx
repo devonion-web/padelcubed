@@ -1003,10 +1003,6 @@ export default function Home() {
       <IntentModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onIndividual={() => {
-          setModalOpen(false);
-          window.location.href = "mailto:info@padelcubed.co.uk";
-        }}
       />
     </div>
   );
