@@ -21,6 +21,7 @@ export const bookingsTable = pgTable(
     bookedAt: timestamp("booked_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    checkedInAt: timestamp("checked_in_at", { withTimezone: true }),
   },
   (table) => [
     unique("bookings_event_email_uniq").on(table.eventId, table.email),

@@ -18,6 +18,7 @@ import { setBaseUrl } from '@workspace/api-client-react';
 import { ProfileProvider } from '@/context/ProfileContext';
 import { BookingsProvider } from '@/context/BookingsContext';
 import { SplashAnimation } from '@/components/SplashAnimation';
+import { AdminProvider } from '@/context/AdminContext';
 
 // Set the API base URL — Expo bundles run outside the web proxy and need absolute URLs.
 setBaseUrl(`https://${process.env.EXPO_PUBLIC_DOMAIN}`);
@@ -51,6 +52,8 @@ function RootLayoutNav() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="event/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="ticket/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="admin" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -82,6 +85,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
+          <AdminProvider>
           <ProfileProvider>
             <BookingsProvider>
               <GestureHandlerRootView style={{ flex: 1 }}>
@@ -92,6 +96,7 @@ export default function RootLayout() {
               </GestureHandlerRootView>
             </BookingsProvider>
           </ProfileProvider>
+          </AdminProvider>
         </QueryClientProvider>
       </ErrorBoundary>
 

@@ -142,10 +142,11 @@ export default function EventDetailScreen() {
   const queryClient = useQueryClient();
 
   const { profile, isRegistered } = useProfile();
-  const { isBooked, book, cancel: cancelLocal } = useBookings();
+  const { isBooked, getBookingId, book, cancel: cancelLocal } = useBookings();
 
   const event = EVENTS.find((e) => e.id === id);
   const booked = isBooked(id ?? '');
+  const bookingId = getBookingId(id ?? '');
   const canBook = event?.status !== 'soon';
 
   const [isBooking, setIsBooking] = useState(false);
@@ -162,7 +163,7 @@ export default function EventDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsBooking(true);
     try {
-      await bookMutation.mutateAsync({
+      const result = await bookMutation.mutateAsync({
         data: {
           email: profile.email,
           fullName: profile.fullName,
@@ -170,13 +171,14 @@ export default function EventDetailScreen() {
         },
       });
       const notifId = await scheduleReminder(id, event.title);
-      await book(id, notifId);
+      // Store bookingId so the QR ticket can encode it
+      await book(id, result.id, notifId);
       queryClient.invalidateQueries({
         queryKey: getEventAttendeesQueryKey(id),
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: unknown) {
-      // If already booked server-side, just record locally
+      // If already booked server-side, just record locally (no bookingId available)
       if ((err as { status?: number })?.status === 409) {
         await book(id);
       }
@@ -489,21 +491,48 @@ export default function EventDetailScreen() {
         ) : booked ? (
           /* Already booked */
           <>
-            <View
-              style={[
-                styles.ctaButton,
-                styles.ctaBookedState,
-                {
-                  backgroundColor: `${colors.primary}18`,
-                  borderRadius: colors.radius,
-                  borderColor: `${colors.primary}44`,
-                },
-              ]}
-            >
-              <Feather name="check-circle" size={18} color={colors.primary} />
-              <Text style={[styles.ctaText, { color: colors.primary }]}>
-                You're going
-              </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View
+                style={[
+                  styles.ctaButton,
+                  styles.ctaBookedState,
+                  {
+                    flex: 1,
+                    backgroundColor: `${colors.primary}18`,
+                    borderRadius: colors.radius,
+                    borderColor: `${colors.primary}44`,
+                  },
+                ]}
+              >
+                <Feather name="check-circle" size={18} color={colors.primary} />
+                <Text style={[styles.ctaText, { color: colors.primary }]}>
+                  You're going
+                </Text>
+              </View>
+              {bookingId ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    router.push(`/ticket/${id}` as never);
+                  }}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.ctaButton,
+                    styles.ctaBookedState,
+                    {
+                      paddingHorizontal: 16,
+                      backgroundColor: colors.card,
+                      borderRadius: colors.radius,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Feather name="credit-card" size={16} color={colors.foreground} />
+                  <Text style={[styles.ctaText, { color: colors.foreground, fontSize: 14 }]}>
+                    Ticket
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
             <TouchableOpacity
               onPress={handleCancel}
