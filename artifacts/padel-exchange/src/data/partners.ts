@@ -30,6 +30,17 @@ const partners: Partner[] = [
     showInCarousel: true,
   },
   {
+    id: "panorays",
+    name: "Panorays",
+    tier: "founding",
+    category: "Third-Party Risk",
+    logoLight: "partners/panorays.png",
+    logoDark: "partners/panorays.png",
+    url: "https://www.panorays.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    blurb: "End-to-end third-party cyber risk management, powered by native AI — helping enterprises secure their entire supply chain.",
+    showInCarousel: true,
+  },
+  {
     id: "logicgate",
     name: "LogicGate",
     tier: "founding",
