@@ -49,8 +49,8 @@ export default function Privacy() {
           <p>
             If you have any questions about this policy or how we handle your personal data, please
             contact us at:{" "}
-            <a href="mailto:privacy@thepadelexchange.com" className="text-primary underline underline-offset-2">
-              privacy@thepadelexchange.com
+            <a href="mailto:info@padelcubed.co.uk" className="text-primary underline underline-offset-2">
+              info@padelcubed.co.uk
             </a>
           </p>
         </Section>
@@ -82,8 +82,8 @@ export default function Privacy() {
           <p>
             You have the right to withdraw your consent at any time. Withdrawal does not affect the
             lawfulness of processing carried out before you withdrew consent. To withdraw, email us at{" "}
-            <a href="mailto:privacy@thepadelexchange.com" className="text-primary underline underline-offset-2">
-              privacy@thepadelexchange.com
+            <a href="mailto:info@padelcubed.co.uk" className="text-primary underline underline-offset-2">
+              info@padelcubed.co.uk
             </a>{" "}
             and we will delete your data within 30 days.
           </p>
@@ -178,8 +178,8 @@ export default function Privacy() {
           </ul>
           <p>
             To exercise any of these rights, email{" "}
-            <a href="mailto:privacy@thepadelexchange.com" className="text-primary underline underline-offset-2">
-              privacy@thepadelexchange.com
+            <a href="mailto:info@padelcubed.co.uk" className="text-primary underline underline-offset-2">
+              info@padelcubed.co.uk
             </a>
             . We will respond within{" "}
             <strong className="text-foreground">one calendar month</strong> as required by UK GDPR.

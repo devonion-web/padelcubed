@@ -971,7 +971,7 @@ export default function Home() {
             <div className="flex flex-wrap gap-6 text-sm font-medium">
               <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
               <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
+              <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
             </div>
