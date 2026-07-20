@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { RegistrationForm } from "@/components/RegistrationForm";
+import { IntentModal } from "@/components/IntentModal";
 import { PartnersSection, VenuesSection } from "@/components/PartnersVenues";
 import { AdSlot } from "@/components/AdSlot";
 import {
@@ -239,6 +240,10 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
 }
 
 export default function Home() {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = () => setModalOpen(true);
+
   const scrollToForm = () => {
     document.getElementById("register")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -266,7 +271,7 @@ export default function Home() {
               Host an event
             </Link>
           </nav>
-          <Button onClick={scrollToForm} className="rounded-full px-6 text-sm font-semibold">
+          <Button onClick={openModal} className="rounded-full px-6 text-sm font-semibold">
             Apply
           </Button>
         </div>
@@ -319,7 +324,7 @@ export default function Home() {
                   Curated padel events for senior professionals and founders — premium venues, top-level play, real connections.
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <Button size="lg" onClick={scrollToForm} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group">
+                  <Button size="lg" onClick={openModal} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group">
                     Register your interest
                     <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
@@ -871,7 +876,7 @@ export default function Home() {
             <FadeIn delay={0.3}>
               <div className="mt-16 text-center">
                 <p className="text-muted-foreground mb-6">Want to be part of it?</p>
-                <Button size="lg" onClick={() => document.getElementById("register")?.scrollIntoView({ behavior: "smooth" })} className="rounded-full px-8 h-14 text-base font-semibold group">
+                <Button size="lg" onClick={openModal} className="rounded-full px-8 h-14 text-base font-semibold group">
                   Register your interest
                   <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -1020,6 +1025,15 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      <IntentModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onIndividual={() => {
+          setModalOpen(false);
+          setTimeout(() => scrollToForm(), 50);
+        }}
+      />
     </div>
   );
 }
