@@ -19,6 +19,17 @@ export interface Partner {
 
 const partners: Partner[] = [
   {
+    id: "risk-rising",
+    name: "Risk Rising",
+    tier: "founding",
+    category: "Risk & Compliance",
+    logoLight: "partners/rr.png",
+    logoDark: "partners/rr.png",
+    url: "https://www.riskrising.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    blurb: "Risk Rising helps financial services firms build resilient, high-performing risk and compliance functions.",
+    showInCarousel: true,
+  },
+  {
     id: "corlytics",
     name: "Corlytics",
     tier: "founding",
