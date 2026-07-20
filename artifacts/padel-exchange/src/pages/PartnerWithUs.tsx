@@ -123,6 +123,7 @@ export default function PartnerWithUs() {
             <a href="/#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
             <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
             <a href="/#ambassadors" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
+            <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
           </nav>
           <Button onClick={scrollToForm} className="rounded-full px-6 text-sm font-semibold">
             Enquire

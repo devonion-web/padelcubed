@@ -274,6 +274,9 @@ export default function Home() {
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               FAQ
             </a>
+            <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Host an event
+            </Link>
           </nav>
           <Button onClick={scrollToForm} className="rounded-full px-6 text-sm font-semibold">
             Apply
@@ -910,6 +913,27 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── Corporate / Host an event — secondary CTA ───────────────────── */}
+        <section className="py-14 md:py-20 border-t border-border/40">
+          <div className="container mx-auto px-4 md:px-8 text-center">
+            <FadeIn>
+              <span className="text-primary text-xs font-semibold tracking-widest uppercase block mb-4">Corporate &amp; private events</span>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">
+                Bring P³ to your team or clients
+              </h2>
+              <p className="text-muted-foreground text-base max-w-xl mx-auto mb-8">
+                We produce the whole event — format, MC, scoring, kit and photos. You take the credit.
+              </p>
+              <Link
+                href="/host-an-event"
+                className="inline-flex items-center gap-2 h-11 px-7 rounded-full border border-border text-sm font-semibold text-foreground hover:border-primary/40 hover:bg-card transition-all"
+              >
+                Find out more →
+              </Link>
+            </FadeIn>
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section id="faq" className="py-12 md:py-16 border-t border-border/50 bg-card/20">
           <div className="container mx-auto px-4 md:px-8">
@@ -995,6 +1019,7 @@ export default function Home() {
               <a href="#ambassadors" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
               <Link href="/partners" className="text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
               <Link href="/partner-with-us" className="text-muted-foreground hover:text-foreground transition-colors">Partner with us</Link>
+              <Link href="/host-an-event" className="text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>

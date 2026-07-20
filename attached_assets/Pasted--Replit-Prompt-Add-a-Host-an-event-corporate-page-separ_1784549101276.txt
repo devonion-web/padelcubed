@@ -1,0 +1,45 @@
+# Replit Prompt — Add a "Host an event" corporate page (separate from registration)
+
+> Paste the **PROMPT** block into the Replit Agent for the P³ site.
+> Key point: this is a **different transaction** from an individual sign-up — it must use its own form and its own pipeline, and take **no payment**.
+
+---
+
+## PROMPT
+
+Add a corporate **"Host an event"** service page and route it completely separately from individual community registration. An individual joining and a company commissioning an event are different transactions — they must not share a form or a data pipeline.
+
+### Routing & navigation
+- Keep **"Join the community"** as the site's primary hero CTA — do not let this new page compete with it.
+- Add a **secondary** nav link **"Host an event"** (and a footer link) → new route `/host-an-event`.
+- Add one tasteful homepage section lower down: heading **"Bring P³ to your team or clients"**, one line, and a button to `/host-an-event`. Keep it clearly secondary to the Join CTA.
+
+### The `/host-an-event` page (premium, B2B tone, on-brand: navy `#0E1B2C`, turquoise `#19C3B0`, off-white `#F4F7FB`, Inter, P³ mark)
+Sections:
+1. **Hero:** "Host a P³ event" + subline: *"We produce the padel event — you take the credit. Team days, client entertainment, launches and offsites."*
+2. **What it is:** short paragraph — we design and run the whole thing: format (Americano and others), a hosted MC, live scoring and leaderboard, branding, kit, drinks and the photos.
+3. **Formats:** brief cards — Team Day, Client Entertainment, Product Launch / Activation, Conference Social.
+4. **What's included + upsells:** what every event includes, plus optional extras (branded shirts, photography/video, custom branding, catering & bar, prizes, an "Exchange" speaker slot).
+5. **Why P³:** 3 short trust points (a proven format, a produced experience, a warm way to build relationships — no pitch, no slides).
+6. **Enquiry form** (see below) + a **"Book a 15-min call"** option.
+
+### The enquiry form — qualifying, NOT a registration, NO payment
+Fields: **Company**, **Contact name**, **Work email**, Phone (optional), **Event type** (dropdown: Team day / Client entertainment / Product launch / Conference social / Other), **Approx. headcount**, **Preferred timeframe or date**, Budget range (optional dropdown), **Message**, and a **GDPR consent** checkbox ("I agree to be contacted about my event enquiry").
+- Add a **"Book a call"** button next to/after the form that links to a scheduling tool — use a placeholder `https://cal.com/pcubed` (Cal.com / Calendly) I can swap later.
+- On submit: **do NOT take payment**. Store the enquiry in a **separate table/store tagged `type: "corporate-event"`**, send the organiser an email notification, and show a polished confirmation: *"Thanks — we'll be in touch within one working day to scope your event."*
+
+### Data separation (important)
+- Corporate enquiries must **not** be added to the member/registration list or the member data hub.
+- Keep three separate destinations, tagged at source: `individual` (member hub) · `corporate-event` (enquiries/sales) · `partner` (partnerships). Reuse the site's existing DB/form approach but tag by type.
+
+### Rules
+- No payment anywhere on this page.
+- Premium, trustworthy B2B feel (a company decision-maker must believe you can deliver) — but same brand system as the rest of the site.
+- Mobile-first; accessible labels and focus states; GDPR consent required to submit.
+- After building, show me `/host-an-event` and the new homepage section on desktop and mobile.
+
+---
+
+## Note for Dev (not part of the prompt)
+- The **book-a-call** link is the biggest UX win for corporate leads — a warm company can grab time immediately instead of waiting on email. Set up a free Cal.com/Calendly and swap the placeholder URL.
+- This page pairs with the **corporate event packages one-pager** (tiers + upsells) you'd send after the enquiry. Say the word and I'll draft it so the page and the follow-up match.
