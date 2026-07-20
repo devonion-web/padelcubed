@@ -256,24 +256,12 @@ export default function Home() {
             <span className="pc-mark" aria-hidden="true">P<sup>3</sup></span>
           </a>
           <nav className="hidden md:flex items-center gap-8">
-            <button onClick={scrollToHow} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              How it works
-            </button>
-            <a href="#who" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Who it's for
-            </a>
             <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Events
-            </a>
-            <a href="#ambassadors" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Ambassadors
             </a>
             <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Partners
             </Link>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              FAQ
-            </a>
             <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Host an event
             </Link>
