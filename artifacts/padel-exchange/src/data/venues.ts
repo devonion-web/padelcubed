@@ -38,8 +38,8 @@ const venues: Venue[] = [
     surface: "indoor",
     transport: {
       station: "East Acton",
-      travelTime: "~25 min",
-      from: "Waterloo",
+      travelTime: "~20 min",
+      from: "Bank",
       lines: [
         { name: "Central", color: "#E32017" },
         { name: "Overground", color: "#EE7C0E" },
