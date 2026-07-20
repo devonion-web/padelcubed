@@ -1,0 +1,23 @@
+kind = "mobile"
+previewPath = "/padel-cubed-mobile/"
+title = "P³ Mobile"
+version = "1.0.0"
+id = "artifacts/padel-cubed-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/padel-cubed-mobile/" ]
+localPort = 23186
+
+[services.development]
+run = "pnpm --filter @workspace/padel-cubed-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/padel-cubed-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/padel-cubed-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "23186"
+BASE_PATH = "/padel-cubed-mobile/"

@@ -1,0 +1,1 @@
+- [Mobile app setup](mobile-app-setup.md) — Expo app at artifacts/padel-cubed-mobile; brand tokens synced from web CSS; Phase 1 built (events, registration, profile).
