@@ -48,6 +48,7 @@ function PartnerLogo({ name, logoLight, url }: PartnerLogoProps) {
           src={`${import.meta.env.BASE_URL}${logoLight}`}
           alt={name}
           className="h-6 w-auto object-contain"
+          style={{ mixBlendMode: "screen" }}
           loading="lazy"
         />
       ) : (
