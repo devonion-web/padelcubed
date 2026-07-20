@@ -602,8 +602,8 @@ export default function Home() {
                   },
                   {
                     icon: BadgePercent,
-                    title: "Sponsor-backed pricing",
-                    desc: "Sponsors cover the cost gap. You pay for a produced social event — not court hire at rack rate. Great padel, fair price, no compromise on quality."
+                    title: "More than a game.",
+                    desc: "One ticket, the whole night — hosted play, a live leaderboard, prizes and drinks. Our partners help us put it on, so it stays a proper experience and keeps everyone on court."
                   },
                   {
                     icon: Trophy,
@@ -745,7 +745,7 @@ export default function Home() {
                 <div>
                   <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Reserve your spot</h2>
                   <p className="text-lg text-muted-foreground max-w-xl">
-                    Group events at London's best padel venues — sponsor-backed so you pay a fraction of the going rate. Kit included, all levels welcome.
+                    One ticket, the whole night — hosted play, a live leaderboard, prizes and drinks. Our partners help us put it on, so it stays a proper experience and keeps everyone on court.
                   </p>
                 </div>
                 <div className="flex-shrink-0 text-right hidden md:block">
