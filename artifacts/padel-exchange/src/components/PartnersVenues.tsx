@@ -212,7 +212,6 @@ export function VenuesSection() {
                   )}
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-card/90 to-transparent" />
               <span className="absolute top-3 right-3 text-xs font-semibold bg-primary/20 border border-primary/30 text-primary px-2.5 py-1 rounded-full backdrop-blur-sm">
                 {venue.courts} courts
               </span>
