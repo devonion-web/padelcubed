@@ -50,13 +50,23 @@ const ICON_SIZE   = 70;
 const CARD_RADIUS = Math.round(CARD_SIZE * 0.28); // ~38 — matches HeaderLogo rounding
 
 function PadLogo() {
-  // Inline P³ mark — matches HeaderLogo.tsx mark exactly
-  const pSize  = 58;
-  const supSize = Math.round(pSize * 0.44);
+  // Same flex-row layout as HeaderLogo — no absolute positioning
+  const pSize   = Math.round(CARD_SIZE * 0.60);   // ~82 px
+  const supSize = Math.round(pSize * 0.46);        // ~38 px
   return (
-    <View style={styles.logoMark}>
-      <Text style={[styles.logoP, { fontSize: pSize }]}>P</Text>
-      <Text style={[styles.logoSup, { fontSize: supSize, top: 10, right: 8 }]}>3</Text>
+    <View style={styles.glyphRow}>
+      <Text
+        style={[styles.glyphP, { fontSize: pSize, lineHeight: pSize * 1.05 }]}
+        allowFontScaling={false}
+      >
+        P
+      </Text>
+      <Text
+        style={[styles.glyphSup, { fontSize: supSize, lineHeight: supSize * 1.1 }]}
+        allowFontScaling={false}
+      >
+        3
+      </Text>
     </View>
   );
 }
@@ -237,26 +247,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // P³ logo inside card
-  logoMark: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+  // P³ glyph row — identical pattern to HeaderLogo
+  glyphRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingLeft: 4,
+    paddingBottom: 4,
   },
-  logoP: {
-    position: 'absolute',
+  glyphP: {
     color: '#F4F7FB',
     fontFamily: 'Inter_700Bold',
-    letterSpacing: -2,
-    left: 28,
-    bottom: 24,
+    letterSpacing: -1,
   },
-  logoSup: {
-    position: 'absolute',
+  glyphSup: {
     color: '#19C3B0',
     fontFamily: 'Inter_700Bold',
+    alignSelf: 'flex-start',
+    letterSpacing: 0,
+    marginBottom: 2,
   },
 
   taglineWrap: {
