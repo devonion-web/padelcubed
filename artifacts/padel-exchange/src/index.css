@@ -153,16 +153,11 @@
   display: inline-flex; align-items: center; gap: 12px;
   text-decoration: none; line-height: 1;
 }
-.pc-mark {
-  display: inline-flex; align-items: center; justify-content: center;
+.pc-mark-img {
   width: 46px; height: 46px; border-radius: 12px;
-  background: linear-gradient(155deg, #153052, #0b1626);
-  color: #F4F7FB; font-family: 'Inter', sans-serif;
-  font-weight: 900; font-size: 23px; letter-spacing: -.04em;
+  flex: 0 0 auto; display: block;
   box-shadow: 0 6px 16px rgba(0,0,0,.28);
-  flex: 0 0 auto;
 }
-.pc-mark sup { color: #19C3B0; font-size: .5em; font-weight: 800; top: -.15em; }
 .pc-word {
   display: inline-flex; flex-direction: column;
   font-family: 'Inter', sans-serif; font-weight: 800;

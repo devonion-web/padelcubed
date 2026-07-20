@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 
 interface HeaderLogoProps {
@@ -9,26 +9,16 @@ interface HeaderLogoProps {
 export function HeaderLogo({ size = 'md' }: HeaderLogoProps) {
   const colors = useColors();
   const markSize = size === 'sm' ? 36 : size === 'lg' ? 56 : 44;
-  const markFontSize = size === 'sm' ? 17 : size === 'lg' ? 28 : 21;
+  const borderRadius = Math.round(markSize * 0.26);
   const wordFontSize = size === 'sm' ? 11 : size === 'lg' ? 15 : 13;
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.mark,
-          {
-            width: markSize,
-            height: markSize,
-            backgroundColor: colors.navy,
-            borderRadius: Math.round(markSize * 0.26),
-          },
-        ]}
-      >
-        <Text style={[styles.markText, { fontSize: markFontSize }]}>
-          P<Text style={{ color: colors.primary, fontSize: markFontSize * 0.55 }}>³</Text>
-        </Text>
-      </View>
+      <Image
+        source={require('@/assets/images/logo-mark.png')}
+        style={[styles.mark, { width: markSize, height: markSize, borderRadius }]}
+        resizeMode="cover"
+      />
       <View style={styles.words}>
         <Text style={[styles.wordLine, { fontSize: wordFontSize, color: colors.foreground }]}>
           <Text style={{ color: colors.primary }}>People</Text>
@@ -49,13 +39,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   mark: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markText: {
-    color: '#FAFAFA',
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -1,
+    flexShrink: 0,
   },
   words: {
     flexDirection: 'column',
