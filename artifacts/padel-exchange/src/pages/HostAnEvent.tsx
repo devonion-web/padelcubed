@@ -199,11 +199,10 @@ export default function HostAnEvent() {
           </a>
           <nav className="hidden md:flex items-center gap-8">
             <a href="/#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
-            <a href="/#ambassadors" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
-            <Link href="/host-an-event" className="text-sm font-medium text-foreground transition-colors">Host an event</Link>
+            <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
           </nav>
           <Button onClick={scrollToForm} className="rounded-full px-6 text-sm font-semibold">
-            Get in touch
+            Apply
           </Button>
         </div>
       </header>
