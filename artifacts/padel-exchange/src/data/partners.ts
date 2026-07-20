@@ -25,7 +25,7 @@ const partners: Partner[] = [
     category: "RegTech",
     logoLight: "partners/rr.png",
     logoDark: "partners/rr.png",
-    url: "https://www.corlytics.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    url: "https://www.riskrising.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
     blurb: "The world's leading regulatory intelligence platform — making compliance faster, smarter and less costly.",
     showInCarousel: true,
   },
