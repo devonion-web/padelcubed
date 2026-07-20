@@ -199,7 +199,6 @@ export default function HostAnEvent() {
           </a>
           <nav className="hidden md:flex items-center gap-8">
             <a href="/#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
-            <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
             <a href="/#ambassadors" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
             <Link href="/host-an-event" className="text-sm font-medium text-foreground transition-colors">Host an event</Link>
           </nav>
@@ -528,8 +527,6 @@ export default function HostAnEvent() {
             <div className="flex flex-wrap gap-6 text-sm font-medium">
               <a href="/#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
               <a href="/#ambassadors" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
-              <Link href="/partners" className="text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
-              <Link href="/partner-with-us" className="text-muted-foreground hover:text-foreground transition-colors">Partner with us</Link>
               <Link href="/host-an-event" className="text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>

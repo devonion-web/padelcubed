@@ -109,15 +109,6 @@ export function PartnersSection() {
           </div>
         </div>
 
-        <div className="flex justify-center mt-4">
-          <Link
-            href="/partner-with-us"
-            className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-          >
-            Partner with us
-            <span aria-hidden="true">→</span>
-          </Link>
-        </div>
       </section>
     </>
   );
