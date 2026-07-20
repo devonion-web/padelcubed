@@ -148,8 +148,9 @@ export function PartnersVenues() {
 
         {/* ── Venues ─────────────────────────────────────────────────── */}
         <div className="container mx-auto px-4 md:px-8 mb-6">
-          <div className="flex items-end justify-between gap-4">
-            <div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="w-[72px]" />{/* spacer to balance arrows */}
+            <div className="text-center">
               <span className="text-primary text-xs font-semibold tracking-widest uppercase block mb-2">
                 Where we play
               </span>
