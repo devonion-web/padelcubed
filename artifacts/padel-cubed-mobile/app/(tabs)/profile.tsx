@@ -63,6 +63,15 @@ export default function ProfileScreen() {
         ]}
       >
         <HeaderLogo size="md" />
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/admin-tab' as never)}
+          activeOpacity={0.65}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={[styles.adminHeaderBtn, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}40` }]}
+        >
+          <Feather name="shield" size={13} color={colors.primary} />
+          <Text style={[styles.adminHeaderLabel, { color: colors.primary }]}>Admin</Text>
+        </TouchableOpacity>
       </View>
 
       {isLoading ? (
@@ -375,6 +384,21 @@ const styles = StyleSheet.create({
   clearText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
+  },
+
+  // Admin header button
+  adminHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  adminHeaderLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
   },
 
   // Admin access row
