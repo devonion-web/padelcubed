@@ -20,7 +20,7 @@ const INTENTS: { id: Intent; icon: React.ElementType; label: string; sublabel: s
     label: "Join the community",
     sublabel: "Individual",
     cta: "Register your interest →",
-    desc: "I want to play at P³ events as an individual.",
+    desc: "Play at P³ events as an individual member.",
   },
   {
     id: "host",
@@ -28,7 +28,7 @@ const INTENTS: { id: Intent; icon: React.ElementType; label: string; sublabel: s
     label: "Host an event",
     sublabel: "Company",
     cta: "Enquire now →",
-    desc: "I represent a company — team day, client entertainment or corporate event.",
+    desc: "Book a team day, client event or corporate outing.",
   },
   {
     id: "partner",
@@ -36,7 +36,7 @@ const INTENTS: { id: Intent; icon: React.ElementType; label: string; sublabel: s
     label: "Partner with us",
     sublabel: "Sponsor / Advertiser",
     cta: "Get in touch →",
-    desc: "I want to sponsor, co-brand or advertise alongside P³.",
+    desc: "Sponsor, co-brand or advertise alongside P³.",
   },
 ];
 
@@ -449,15 +449,15 @@ export function IntentModal({ open, onClose }: IntentModalProps) {
                         <button
                           key={id}
                           onClick={() => pick(id)}
-                          className="group text-left rounded-2xl border border-border bg-background/60 hover:border-primary/50 hover:bg-primary/5 p-5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card"
+                          className="group text-left rounded-2xl border border-border bg-background/60 hover:border-primary/50 hover:bg-primary/5 p-5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card flex flex-col"
                         >
-                          <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center mb-3 group-hover:bg-primary/25 transition-colors">
+                          <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center mb-3 flex-shrink-0 group-hover:bg-primary/25 transition-colors">
                             <Icon className="h-5 w-5 text-primary" />
                           </div>
                           <span className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground block mb-1">{sublabel}</span>
                           <h3 className="text-sm font-bold text-foreground mb-2 group-hover:text-primary transition-colors leading-snug">{label}</h3>
-                          <p className="text-xs text-muted-foreground leading-relaxed mb-3">{desc}</p>
-                          <span className="text-xs font-semibold text-primary">{cta}</span>
+                          <p className="text-xs text-muted-foreground leading-relaxed flex-grow">{desc}</p>
+                          <span className="text-xs font-semibold text-primary mt-3 block">{cta}</span>
                         </button>
                       ))}
                     </motion.div>
