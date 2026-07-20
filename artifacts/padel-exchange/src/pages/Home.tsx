@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { Link } from "wouter";
 import { RegistrationForm } from "@/components/RegistrationForm";
+import { PartnerCarousel } from "@/components/PartnerCarousel";
+import { AdSlot } from "@/components/AdSlot";
 import {
   Accordion,
   AccordionContent,
@@ -265,6 +268,9 @@ export default function Home() {
             <a href="#founders" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               The Founders
             </a>
+            <Link href="/partners" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Partners
+            </Link>
             <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               FAQ
             </a>
@@ -837,6 +843,11 @@ export default function Home() {
                 Not seeing the right date? <button onClick={scrollToForm} className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity">Register your interest</button> and we'll match you to the next suitable event.
               </p>
             </FadeIn>
+
+            {/* Events inline ad slot — only renders when a live advert is scheduled */}
+            <FadeIn delay={0.5}>
+              <AdSlot slot="events-inline" className="mt-10 max-w-xl mx-auto" />
+            </FadeIn>
           </div>
         </section>
 
@@ -950,6 +961,12 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Partner carousel + home-banner ad slot */}
+        <PartnerCarousel />
+        <div className="container mx-auto px-4 md:px-8 pb-10">
+          <AdSlot slot="home-banner" className="max-w-2xl mx-auto" />
+        </div>
       </main>
 
       {/* Footer */}
@@ -971,6 +988,8 @@ export default function Home() {
             <div className="flex flex-wrap gap-6 text-sm font-medium">
               <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
               <a href="#founders" className="text-muted-foreground hover:text-foreground transition-colors">The Founders</a>
+              <Link href="/partners" className="text-muted-foreground hover:text-foreground transition-colors">Partners</Link>
+              <Link href="/partner-with-us" className="text-muted-foreground hover:text-foreground transition-colors">Partner with us</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>

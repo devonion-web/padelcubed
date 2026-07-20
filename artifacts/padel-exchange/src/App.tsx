@@ -6,6 +6,8 @@ import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Home from '@/pages/Home';
 import Admin from '@/pages/Admin';
 import Privacy from '@/pages/Privacy';
+import Partners from '@/pages/Partners';
+import PartnerWithUs from '@/pages/PartnerWithUs';
 import { CookieBanner } from '@/components/CookieBanner';
 
 const queryClient = new QueryClient({
@@ -23,6 +25,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={Admin} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/partners" component={Partners} />
+      <Route path="/partner-with-us" component={PartnerWithUs} />
       <Route component={NotFound} />
     </Switch>
   );

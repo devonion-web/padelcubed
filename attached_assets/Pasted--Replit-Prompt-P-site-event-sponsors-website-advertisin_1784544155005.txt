@@ -1,0 +1,79 @@
+# Replit Prompt — P³ site: event sponsors, website advertising & partner carousel (v2)
+
+> Paste the **PROMPT** block into the Replit Agent for the P³ (People. Padel. Places.) site.
+> This extends the earlier sponsor prompt: it keeps per-event sponsors and the Partners/"Partner with us" pages, and **adds** an auto-scrolling partner carousel and a scheduled website-advertising system.
+> Nothing takes payment — sponsor/advertiser journeys end in an enquiry.
+
+---
+
+## PROMPT
+
+Add THREE distinct, data-driven sponsor/advertising products to the site. Keep everything **premium and uncluttered** (members'-club feel — never ad-heavy) and consistent with the design system (navy `#0E1B2C`, turquoise `#19C3B0`, off-white `#F4F7FB`, Inter, the P³ mark). Drive all three from editable data files.
+
+### Data files (create/extend)
+
+```js
+// 1) Ongoing partners — feed the carousel and the /partners page
+const partners = [
+  { name:"Placeholder Padel Co", tier:"founding", category:"Padel / Sport",
+    logoLight:"partners/example-light.svg", logoDark:"partners/example-dark.svg",
+    url:"https://example.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    blurb:"One line on who they are.", showInCarousel:true }
+];
+
+// 2) Paid website adverts — scheduled brand placements in fixed slots
+const adverts = [
+  { advertiser:"Placeholder Racquet Co", slot:"home-banner",   // "home-banner" | "events-inline" | "sidebar"
+    creativeLight:"adverts/example-light.svg", creativeDark:"adverts/example-dark.svg",
+    headline:"Optional short tagline (<= 6 words)",
+    url:"https://example.com/?utm_source=pcubed&utm_medium=advert&utm_campaign=summer",
+    start:"2026-08-01", end:"2026-10-31" }   // ISO dates — advert only shows inside this window
+];
+
+// 3) Event sponsors — on each event object
+// events: [{ ..., sponsors:[ "Placeholder Padel Co" ] }]  // names reference `partners`, or inline {name,logoLight,logoDark,url}
+```
+
+### 1) Partner logo carousel (auto-scrolling)
+- A seamless, **infinite horizontal marquee** of logos from `partners` where `showInCarousel === true`.
+- Heading **"Our partners"** with subline *"Backed by brands who believe in People. Padel. Places."*
+- Logos in muted **greyscale that colourises on hover**; consistent height and padding; **pause on hover**; slow, smooth, seamless loop (duplicate the list so there's no visible jump); links open in a new tab (`rel="noopener noreferrer"`).
+- **Accessibility:** if `prefers-reduced-motion` is set, don't animate — show a static, wrapped logo row instead.
+- Place it near the foot of the homepage, with a quiet **"Partner with us →"** link to `/partner-with-us`.
+- If there are no carousel partners yet, show one elegant line: *"Partnership spots open — [Partner with us]."*
+
+### 2) Website advertising slots (scheduled, tasteful)
+- Build an `AdSlot` component that, given a slot name, shows the **currently-active** advert(s) for that slot — i.e. where today's date is between `start` and `end`. If several are active, **rotate** them (fade every ~8s); if none, render nothing (collapse the space — never show an empty or broken slot).
+- Each rendered advert: the brand creative (use `creativeLight`/`creativeDark` per background; if missing, show the advertiser name in a styled text lockup), optional headline, a clear clickable area (new tab, UTM link), and a small, legally-required label **"In partnership with"** or **"Advertisement"** in muted text.
+- Slots to place (keep density low — max one visible per screen):
+  - `home-banner` — one refined placement above the footer on the homepage.
+  - `events-inline` — a single placement on the events page.
+  - `sidebar` — optional, only if the layout has a sidebar.
+- Design them as premium framed cards that match the site — **not** loud banners. No pop-ups, no autoplay video, no more than one accent colour.
+
+### 3) Event sponsors (keep/confirm)
+- Each event page/card shows a subtle **"Supported by"** row of that event's `sponsors` logos.
+
+### Tracking (ROI evidence for advertisers & sponsors)
+- Every partner/advert/sponsor outbound link carries UTM params and fires a lightweight event to analytics (GA4/Plausible if present; else `console.log` a `partner_click` / `advert_click` event with the name).
+- For adverts, also log an **impression** event when the slot renders, so we can report impressions + clicks per advertiser.
+
+### "Partner with us" page (`/partner-with-us`) — update
+- Present **three ways to partner**, each with a one-liner and a "By arrangement" note (no fixed prices):
+  1. **Event Sponsorship** — back a specific event; on-court and on-page branding, tickets, an "Exchange" slot.
+  2. **Website Advertising** — an always-on brand placement reaching our community (great for padel & lifestyle brands).
+  3. **Founding Partner** — headline, ongoing, top billing in the carousel and across the site.
+- Keep the audience-snapshot stat tiles (editable placeholders) and the **enquiry form** (name, company, work email, interest dropdown covering the three options, message, GDPR consent). No payment — store the enquiry and email the organiser.
+
+### Rules
+- **Never** expose member/registration data on any public sponsor/advert surface — cohort access is separate and opt-in/aggregate only.
+- Data-driven and easy to edit; missing images fall back to a styled text lockup, never a broken image.
+- Add "Partners" to nav + footer.
+- After building, show me: the homepage with the carousel and `home-banner` advert, the `/partners` page, and `/partner-with-us`, on desktop and mobile.
+
+---
+
+## Note for Dev (not part of the prompt)
+- Three products, three sales motions: **event sponsorship** (per event, relationship-sold), **website advertising** (rate-card, monthly/quarterly, endemic brands like racquet/apparel co's), **founding partnership** (premium, ongoing). The carousel is the shop window that makes all three feel credible.
+- The `start`/`end` dates mean adverts expire on their own — no dead logos lingering after a booking ends.
+- This is where a simple **rate card** starts to matter (advertising especially). Say the word and I'll draft the sponsorship + advertising **rate card / media kit** and the **agreement template** so the site, the pitch and the paperwork all line up.
