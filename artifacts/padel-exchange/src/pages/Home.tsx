@@ -3,6 +3,7 @@ import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { PartnerCarousel } from "@/components/PartnerCarousel";
+import { VenueCarousel } from "@/components/VenueCarousel";
 import { AdSlot } from "@/components/AdSlot";
 import {
   Accordion,
@@ -853,6 +854,9 @@ export default function Home() {
             </FadeIn>
           </div>
         </section>
+
+        {/* Venue Carousel */}
+        <VenueCarousel />
 
         {/* Founders Section */}
         <section id="ambassadors" className="py-12 md:py-16 bg-card/30 border-y border-border/50">
