@@ -282,6 +282,9 @@ export default function Home() {
       </header>
 
       <main>
+        {/* Partner carousel — sits directly under the nav */}
+        <PartnerCarousel />
+
         {/* Hero Section */}
         <section className="relative flex items-start pt-20">
           <div className="absolute inset-0 z-0 overflow-hidden">
@@ -962,8 +965,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Partner carousel + home-banner ad slot */}
-        <PartnerCarousel />
+        {/* home-banner ad slot — only renders when a live advert is scheduled */}
         <div className="container mx-auto px-4 md:px-8 pb-10">
           <AdSlot slot="home-banner" className="max-w-2xl mx-auto" />
         </div>
