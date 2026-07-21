@@ -1,61 +1,74 @@
 /**
- * SplashAnimation — vertical slot-machine reel.
+ * SplashAnimation — vertical slot-machine reel, slow → fast → P³ spring land.
  *
- * A static rounded-square card clips a reel of padel icons.
- * Each icon slides up from below, pauses, then the next slides in.
- * The reel finally lands on the P³ logo with a spring bounce.
- * After a short hold the tagline fades in, then the whole overlay fades out.
+ * Six real padel player silhouette PNGs cycle through the card window,
+ * each transition faster than the last. The reel then springs to a stop
+ * on the P³ mark. Tagline fades in, overlay fades out.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Image,
   Platform,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// ─── Icon sequence (padel-themed silhouettes → P³) ───────────────────────────
+// ─── Asset map ────────────────────────────────────────────────────────────────
 
-type VectorIcon = { kind: 'icon'; name: string };
-type LogoIcon   = { kind: 'logo' };
-type IconDef    = VectorIcon | LogoIcon;
+const PADEL_IMAGES = [
+  require('../assets/splash/padel1.png'),
+  require('../assets/splash/padel2.png'),
+  require('../assets/splash/padel3.png'),
+  require('../assets/splash/padel4.png'),
+  require('../assets/splash/padel5.png'),
+  require('../assets/splash/padel6.png'),
+] as const;
+
+// ─── Icon sequence ────────────────────────────────────────────────────────────
+//   0-5 → padel player images
+//   6   → P³ logo (final)
+
+type ImageIcon = { kind: 'image'; src: (typeof PADEL_IMAGES)[number] };
+type LogoIcon  = { kind: 'logo' };
+type IconDef   = ImageIcon | LogoIcon;
 
 const ICONS: IconDef[] = [
-  { kind: 'icon', name: 'tennis'               },  // forehand drive
-  { kind: 'icon', name: 'badminton'            },  // overhead smash
-  { kind: 'icon', name: 'run'                  },  // sprinting player
-  { kind: 'icon', name: 'tennis-ball'          },  // ball
-  { kind: 'icon', name: 'human-handsup'        },  // winner arms-raised
-  { kind: 'icon', name: 'trophy-outline'       },  // trophy
-  { kind: 'logo'                                },  // P³ — final reveal
+  ...PADEL_IMAGES.map((src) => ({ kind: 'image' as const, src })),
+  { kind: 'logo' },
 ];
 
-// ─── Timing ───────────────────────────────────────────────────────────────────
+// ─── Acceleration curve ───────────────────────────────────────────────────────
+//
+// HOLD_MS[i]  — how long icon i is visible before the next slide starts
+// SLIDE_MS[i] — duration of the slide that follows hold i
+//
+// Index 0..5 = the 6 padel images; index 6 = arrival on P³ (no hold/slide after)
 
-const HOLD_MS      = 480;   // pause on each icon
-const SLIDE_MS     = 260;   // slide-in duration (non-final icons)
-const SPRING_DELAY = 60;    // tiny delay before final spring so the reel "stops"
-const TAGLINE_MS   = 380;
-const LINGER_MS    = 800;
-const FADE_MS      = 460;
+const HOLD_MS  = [900, 620, 400, 240, 130, 65];   // slowing: 900 → 65
+const SLIDE_MS = [300, 230, 170, 115, 78,  52];   // slide speeds up with each step
+
+// After landing on P³:
+const TAGLINE_DELAY_MS = 220;
+const TAGLINE_MS       = 380;
+const LINGER_MS        = 900;
+const FADE_MS          = 460;
 
 // ─── Card dimensions ──────────────────────────────────────────────────────────
 
-const CARD_SIZE   = 136;
-const CARD_RADIUS = Math.round(CARD_SIZE * 0.28);  // ≈38 px — same rounding as HeaderLogo
-const ICON_SIZE   = 68;
+const CARD_SIZE   = 140;
+const CARD_RADIUS = Math.round(CARD_SIZE * 0.26);   // ~36 px
 
-// ─── P³ logo (matches HeaderLogo layout) ─────────────────────────────────────
+// ─── P³ logo ──────────────────────────────────────────────────────────────────
 
 function PadLogo() {
-  const pSize   = Math.round(CARD_SIZE * 0.60);   // ~82 px
-  const supSize = Math.round(pSize * 0.46);        // ~38 px
+  const pSize   = Math.round(CARD_SIZE * 0.60);
+  const supSize = Math.round(pSize * 0.46);
   return (
     <View style={styles.glyphRow}>
       <Text style={[styles.glyphP, { fontSize: pSize, lineHeight: pSize * 1.05 }]} allowFontScaling={false}>
@@ -68,56 +81,25 @@ function PadLogo() {
   );
 }
 
-// ─── Single icon renderer ─────────────────────────────────────────────────────
+// ─── Single reel slot ─────────────────────────────────────────────────────────
 
-function ReelIcon({ icon }: { icon: IconDef }) {
-  if (icon.kind === 'logo') return <PadLogo />;
-  return (
-    <MaterialCommunityIcons
-      name={icon.name as React.ComponentProps<typeof MaterialCommunityIcons>['name']}
-      size={ICON_SIZE}
-      color="#F4F7FB"
-    />
-  );
-}
-
-// ─── Slot-machine reel ────────────────────────────────────────────────────────
-//
-// Two icon slots are stacked vertically inside a clipped container:
-//   ┌─────────────┐  ← overflow: hidden, height = CARD_SIZE
-//   │  CURRENT    │  ← y = 0          (visible)
-//   │  NEXT       │  ← y = CARD_SIZE  (waiting below)
-//   └─────────────┘
-//
-// Sliding translateY from 0 → -CARD_SIZE pushes current out the top
-// and brings next into view — classic slot-machine reel trick.
-
-interface ReelProps {
-  /** index currently in view */
-  current: number;
-  /** index waiting below, about to slide in */
-  next: number;
-  /** animated translate (0 → -CARD_SIZE) */
-  slideY: Animated.Value;
-}
-
-function Reel({ current, next, slideY }: ReelProps) {
-  return (
-    <Animated.View
-      style={[
-        styles.reel,
-        { transform: [{ translateY: slideY }] },
-      ]}
-    >
-      {/* Currently visible icon */}
+function ReelSlot({ icon }: { icon: IconDef }) {
+  if (icon.kind === 'logo') {
+    return (
       <View style={styles.reelSlot}>
-        <ReelIcon icon={ICONS[current]} />
+        <PadLogo />
       </View>
-      {/* Next icon, waiting one slot below */}
-      <View style={styles.reelSlot}>
-        <ReelIcon icon={ICONS[next]} />
-      </View>
-    </Animated.View>
+    );
+  }
+  return (
+    <View style={styles.reelSlot}>
+      <Image
+        source={icon.src}
+        style={styles.slotImage}
+        resizeMode="cover"
+        fadeDuration={0}
+      />
+    </View>
   );
 }
 
@@ -130,50 +112,42 @@ interface SplashAnimationProps {
 export function SplashAnimation({ onComplete }: SplashAnimationProps) {
   const insets = useSafeAreaInsets();
 
-  // Which icon is currently visible (top slot of the reel)
+  // Reel state: current = visible slot, next = slot entering from below
   const [currentIdx, setCurrentIdx] = useState(0);
-  // Which icon is waiting in the bottom slot
   const [nextIdx,    setNextIdx]    = useState(1);
 
-  // Reel position: 0 = current icon visible; -CARD_SIZE = next icon visible
-  const slideY        = useRef(new Animated.Value(0)).current;
+  const slideY         = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
 
   /**
-   * Slide to a new icon.
-   * - Sets the next slot to `toIndex`
-   * - Animates the reel up
-   * - When done: resets reel position and swaps current → toIndex
+   * Slide reel upward to bring toIndex into view.
+   * Uses SLIDE_MS[fromIndex] for timing; final icon uses a spring.
    */
   const slideTo = useCallback(
-    (toIndex: number, isFinal: boolean): Promise<void> =>
+    (fromIndex: number, toIndex: number): Promise<void> =>
       new Promise((resolve) => {
-        // Put the target icon in the waiting slot
         setNextIdx(toIndex);
-        // Small sync gap so React renders the next slot before we animate
         requestAnimationFrame(() => {
+          const isFinal = toIndex === ICONS.length - 1;
+
           if (isFinal) {
-            // Spring settle for the landing on P³
-            setTimeout(() => {
-              Animated.spring(slideY, {
-                toValue: -CARD_SIZE,
-                tension: 80,
-                friction: 9,
-                useNativeDriver: true,
-              }).start(() => {
-                // Snap: promote next → current, reset reel position silently
-                setCurrentIdx(toIndex);
-                slideY.setValue(0);
-                resolve();
-              });
-            }, SPRING_DELAY);
+            // Spring stop — slight overshoot then settle
+            Animated.spring(slideY, {
+              toValue: -CARD_SIZE,
+              tension: 70,
+              friction: 8,
+              useNativeDriver: true,
+            }).start(() => {
+              setCurrentIdx(toIndex);
+              slideY.setValue(0);
+              resolve();
+            });
           } else {
-            // Smooth ease-in-out slide for intermediate icons
             Animated.timing(slideY, {
               toValue: -CARD_SIZE,
-              duration: SLIDE_MS,
-              easing: Easing.out(Easing.cubic),
+              duration: SLIDE_MS[fromIndex] ?? 60,
+              easing: Easing.out(Easing.quad),
               useNativeDriver: true,
             }).start(() => {
               setCurrentIdx(toIndex);
@@ -194,16 +168,17 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
     const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
     async function run() {
+      // Cycle through icons 1 → last (P³) with acceleration
       for (let i = 1; i < ICONS.length; i++) {
         if (cancelled) return;
-        await delay(HOLD_MS);
+        await delay(HOLD_MS[i - 1] ?? 65);        // hold on icon i-1
         if (cancelled) return;
-        await slideTo(i, i === ICONS.length - 1);
+        await slideTo(i - 1, i);                  // slide to icon i
       }
 
-      // Hold on P³, then fade tagline in
+      // Landed on P³ — brief pause, then tagline
       if (cancelled) return;
-      await delay(HOLD_MS * 0.7);
+      await delay(TAGLINE_DELAY_MS);
 
       await new Promise<void>((r) =>
         Animated.timing(taglineOpacity, {
@@ -216,7 +191,7 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
       await delay(LINGER_MS);
       if (cancelled) return;
 
-      // Fade out the entire overlay
+      // Fade out overlay
       await new Promise<void>((r) =>
         Animated.timing(overlayOpacity, {
           toValue: 0,
@@ -237,19 +212,21 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
       style={[styles.overlay, { opacity: overlayOpacity }]}
       pointerEvents="none"
     >
-      {/* ── Static card with clipped reel ── */}
+      {/* ── Card ── */}
       <View style={styles.cardShadow}>
-        <LinearGradient
-          colors={['#1a3050', '#0b1825']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          {/* overflow:hidden clips the reel to exactly one icon height */}
+        <View style={styles.card}>
+          {/* Window clips the reel to exactly one slot height */}
           <View style={styles.window}>
-            <Reel current={currentIdx} next={nextIdx} slideY={slideY} />
+            <Animated.View
+              style={[styles.reel, { transform: [{ translateY: slideY }] }]}
+            >
+              {/* Current slot (in view) */}
+              <ReelSlot icon={ICONS[currentIdx]} />
+              {/* Next slot (entering from below) */}
+              <ReelSlot icon={ICONS[nextIdx]} />
+            </Animated.View>
           </View>
-        </LinearGradient>
+        </View>
       </View>
 
       {/* ── Tagline ── */}
@@ -280,45 +257,50 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 
-  // Outer wrapper carries the shadow (shadow can't sit on overflow:hidden views)
+  // Shadow wrapper (shadow can't coexist with overflow:hidden)
   cardShadow: {
     width: CARD_SIZE,
     height: CARD_SIZE,
     borderRadius: CARD_RADIUS,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.55,
+    shadowRadius: 28,
+    elevation: 16,
   },
   card: {
     width: CARD_SIZE,
     height: CARD_SIZE,
     borderRadius: CARD_RADIUS,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',      // ← clips the sliding reel
+    overflow: 'hidden',            // clips the reel
+    backgroundColor: '#0b1825',   // matches image dark bg — no flash between frames
   },
 
-  // Clipping window — exactly one slot tall, centred inside the card
+  // Clipping window — exactly one slot tall
   window: {
     width: CARD_SIZE,
     height: CARD_SIZE,
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
   },
 
-  // The reel strip: two icon slots stacked, total height = CARD_SIZE × 2
+  // Animated strip: two slots stacked (total = CARD_SIZE × 2)
   reel: {
     width: CARD_SIZE,
-    alignItems: 'center',
   },
+
+  // One icon slot
   reelSlot: {
     width: CARD_SIZE,
     height: CARD_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
+  // PNG fills the slot; cover crops the white border out of each image
+  slotImage: {
+    width: CARD_SIZE,
+    height: CARD_SIZE,
   },
 
   // P³ glyph — matches HeaderLogo
@@ -337,7 +319,6 @@ const styles = StyleSheet.create({
     color: '#19C3B0',
     fontFamily: 'Inter_700Bold',
     alignSelf: 'flex-start',
-    letterSpacing: 0,
     marginBottom: 2,
   },
 
