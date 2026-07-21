@@ -14,7 +14,7 @@ import {
   walkinsTable,
   registrationsTable,
 } from "@workspace/db/schema";
-import { eq, and, isNotNull, ne } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, ne } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router = Router();
@@ -290,6 +290,28 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
   await db.update(americanoSessionsTable).set({ currentRound: nextRoundNumber }).where(eq(americanoSessionsTable.id, session.id));
 
   res.status(201).json(await getFullState(session.id));
+});
+
+// ── PUT /admin/events/:eventId/americano/end — end session early ──────────────
+
+router.put("/admin/events/:eventId/americano/end", requireAdmin, async (req, res) => {
+  const session = await getSession(req.params.eventId);
+  if (!session) { res.status(404).json({ error: "No session" }); return; }
+  if (session.status === "complete") { res.status(400).json({ error: "Session already complete" }); return; }
+
+  // Mark any in-progress round as ended
+  await db
+    .update(americanoRoundsTable)
+    .set({ endedAt: new Date() })
+    .where(and(eq(americanoRoundsTable.sessionId, session.id), isNull(americanoRoundsTable.endedAt)));
+
+  // Mark session complete
+  await db
+    .update(americanoSessionsTable)
+    .set({ status: "complete" })
+    .where(eq(americanoSessionsTable.id, session.id));
+
+  res.json(await getFullState(session.id));
 });
 
 // ── POST /admin/americano/courts/:courtId/score — one-team entry ──────────────

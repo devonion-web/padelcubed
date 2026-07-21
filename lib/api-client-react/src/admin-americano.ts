@@ -135,6 +135,15 @@ export function useEnterScore(token: string) {
   });
 }
 
+export function useEndSession(eventId: string, token: string) {
+  const qc = useQueryClient();
+  return useMutation<AmericanoState, Error>({
+    mutationFn: () =>
+      apiFetch<AmericanoState>(`/api/admin/events/${eventId}/americano/end`, token, { method: 'PUT' }),
+    onSuccess: (data) => qc.setQueryData(getAmericanoQueryKey(eventId), data),
+  });
+}
+
 export function useLeaderboard(eventId: string, token: string) {
   return useQuery<{ session: AmericanoSession; players: AmericanoPlayer[] }>({
     queryKey: ['leaderboard', eventId],

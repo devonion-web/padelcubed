@@ -28,6 +28,7 @@ import {
   useStartRound,
   useNextRound,
   useEnterScore,
+  useEndSession,
   getAmericanoQueryKey,
 } from '@workspace/api-client-react';
 import type { AmericanoPlayer, AmericanoCourt, AmericanoState, GameFormat } from '@workspace/api-client-react';
@@ -296,6 +297,7 @@ export default function FormatManagerScreen() {
   const { data: state, isLoading, error } = useAmericanoState(id ?? '', token);
   const startRound = useStartRound(token);
   const nextRound = useNextRound(id ?? '', token);
+  const endSession = useEndSession(id ?? '', token);
 
   const session = state?.session;
   const currentRound = state?.currentRound ?? null;
@@ -329,6 +331,28 @@ export default function FormatManagerScreen() {
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
+  };
+
+  const handleEndSession = () => {
+    Alert.alert(
+      'End Session Early?',
+      'This will close the current round and finalise the standings. You can still view results afterwards.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'End Session',
+          style: 'destructive',
+          onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            try {
+              await endSession.mutateAsync();
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // ── Loading / error states ──
@@ -483,31 +507,53 @@ export default function FormatManagerScreen() {
               )}
             </TouchableOpacity>
           ) : allScored ? (
-            /* NEXT ROUND */
-            <TouchableOpacity
-              onPress={handleNextRound}
-              disabled={nextRound.isPending}
-              activeOpacity={0.85}
-              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-            >
-              {nextRound.isPending ? (
-                <ActivityIndicator color={colors.primaryForeground} />
-              ) : (
-                <>
-                  <Feather name="skip-forward" size={20} color={colors.primaryForeground} />
-                  <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>
-                    Next Round
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+            /* ALL SCORED — Next Round + End Session row */
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                onPress={handleNextRound}
+                disabled={nextRound.isPending}
+                activeOpacity={0.85}
+                style={[styles.primaryBtn, { backgroundColor: colors.primary, flex: 1 }]}
+              >
+                {nextRound.isPending ? (
+                  <ActivityIndicator color={colors.primaryForeground} />
+                ) : (
+                  <>
+                    <Feather name="skip-forward" size={20} color={colors.primaryForeground} />
+                    <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>
+                      Next Round
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleEndSession}
+                disabled={endSession.isPending}
+                activeOpacity={0.85}
+                style={[styles.endBtn, { borderColor: '#ef4444' }]}
+              >
+                <Feather name="flag" size={17} color="#ef4444" />
+                <Text style={[styles.endBtnText, { color: '#ef4444' }]}>End</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
-            /* WAITING FOR SCORES — show how many left */
-            <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <ActivityIndicator size="small" color={colors.mutedForeground} />
-              <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
-                {courts.filter((c) => c.teamAScore === null).length} court{courts.filter((c) => c.teamAScore === null).length !== 1 ? 's' : ''} still need scores
-              </Text>
+            /* WAITING FOR SCORES — pending count + End Session */
+            <View style={styles.actionRow}>
+              <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}>
+                <ActivityIndicator size="small" color={colors.mutedForeground} />
+                <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
+                  {courts.filter((c) => c.teamAScore === null).length} court{courts.filter((c) => c.teamAScore === null).length !== 1 ? 's' : ''} still need scores
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleEndSession}
+                disabled={endSession.isPending}
+                activeOpacity={0.85}
+                style={[styles.endBtn, { borderColor: '#ef4444' }]}
+              >
+                <Feather name="flag" size={17} color="#ef4444" />
+                <Text style={[styles.endBtnText, { color: '#ef4444' }]}>End</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -581,13 +627,19 @@ const styles = StyleSheet.create({
   lbName: { fontFamily: 'Inter_500Medium', fontSize: 14, flex: 1 },
   lbPts: { fontFamily: 'Inter_700Bold', fontSize: 14 },
 
-  actionBar: { position: 'absolute', left: 16, right: 16 },
+  actionBar: { position: 'absolute', left: 16, right: 16, gap: 8 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   primaryBtn: {
     height: 58, borderRadius: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 8,
   },
   primaryBtnText: { fontFamily: 'Inter_700Bold', fontSize: 17 },
-  waitingBar: { height: 54, borderRadius: 14, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  waitingBar: { height: 58, borderRadius: 16, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   waitingText: { fontFamily: 'Inter_500Medium', fontSize: 14 },
+  endBtn: {
+    height: 58, width: 72, borderRadius: 16, borderWidth: 1.5,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+  },
+  endBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 });
