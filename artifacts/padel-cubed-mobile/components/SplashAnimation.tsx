@@ -189,7 +189,8 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
       style={[styles.overlay, { opacity: overlayOpacity, paddingBottom: insets.bottom }]}
       pointerEvents="none"
     >
-      {/* ── Logo + tagline grouped so the pair is centred as one unit ── */}
+      {/* ── Logo + tagline — group sizes to slot window only; tagline is
+           absolutely positioned so it never shifts the centred logo ── */}
       <View style={styles.group}>
         {/* Slot window — clips the reel to one icon height */}
         <View style={styles.window}>
@@ -201,7 +202,7 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
           </Animated.View>
         </View>
 
-        {/* Tagline */}
+        {/* Tagline — floats below the slot without affecting group height */}
         <Animated.View style={[styles.taglineWrap, { opacity: taglineOpacity }]}>
           <Text style={styles.tagline}>
             <Text style={styles.taglineAccent}>People</Text>
@@ -227,10 +228,10 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 
-  // Logo + tagline sit together as one centred unit
+  // Sizes to the slot window only — tagline is absolute so it never
+  // shifts the group's centre during the cycling animation
   group: {
     alignItems: 'center',
-    gap: 8,
   },
 
   // Clips the reel to exactly one slot height
@@ -277,7 +278,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 
-  taglineWrap: { alignItems: 'center' },
+  taglineWrap: {
+    position: 'absolute',
+    top: SLOT_SIZE + 8,
+    alignItems: 'center',
+  },
   tagline: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
