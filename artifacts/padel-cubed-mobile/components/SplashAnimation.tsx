@@ -88,7 +88,9 @@ function PadLogo() {
 
 function ReelSlot({ icon }: { icon: IconDef }) {
   return (
-    <View style={styles.reelSlot}>
+    // Logo slot: flush to the bottom so the glyph sits right above the tagline.
+    // Image slots: centred so silhouettes fill the window evenly.
+    <View style={[styles.reelSlot, icon.kind === 'logo' && styles.reelSlotLogo]}>
       {icon.kind === 'logo' ? (
         <PadLogo />
       ) : (
@@ -266,6 +268,13 @@ const styles = StyleSheet.create({
     height: SLOT_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Logo frame only — pushes P³ glyph to the slot bottom so it sits
+  // flush against the tagline with no dead space between them.
+  reelSlotLogo: {
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
   },
 
   // Transparent silhouette — contain so the full figure is visible
