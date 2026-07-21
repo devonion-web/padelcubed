@@ -20,14 +20,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Asset map ────────────────────────────────────────────────────────────────
+// These icons fill the rounded square edge-to-edge — no white border.
 
 const PADEL_IMAGES = [
-  require('../assets/splash/padel1.png'),
-  require('../assets/splash/padel2.png'),
-  require('../assets/splash/padel3.png'),
-  require('../assets/splash/padel4.png'),
-  require('../assets/splash/padel5.png'),
-  require('../assets/splash/padel6.png'),
+  require('../assets/splash/icon1.png'),
+  require('../assets/splash/icon2.png'),
+  require('../assets/splash/icon3.png'),
+  require('../assets/splash/icon4.png'),
 ] as const;
 
 // ─── Icon sequence ────────────────────────────────────────────────────────────
@@ -45,13 +44,13 @@ const ICONS: IconDef[] = [
 
 // ─── Acceleration curve ───────────────────────────────────────────────────────
 //
-// HOLD_MS[i]  — how long icon i is visible before the next slide starts
-// SLIDE_MS[i] — duration of the slide that follows hold i
+// HOLD_MS[i]  — how long icon i is shown before sliding away
+// SLIDE_MS[i] — duration of that slide (gets faster each step)
 //
-// Index 0..5 = the 6 padel images; index 6 = arrival on P³ (no hold/slide after)
+// 4 padel icons → P³ spring land
 
-const HOLD_MS  = [900, 620, 400, 240, 130, 65];   // slowing: 900 → 65
-const SLIDE_MS = [300, 230, 170, 115, 78,  52];   // slide speeds up with each step
+const HOLD_MS  = [900, 520, 260, 110];   // slow → fast across 4 icons
+const SLIDE_MS = [280, 190, 120,  65];   // slide duration accelerates too
 
 // After landing on P³:
 const TAGLINE_DELAY_MS = 220;
@@ -297,13 +296,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // Scale image up so the white border around the dark rounded square is
-  // fully cropped by the slot's overflow:hidden. The dark square in each PNG
-  // occupies ~80% of the image; scaling to 1.3× ensures the white surround
-  // is clipped on all four sides, leaving only the silhouette on dark bg.
+  // Icons fill the rounded square edge-to-edge — display 1:1, no cropping needed.
   slotImage: {
-    width: CARD_SIZE * 1.3,
-    height: CARD_SIZE * 1.3,
+    width: CARD_SIZE,
+    height: CARD_SIZE,
   },
 
   // P³ glyph — matches HeaderLogo
