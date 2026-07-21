@@ -189,26 +189,29 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
       style={[styles.overlay, { opacity: overlayOpacity }]}
       pointerEvents="none"
     >
-      {/* ── Slot window — clips the reel to one icon height ── */}
-      <View style={styles.window}>
-        <Animated.View
-          style={[styles.reel, { transform: [{ translateY: slideY }] }]}
-        >
-          <ReelSlot icon={ICONS[currentIdx]} />
-          <ReelSlot icon={ICONS[nextIdx]} />
+      {/* ── Logo + tagline grouped so the pair is centred as one unit ── */}
+      <View style={styles.group}>
+        {/* Slot window — clips the reel to one icon height */}
+        <View style={styles.window}>
+          <Animated.View
+            style={[styles.reel, { transform: [{ translateY: slideY }] }]}
+          >
+            <ReelSlot icon={ICONS[currentIdx]} />
+            <ReelSlot icon={ICONS[nextIdx]} />
+          </Animated.View>
+        </View>
+
+        {/* Tagline */}
+        <Animated.View style={[styles.taglineWrap, { opacity: taglineOpacity }]}>
+          <Text style={styles.tagline}>
+            <Text style={styles.taglineAccent}>People</Text>
+            <Text style={styles.taglineDot}> · </Text>
+            <Text style={styles.taglineAccent}>Padel</Text>
+            <Text style={styles.taglineDot}> · </Text>
+            <Text style={styles.taglineAccent}>Places</Text>
+          </Text>
         </Animated.View>
       </View>
-
-      {/* ── Tagline ── */}
-      <Animated.View style={[styles.taglineWrap, { opacity: taglineOpacity }]}>
-        <Text style={styles.tagline}>
-          <Text style={styles.taglineAccent}>People</Text>
-          <Text style={styles.taglineDot}> · </Text>
-          <Text style={styles.taglineAccent}>Padel</Text>
-          <Text style={styles.taglineDot}> · </Text>
-          <Text style={styles.taglineAccent}>Places</Text>
-        </Text>
-      </Animated.View>
 
       <View style={{ height: insets.bottom }} />
     </Animated.View>
@@ -223,8 +226,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#4169E1',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 32,
     zIndex: 999,
+  },
+
+  // Logo + tagline sit together as one centred unit
+  group: {
+    alignItems: 'center',
+    gap: 16,
   },
 
   // Clips the reel to exactly one slot height
