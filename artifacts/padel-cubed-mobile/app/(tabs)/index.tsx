@@ -4,10 +4,12 @@ import {
   Platform,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { EventCard } from '@/components/EventCard';
 import { HeaderLogo } from '@/components/HeaderLogo';
@@ -36,7 +38,16 @@ export default function EventsScreen() {
           },
         ]}
       >
-        <HeaderLogo size="md" />
+        <TouchableOpacity
+          onLongPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            router.push('/(tabs)/admin-tab' as never);
+          }}
+          delayLongPress={800}
+          activeOpacity={1}
+        >
+          <HeaderLogo size="md" />
+        </TouchableOpacity>
         <View
           style={[
             styles.seasonBadge,

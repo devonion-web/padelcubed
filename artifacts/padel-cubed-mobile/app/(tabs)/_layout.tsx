@@ -27,10 +27,7 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} />
         <Label>Profile</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="admin-tab">
-        <Icon sf={{ default: 'shield', selected: 'shield.fill' }} />
-        <Label>Admin</Label>
-      </NativeTabs.Trigger>
+      {/* Admin tab intentionally omitted — accessed via long-press on logo */}
     </NativeTabs>
   );
 }
