@@ -297,10 +297,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // PNG fills the slot; cover crops the white border out of each image
+  // Scale image up so the white border around the dark rounded square is
+  // fully cropped by the slot's overflow:hidden. The dark square in each PNG
+  // occupies ~80% of the image; scaling to 1.3× ensures the white surround
+  // is clipped on all four sides, leaving only the silhouette on dark bg.
   slotImage: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
+    width: CARD_SIZE * 1.3,
+    height: CARD_SIZE * 1.3,
   },
 
   // P³ glyph — matches HeaderLogo
