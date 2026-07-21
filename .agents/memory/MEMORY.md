@@ -3,3 +3,4 @@
 - [Admin auth system](admin-auth.md) — JWT multi-user auth; ADMIN_PASSWORD is bootstrap-only master key; first user seeded.
 - [Americano engine](americano-engine.md) — DB tables, API routes, mobile screens for on-site event management.
 - [Admin easter egg](admin-easter-egg.md) — 5-tap logo trigger navigates to /admin stack; tab routing pitfalls; Pressable vs TouchableOpacity on web.
+- [Admin liveness gate](admin-liveness-gate.md) — never gate admin tools on liveStatus; redesigned event screen shows all tools unconditionally; test event refresh SQL included.
