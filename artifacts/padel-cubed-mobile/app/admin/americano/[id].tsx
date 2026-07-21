@@ -1,10 +1,6 @@
 /**
- * Americano event manager.
- * - Start a session (pulls all checked-in players)
- * - Generate rounds with court assignments
- * - 15-minute countdown timer
- * - Enter scores per court
- * - See live standings inline
+ * Format Manager — handles all 4 formats (Americano, Mexicano, Round Robin, Knockout).
+ * Shows court draw, server-synced countdown timer, one-team score entry, leaderboard.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
@@ -17,7 +13,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Vibration,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -25,159 +20,244 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useAdmin } from '@/context/AdminContext';
 import {
   useAmericanoState,
-  useStartAmericano,
+  useStartRound,
   useNextRound,
   useEnterScore,
+  getAmericanoQueryKey,
 } from '@workspace/api-client-react';
-import type { AmericanoPlayer, AmericanoCourt, AmericanoState } from '@workspace/api-client-react';
+import type { AmericanoPlayer, AmericanoCourt, AmericanoState, GameFormat } from '@workspace/api-client-react';
 import { EVENTS } from '@/constants/events';
 
-const ROUND_SECONDS = 15 * 60; // 15 minutes
+const POINTS_PER_COURT = 32;
 
-// ── Timer ─────────────────────────────────────────────────────────────────────
-function useCountdown(running: boolean, onExpire: () => void) {
-  const [secs, setSecs] = useState(ROUND_SECONDS);
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
+const FORMAT_LABELS: Record<GameFormat, string> = {
+  americano: 'Americano',
+  mexicano: 'Mexicano',
+  round_robin: 'Round Robin',
+  knockout: 'Knockout',
+};
 
-  const reset = useCallback(() => setSecs(ROUND_SECONDS), []);
+// ── Server-synced countdown timer ─────────────────────────────────────────────
+
+function useServerTimer(startedAt: string | null, durationMinutes: number) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
-    if (!running) { if (ref.current) clearInterval(ref.current); return; }
-    ref.current = setInterval(() => {
-      setSecs((s) => {
-        if (s <= 1) { clearInterval(ref.current!); onExpire(); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => { if (ref.current) clearInterval(ref.current); };
-  }, [running, onExpire]);
+    if (!startedAt) { setRemaining(null); setExpired(false); return; }
+    const durationMs = durationMinutes * 60_000;
+    const tick = () => {
+      const elapsed = Date.now() - new Date(startedAt).getTime();
+      const rem = Math.max(0, durationMs - elapsed);
+      setRemaining(Math.floor(rem / 1000));
+      setExpired(rem <= 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [startedAt, durationMinutes]);
 
-  const mm = String(Math.floor(secs / 60)).padStart(2, '0');
-  const ss = String(secs % 60).padStart(2, '0');
-  return { display: `${mm}:${ss}`, secs, reset };
+  if (remaining === null) return { display: null, expired: false, progress: 0 };
+  const total = durationMinutes * 60;
+  const progress = Math.max(0, (total - remaining) / total);
+  const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+  const ss = String(remaining % 60).padStart(2, '0');
+  return { display: `${mm}:${ss}`, expired, progress };
+}
+
+// ── Timer ring ─────────────────────────────────────────────────────────────────
+
+function TimerRing({
+  display,
+  expired,
+  progress,
+}: {
+  display: string | null;
+  expired: boolean;
+  progress: number;
+}) {
+  const colors = useColors();
+  const SIZE = 110;
+  const STROKE = 8;
+  const R = (SIZE - STROKE) / 2;
+  const CIRC = 2 * Math.PI * R;
+  const dash = CIRC * (1 - progress);
+  const color = expired ? '#ef4444' : progress > 0.75 ? '#f59e0b' : colors.primary;
+
+  if (!display) return null;
+
+  return (
+    <View style={styles.timerRingWrap}>
+      {Platform.OS !== 'web' ? (
+        <View style={[styles.timerCircleFallback, { width: SIZE, height: SIZE, borderColor: color }]}>
+          <Text style={[styles.timerText, { color }]}>{display}</Text>
+        </View>
+      ) : (
+        <View style={{ position: 'relative', width: SIZE, height: SIZE }}>
+          <Text style={[styles.timerText, { color, position: 'absolute', top: SIZE / 2 - 14, left: 0, right: 0, textAlign: 'center' }]}>
+            {display}
+          </Text>
+        </View>
+      )}
+      {expired && <Text style={[styles.timerExpired, { color: '#ef4444' }]}>TIME'S UP</Text>}
+    </View>
+  );
 }
 
 // ── Court card ────────────────────────────────────────────────────────────────
+
 function CourtCard({
   court,
   players,
   eventId,
   token,
+  roundStarted,
 }: {
   court: AmericanoCourt;
   players: AmericanoPlayer[];
   eventId: string;
   token: string;
+  roundStarted: boolean;
 }) {
   const colors = useColors();
-  const [a, setA] = useState(court.teamAScore !== null ? String(court.teamAScore) : '');
-  const [b, setB] = useState(court.teamBScore !== null ? String(court.teamBScore) : '');
-  const [saving, setSaving] = useState(false);
-  const bRef = useRef<TextInput>(null);
-  const scoreMutation = useEnterScore(token);
+  const enterScore = useEnterScore(token);
+  const qc = useQueryClient();
 
-  const byId = (id: number) => players.find((p) => p.id === id)?.name ?? '?';
-  const scored = court.teamAScore !== null && court.teamBScore !== null;
+  const [scoreA, setScoreA] = useState(
+    court.teamAScore !== null ? String(court.teamAScore) : ''
+  );
+  const bRef = useRef<TextInput>(null);
+
+  // Keep field in sync when parent refetches
+  useEffect(() => {
+    if (court.teamAScore !== null) setScoreA(String(court.teamAScore));
+  }, [court.teamAScore]);
+
+  const pName = (id: number) => players.find((p) => p.id === id)?.name ?? `P${id}`;
+  const isScored = court.teamAScore !== null;
+  const teamBScore = scoreA !== '' ? POINTS_PER_COURT - Number(scoreA) : null;
 
   const handleSave = async () => {
-    const aNum = parseInt(a, 10);
-    const bNum = parseInt(b, 10);
-    if (isNaN(aNum) || isNaN(bNum) || aNum < 0 || bNum < 0) {
-      Alert.alert('Invalid scores', 'Enter valid scores for both teams');
+    const a = Number(scoreA);
+    if (isNaN(a) || a < 0 || a > POINTS_PER_COURT) {
+      Alert.alert('Invalid score', `Enter a value between 0 and ${POINTS_PER_COURT}`);
       return;
     }
-    setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      await scoreMutation.mutateAsync({ courtId: court.id, teamAScore: aNum, teamBScore: bNum, eventId });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: unknown) {
-      Alert.alert('Error', (err as Error).message);
-    } finally {
-      setSaving(false);
+      await enterScore.mutateAsync({ courtId: court.id, teamAScore: a, eventId });
+      qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
     }
   };
 
+  const borderColor = isScored
+    ? `${colors.primary}55`
+    : roundStarted
+    ? colors.border
+    : `${colors.border}66`;
+
   return (
-    <View style={[styles.courtCard, { backgroundColor: colors.card, borderColor: scored ? `${colors.primary}55` : colors.border, borderRadius: colors.radius }]}>
-      {/* Court label */}
-      <View style={[styles.courtLabel, { backgroundColor: scored ? colors.primary : colors.navy }]}>
-        <Text style={styles.courtLabelText}>Court {court.courtNumber}</Text>
-        {scored && <Feather name="check" size={12} color="#fff" />}
+    <View style={[styles.courtCard, { backgroundColor: colors.card, borderColor, borderRadius: colors.radius }]}>
+      {/* Court header */}
+      <View style={styles.courtHeader}>
+        <View style={[styles.courtBadge, { backgroundColor: `${colors.primary}22` }]}>
+          <Text style={[styles.courtBadgeText, { color: colors.primary }]}>Court {court.courtNumber}</Text>
+        </View>
+        {isScored && (
+          <View style={[styles.scoredBadge, { backgroundColor: '#22c55e22' }]}>
+            <Feather name="check" size={11} color="#22c55e" />
+            <Text style={[styles.scoredBadgeText, { color: '#22c55e' }]}>Scored</Text>
+          </View>
+        )}
       </View>
 
-      {/* Teams */}
-      <View style={styles.teamsRow}>
-        {/* Team A */}
-        <View style={styles.teamCol}>
-          <Text style={[styles.teamHeader, { color: colors.primary }]}>Team A</Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>{byId(court.player1Id)}</Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>{byId(court.player2Id)}</Text>
+      {/* Team A */}
+      <View style={styles.teamRow}>
+        <View style={[styles.teamABar, { backgroundColor: colors.primary }]} />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.teamLabel, { color: colors.mutedForeground }]}>Team A</Text>
+          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+            {pName(court.player1Id)}
+          </Text>
+          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+            {pName(court.player2Id)}
+          </Text>
         </View>
+        {/* Score input for Team A */}
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TextInput
+            value={scoreA}
+            onChangeText={(v) => setScoreA(v.replace(/[^0-9]/g, ''))}
+            onSubmitEditing={handleSave}
+            keyboardType="number-pad"
+            maxLength={2}
+            placeholder="—"
+            placeholderTextColor={colors.mutedForeground}
+            editable={roundStarted}
+            style={[
+              styles.scoreInput,
+              {
+                color: colors.foreground,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+                opacity: roundStarted ? 1 : 0.5,
+              },
+            ]}
+          />
+        </KeyboardAvoidingView>
+      </View>
 
-        {/* VS + scores */}
-        <View style={styles.scoreCol}>
-          <Text style={[styles.vs, { color: colors.mutedForeground }]}>vs</Text>
-          {scored ? (
-            <Text style={[styles.scoreFinal, { color: colors.foreground }]}>
-              {court.teamAScore} — {court.teamBScore}
-            </Text>
-          ) : (
-            <View style={styles.scoreInputs}>
-              <TextInput
-                style={[styles.scoreInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
-                value={a}
-                onChangeText={setA}
-                keyboardType="number-pad"
-                placeholder="—"
-                placeholderTextColor={colors.mutedForeground}
-                returnKeyType="next"
-                onSubmitEditing={() => bRef.current?.focus()}
-                maxLength={2}
-              />
-              <Text style={[styles.scoreSep, { color: colors.mutedForeground }]}>–</Text>
-              <TextInput
-                ref={bRef}
-                style={[styles.scoreInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
-                value={b}
-                onChangeText={setB}
-                keyboardType="number-pad"
-                placeholder="—"
-                placeholderTextColor={colors.mutedForeground}
-                returnKeyType="done"
-                onSubmitEditing={handleSave}
-                maxLength={2}
-              />
-            </View>
-          )}
+      {/* Divider with auto-calc */}
+      <View style={[styles.divider, { backgroundColor: colors.border }]}>
+        <Text style={[styles.vsText, { color: colors.mutedForeground, backgroundColor: colors.card }]}>
+          {teamBScore !== null ? `= ${teamBScore}` : 'vs'}
+        </Text>
+      </View>
+
+      {/* Team B */}
+      <View style={styles.teamRow}>
+        <View style={[styles.teamBBar, { backgroundColor: '#6366f1' }]} />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.teamLabel, { color: colors.mutedForeground }]}>Team B</Text>
+          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+            {pName(court.player3Id)}
+          </Text>
+          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+            {pName(court.player4Id)}
+          </Text>
         </View>
-
-        {/* Team B */}
-        <View style={[styles.teamCol, { alignItems: 'flex-end' }]}>
-          <Text style={[styles.teamHeader, { color: colors.mutedForeground }]}>Team B</Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>{byId(court.player3Id)}</Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>{byId(court.player4Id)}</Text>
+        {/* Auto-calculated Team B score */}
+        <View style={[styles.scoreDisplay, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <Text style={[styles.scoreDisplayText, { color: teamBScore !== null ? '#6366f1' : colors.mutedForeground }]}>
+            {teamBScore !== null ? teamBScore : '—'}
+          </Text>
         </View>
       </View>
 
       {/* Save button */}
-      {!scored && (
+      {roundStarted && scoreA !== '' && (
         <TouchableOpacity
           onPress={handleSave}
-          disabled={saving || !a || !b}
+          disabled={enterScore.isPending}
           activeOpacity={0.8}
-          style={[styles.saveBtn, { backgroundColor: (a && b) ? colors.primary : colors.border, borderRadius: colors.radius }]}
+          style={[styles.saveBtn, { backgroundColor: `${colors.primary}22` }]}
         >
-          {saving ? (
-            <ActivityIndicator size="small" color="#fff" />
+          {enterScore.isPending ? (
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text style={[styles.saveBtnText, { color: (a && b) ? colors.primaryForeground : colors.mutedForeground }]}>
-              Save scores
-            </Text>
+            <>
+              <Feather name={isScored ? 'edit-2' : 'check'} size={14} color={colors.primary} />
+              <Text style={[styles.saveBtnText, { color: colors.primary }]}>
+                {isScored ? 'Update Score' : 'Save Score'}
+              </Text>
+            </>
           )}
         </TouchableOpacity>
       )}
@@ -185,73 +265,123 @@ function CourtCard({
   );
 }
 
+// ── Mini leaderboard ──────────────────────────────────────────────────────────
+
+function MiniLeaderboard({ players }: { players: AmericanoPlayer[] }) {
+  const colors = useColors();
+  const top = players.filter((p) => !p.eliminated).slice(0, 5);
+  if (top.length === 0) return null;
+  return (
+    <View style={[styles.lbContainer, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}>
+      <Text style={[styles.lbTitle, { color: colors.foreground }]}>Leaderboard</Text>
+      {top.map((p, i) => (
+        <View key={p.id} style={styles.lbRow}>
+          <Text style={[styles.lbRank, { color: i === 0 ? '#f59e0b' : colors.mutedForeground }]}>
+            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+          </Text>
+          <Text style={[styles.lbName, { color: colors.foreground }]} numberOfLines={1}>{p.name}</Text>
+          <Text style={[styles.lbPts, { color: colors.primary }]}>{p.totalPoints} pts</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ── Main screen ───────────────────────────────────────────────────────────────
-export default function AmericanoScreen() {
+
+export default function FormatManagerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { token } = useAdmin();
   const isWeb = Platform.OS === 'web';
+  const { token } = useAdmin();
+  const qc = useQueryClient();
   const event = EVENTS.find((e) => e.id === id);
 
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
+  const { data: state, isLoading, error } = useAmericanoState(id ?? '', token);
+  const startRound = useStartRound(token);
+  const nextRound = useNextRound(id ?? '', token);
 
-  const { data, isLoading, error, refetch } = useAmericanoState(id ?? '', token);
-  const startMutation = useStartAmericano(id ?? '', token);
-  const nextRoundMutation = useNextRound(id ?? '', token);
+  const session = state?.session;
+  const currentRound = state?.currentRound ?? null;
+  const courts = state?.currentCourts ?? [];
+  const players = state?.players ?? [];
 
-  const onTimerExpire = useCallback(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Vibration.vibrate([0, 500, 200, 500]);
-    Alert.alert("⏰ Time's up!", "Round complete. Enter all scores then generate the next round.");
-    setTimerRunning(false);
-  }, []);
+  const roundStarted = Boolean(currentRound?.startedAt);
+  const allScored = courts.length > 0 && courts.every((c) => c.teamAScore !== null);
+  const roundEnded = Boolean(currentRound?.endedAt);
 
-  const { display: timerDisplay, secs: timerSecs, reset: resetTimer } = useCountdown(timerRunning, onTimerExpire);
+  const timer = useServerTimer(
+    currentRound?.startedAt ?? null,
+    session?.roundDurationMinutes ?? 15
+  );
 
-  const timerColor = timerSecs <= 60 ? '#EF4444' : timerSecs <= 180 ? '#F59E0B' : colors.primary;
-
-  const handleStart = async () => {
-    setActionLoading(true);
+  const handleStartRound = async () => {
+    if (!currentRound) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     try {
-      await startMutation.mutateAsync();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: unknown) {
-      Alert.alert('Error', (err as Error).message);
-    } finally {
-      setActionLoading(false);
+      await startRound.mutateAsync({ roundId: currentRound.id, eventId: id! });
+      qc.invalidateQueries({ queryKey: getAmericanoQueryKey(id ?? '') });
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
     }
   };
 
   const handleNextRound = async () => {
-    setActionLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await nextRoundMutation.mutateAsync();
-      resetTimer();
-      setTimerRunning(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: unknown) {
-      Alert.alert('Cannot start next round', (err as Error).message);
-    } finally {
-      setActionLoading(false);
+      await nextRound.mutateAsync();
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
     }
   };
 
-  const allScored = (data?.currentCourts ?? []).every(
-    (c) => c.teamAScore !== null && c.teamBScore !== null
-  );
-  const hasRound = Boolean(data?.currentRound);
-  const hasSession = Boolean(data?.session);
+  // ── Loading / error states ──
+
+  if (isLoading) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error || !state) {
+    const noSession = (error as Error)?.message?.includes('No session') || (error as any)?.status === 404;
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Feather name={noSession ? 'sliders' : 'alert-circle'} size={36} color={noSession ? colors.primary : '#ef4444'} />
+        <Text style={[styles.errText, { color: colors.foreground, fontFamily: 'Inter_600SemiBold', fontSize: 18 }]}>
+          {noSession ? 'No format set up yet' : 'Something went wrong'}
+        </Text>
+        <Text style={[styles.errText, { color: colors.mutedForeground }]}>
+          {noSession ? 'Choose a format to generate the draw and start the event.' : (error as Error)?.message}
+        </Text>
+        {noSession ? (
+          <TouchableOpacity
+            onPress={() => router.replace(`/admin/format-setup/${id}` as never)}
+            activeOpacity={0.85}
+            style={[styles.primaryBtn, { backgroundColor: colors.primary, paddingHorizontal: 28, height: 50 }]}
+          >
+            <Feather name="sliders" size={18} color={colors.primaryForeground} />
+            <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>Set Up Format</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={() => router.back()} style={styles.backPill}>
+            <Text style={{ color: colors.primary }}>← Go back</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }
+
+  const formatLabel = FORMAT_LABELS[session?.format ?? 'americano'];
+  const activePlayers = players.filter((p) => !p.eliminated);
+  const sessionComplete = session?.status === 'complete';
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={[colors.navy, colors.background]}
@@ -259,184 +389,211 @@ export default function AmericanoScreen() {
         end={{ x: 0, y: 0.5 }}
         style={[styles.header, { paddingTop: (isWeb ? 20 : insets.top) + 12 }]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Feather name="chevron-left" size={22} color={colors.foreground} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.foreground }]}>Americano</Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          {event?.title ?? `Event ${id}`}
-          {data?.session ? `  ·  Round ${data.session.currentRound}` : ''}
+        <View style={styles.headerTop}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Feather name="chevron-left" size={22} color={colors.foreground} />
+          </TouchableOpacity>
+          <View style={[styles.formatPill, { backgroundColor: `${colors.primary}22`, borderColor: `${colors.primary}44` }]}>
+            <Text style={[styles.formatPillText, { color: colors.primary }]}>{formatLabel}</Text>
+          </View>
+          {/* Leaderboard shortcut */}
+          <TouchableOpacity
+            onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
+            style={styles.lbBtn}
+          >
+            <Feather name="award" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.roundHeading, { color: colors.foreground }]}>
+          {sessionComplete ? 'Final Results' : `Round ${session?.currentRound ?? 1}`}
+        </Text>
+        <Text style={[styles.eventSub, { color: colors.mutedForeground }]}>
+          {event?.title ?? `Event ${id}`} · {activePlayers.length} players
         </Text>
 
-        {/* Timer — shown once a session has a round */}
-        {hasRound && (
-          <View style={styles.timerRow}>
-            <Text style={[styles.timerDisplay, { color: timerColor }]}>{timerDisplay}</Text>
-            <TouchableOpacity
-              onPress={() => setTimerRunning((r) => !r)}
-              style={[styles.timerBtn, { borderColor: timerColor }]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name={timerRunning ? 'pause' : 'play'} size={16} color={timerColor} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => { resetTimer(); setTimerRunning(false); }}
-              style={[styles.timerBtn, { borderColor: colors.border }]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="refresh-cw" size={14} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Timer */}
+        <TimerRing display={timer.display} expired={timer.expired} progress={timer.progress} />
       </LinearGradient>
 
-      {isLoading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
-      ) : !hasSession && !error ? (
-        /* No session yet — setup state */
-        <View style={styles.center}>
-          <Feather name="shuffle" size={48} color={colors.primary} style={{ opacity: 0.7 }} />
-          <Text style={[styles.setupTitle, { color: colors.foreground }]}>Ready to start?</Text>
-          <Text style={[styles.setupSub, { color: colors.mutedForeground }]}>
-            This will pull all checked-in players and generate the first draw.
-          </Text>
-          <TouchableOpacity
-            onPress={handleStart}
-            disabled={actionLoading}
-            activeOpacity={0.85}
-            style={[styles.bigBtn, { backgroundColor: colors.primary, borderRadius: colors.radius, opacity: actionLoading ? 0.7 : 1 }]}
-          >
-            {actionLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Feather name="play" size={20} color={colors.primaryForeground} />
-                <Text style={[styles.bigBtnText, { color: colors.primaryForeground }]}>Start Americano</Text>
-              </>
+      {/* Court list */}
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 130 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {sessionComplete ? (
+          <MiniLeaderboard players={players} />
+        ) : (
+          <>
+            {/* Court draw notice if round not started */}
+            {!roundStarted && (
+              <View style={[styles.notice, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }]}>
+                <Feather name="info" size={14} color={colors.primary} />
+                <Text style={[styles.noticeText, { color: colors.primary }]}>
+                  Draw generated — tap Start Round to sync the timer for all devices.
+                </Text>
+              </View>
             )}
-          </TouchableOpacity>
-        </View>
-      ) : error && !hasSession ? (
-        <View style={styles.center}>
-          <TouchableOpacity onPress={handleStart} activeOpacity={0.85} style={[styles.bigBtn, { backgroundColor: colors.primary, borderRadius: colors.radius }]}>
-            <Feather name="play" size={20} color={colors.primaryForeground} />
-            <Text style={[styles.bigBtnText, { color: colors.primaryForeground }]}>Start Americano</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 120 }]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Player count */}
-          {!hasRound && (
-            <View style={[styles.infoBanner, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}>
-              <Feather name="users" size={16} color={colors.primary} />
-              <Text style={[styles.infoText, { color: colors.foreground }]}>
-                {data?.players?.length ?? 0} players in session
-              </Text>
-            </View>
-          )}
 
-          {/* Courts */}
-          {(data?.currentCourts ?? []).map((court) => (
-            <CourtCard
-              key={court.id}
-              court={court}
-              players={data?.players ?? []}
-              eventId={id ?? ''}
-              token={token}
-            />
-          ))}
-        </ScrollView>
-      )}
+            {courts.map((c) => (
+              <CourtCard
+                key={c.id}
+                court={c}
+                players={players}
+                eventId={id ?? ''}
+                token={token}
+                roundStarted={roundStarted}
+              />
+            ))}
 
-      {/* Bottom action bar */}
-      {hasSession && (
-        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16, backgroundColor: colors.background }]}>
-          {!hasRound ? (
+            {/* Knocked out players */}
+            {session?.format === 'knockout' && players.some((p) => p.eliminated) && (
+              <View style={[styles.eliminatedBox, { borderColor: colors.border }]}>
+                <Text style={[styles.eliminatedTitle, { color: colors.mutedForeground }]}>Eliminated</Text>
+                {players.filter((p) => p.eliminated).map((p) => (
+                  <Text key={p.id} style={[styles.eliminatedName, { color: colors.mutedForeground }]}>✕ {p.name}</Text>
+                ))}
+              </View>
+            )}
+
+            {/* Mini leaderboard (if any rounds played) */}
+            {players.some((p) => p.roundsPlayed > 0) && (
+              <MiniLeaderboard players={players} />
+            )}
+          </>
+        )}
+      </ScrollView>
+
+      {/* ── Bottom action bar ── */}
+      {!sessionComplete && (
+        <View style={[styles.actionBar, { bottom: insets.bottom + 16 }]}>
+          {!roundStarted ? (
+            /* START ROUND */
             <TouchableOpacity
-              onPress={handleNextRound}
-              disabled={actionLoading}
+              onPress={handleStartRound}
+              disabled={startRound.isPending}
               activeOpacity={0.85}
-              style={[styles.bigBtn, { backgroundColor: colors.primary, borderRadius: colors.radius, flex: 1, opacity: actionLoading ? 0.7 : 1 }]}
+              style={[styles.primaryBtn, { backgroundColor: '#22c55e' }]}
             >
-              {actionLoading ? <ActivityIndicator size="small" color="#fff" /> : (
+              {startRound.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
                 <>
-                  <Feather name="shuffle" size={18} color={colors.primaryForeground} />
-                  <Text style={[styles.bigBtnText, { color: colors.primaryForeground }]}>Generate Round 1</Text>
+                  <Feather name="play" size={20} color="#fff" />
+                  <Text style={[styles.primaryBtnText, { color: '#fff' }]}>Start Round {session?.currentRound}</Text>
                 </>
               )}
             </TouchableOpacity>
           ) : allScored ? (
+            /* NEXT ROUND */
             <TouchableOpacity
               onPress={handleNextRound}
-              disabled={actionLoading}
+              disabled={nextRound.isPending}
               activeOpacity={0.85}
-              style={[styles.bigBtn, { backgroundColor: colors.primary, borderRadius: colors.radius, flex: 1, opacity: actionLoading ? 0.7 : 1 }]}
+              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
             >
-              {actionLoading ? <ActivityIndicator size="small" color="#fff" /> : (
+              {nextRound.isPending ? (
+                <ActivityIndicator color={colors.primaryForeground} />
+              ) : (
                 <>
-                  <Feather name="arrow-right" size={18} color={colors.primaryForeground} />
-                  <Text style={[styles.bigBtnText, { color: colors.primaryForeground }]}>
-                    Next Round ({(data?.session?.currentRound ?? 0) + 1})
+                  <Feather name="skip-forward" size={20} color={colors.primaryForeground} />
+                  <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>
+                    Next Round
                   </Text>
                 </>
               )}
             </TouchableOpacity>
           ) : (
-            <View style={[styles.waitingBanner, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius, flex: 1 }]}>
-              <Feather name="clock" size={16} color={colors.mutedForeground} />
+            /* WAITING FOR SCORES — show how many left */
+            <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
               <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
-                Enter all scores to continue
+                {courts.filter((c) => c.teamAScore === null).length} court{courts.filter((c) => c.teamAScore === null).length !== 1 ? 's' : ''} still need scores
               </Text>
             </View>
           )}
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 32 },
+  container: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
+  errText: { fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center' },
+  backPill: { paddingHorizontal: 16, paddingVertical: 8 },
+
   header: { paddingHorizontal: 20, paddingBottom: 20, gap: 4 },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 4, alignSelf: 'flex-start' },
-  title: { fontFamily: 'Inter_700Bold', fontSize: 24, letterSpacing: -0.5 },
-  subtitle: { fontFamily: 'Inter_400Regular', fontSize: 14 },
-  timerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
-  timerDisplay: { fontFamily: 'Inter_700Bold', fontSize: 36, letterSpacing: 2, fontVariant: ['tabular-nums'] },
-  timerBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  scroll: { padding: 16, gap: 12 },
-  infoBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderWidth: 1 },
-  infoText: { fontFamily: 'Inter_500Medium', fontSize: 14 },
-  courtCard: { borderWidth: 1, padding: 16, gap: 12 },
-  courtLabel: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
-  courtLabelText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#fff' },
-  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  teamCol: { flex: 1, gap: 4 },
-  teamHeader: { fontFamily: 'Inter_700Bold', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
-  playerName: { fontFamily: 'Inter_500Medium', fontSize: 13 },
-  scoreCol: { alignItems: 'center', gap: 6, paddingHorizontal: 4 },
-  vs: { fontFamily: 'Inter_400Regular', fontSize: 12 },
-  scoreFinal: { fontFamily: 'Inter_700Bold', fontSize: 22, letterSpacing: 1 },
-  scoreInputs: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  formatPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
+  formatPillText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 0.5 },
+  lbBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  roundHeading: { fontFamily: 'Inter_700Bold', fontSize: 28, letterSpacing: -0.5 },
+  eventSub: { fontFamily: 'Inter_400Regular', fontSize: 13 },
+
+  timerRingWrap: { alignItems: 'center', marginTop: 8 },
+  timerCircleFallback: { borderWidth: 6, borderRadius: 55, width: 110, height: 110, alignItems: 'center', justifyContent: 'center' },
+  timerText: { fontFamily: 'Inter_700Bold', fontSize: 26, letterSpacing: -1 },
+  timerExpired: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1, marginTop: 4 },
+
+  scrollContent: { padding: 16, gap: 14 },
+
+  notice: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14, borderRadius: 12, borderWidth: 1 },
+  noticeText: { fontFamily: 'Inter_400Regular', fontSize: 13, flex: 1, lineHeight: 19 },
+
+  courtCard: { borderWidth: 1, padding: 16, gap: 10 },
+  courtHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  courtBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  courtBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 0.5 },
+  scoredBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  scoredBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
+
+  teamRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  teamABar: { width: 4, height: 44, borderRadius: 2 },
+  teamBBar: { width: 4, height: 44, borderRadius: 2 },
+  teamLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, letterSpacing: 0.5, marginBottom: 2 },
+  playerName: { fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 19 },
+
   scoreInput: {
-    width: 42, height: 42, borderWidth: 1, borderRadius: 8,
-    textAlign: 'center', fontFamily: 'Inter_700Bold', fontSize: 18,
+    width: 56, height: 52, borderRadius: 10, borderWidth: 1.5,
+    textAlign: 'center', fontFamily: 'Inter_700Bold', fontSize: 22,
   },
-  scoreSep: { fontFamily: 'Inter_700Bold', fontSize: 18 },
-  saveBtn: { height: 40, alignItems: 'center', justifyContent: 'center' },
+  scoreDisplay: {
+    width: 56, height: 52, borderRadius: 10, borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  scoreDisplayText: { fontFamily: 'Inter_700Bold', fontSize: 22 },
+
+  divider: { height: 1, marginHorizontal: -16, justifyContent: 'center', alignItems: 'center' },
+  vsText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, paddingHorizontal: 10 },
+
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 36, borderRadius: 10 },
   saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  setupTitle: { fontFamily: 'Inter_700Bold', fontSize: 22, textAlign: 'center' },
-  setupSub: { fontFamily: 'Inter_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  bigBtn: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24 },
-  bigBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
-  bottomBar: { position: 'absolute', bottom: 0, left: 16, right: 16, paddingTop: 12 },
-  waitingBanner: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1 },
+
+  eliminatedBox: { borderWidth: 1, borderRadius: 12, padding: 14, gap: 4 },
+  eliminatedTitle: { fontFamily: 'Inter_700Bold', fontSize: 11, letterSpacing: 1, marginBottom: 4 },
+  eliminatedName: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+
+  lbContainer: { borderWidth: 1, padding: 16, gap: 8 },
+  lbTitle: { fontFamily: 'Inter_700Bold', fontSize: 14, marginBottom: 4 },
+  lbRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  lbRank: { fontFamily: 'Inter_700Bold', fontSize: 14, width: 28 },
+  lbName: { fontFamily: 'Inter_500Medium', fontSize: 14, flex: 1 },
+  lbPts: { fontFamily: 'Inter_700Bold', fontSize: 14 },
+
+  actionBar: { position: 'absolute', left: 16, right: 16 },
+  primaryBtn: {
+    height: 58, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 8,
+  },
+  primaryBtnText: { fontFamily: 'Inter_700Bold', fontSize: 17 },
+  waitingBar: { height: 54, borderRadius: 14, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   waitingText: { fontFamily: 'Inter_500Medium', fontSize: 14 },
 });

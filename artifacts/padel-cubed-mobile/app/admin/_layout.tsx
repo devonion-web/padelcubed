@@ -6,6 +6,10 @@ export default function AdminLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="event/[id]" />
       <Stack.Screen name="scan/[id]" />
+      <Stack.Screen name="walkin/[id]" />
+      <Stack.Screen name="americano/[id]" />
+      <Stack.Screen name="leaderboard/[id]" />
+      <Stack.Screen name="format-setup/[id]" />
     </Stack>
   );
 }

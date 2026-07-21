@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
 import { americanoSessionsTable } from './americano-sessions';
 
 export const americanoPlayersTable = pgTable('americano_players', {
@@ -14,6 +14,9 @@ export const americanoPlayersTable = pgTable('americano_players', {
   walkinId: integer('walkin_id'),
   totalPoints: integer('total_points').notNull().default(0),
   roundsPlayed: integer('rounds_played').notNull().default(0),
+  wins: integer('wins').notNull().default(0),
+  /** Knockout: player is out of the tournament */
+  eliminated: boolean('eliminated').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

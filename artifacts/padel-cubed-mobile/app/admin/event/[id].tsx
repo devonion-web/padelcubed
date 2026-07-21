@@ -287,78 +287,46 @@ export default function AdminEventDetailScreen() {
       {/* ── Action toolbar ── */}
       <View style={[styles.toolbar, { bottom: insets.bottom + 16 }]}>
 
-        {/* ENDED: post-event report */}
-        {isEnded && (
+        {/* Walk-in — always visible regardless of status */}
+        <View style={styles.toolbarRow}>
+          {isLive && (
+            <TouchableOpacity
+              onPress={() => router.push(`/admin/scan/${id}` as never)}
+              activeOpacity={0.85}
+              style={[styles.fabBtn, { backgroundColor: colors.primary, flex: 1 }]}
+            >
+              <Feather name="camera" size={18} color={colors.primaryForeground} />
+              <Text style={[styles.fabText, { color: colors.primaryForeground }]}>Scan QR</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            onPress={handleFullReport}
+            onPress={() => router.push(`/admin/walkin/${id}` as never)}
             activeOpacity={0.85}
-            style={[styles.fabBtn, { backgroundColor: colors.primary, flex: 1 }]}
+            style={[styles.fabBtn, { backgroundColor: colors.navy, flex: isLive ? 1 : undefined, paddingHorizontal: isLive ? 0 : 24 }]}
           >
-            <Feather name="download" size={18} color={colors.primaryForeground} />
-            <Text style={[styles.fabText, { color: colors.primaryForeground }]}>Download Full Report</Text>
+            <Feather name="user-plus" size={18} color="#fff" />
+            <Text style={[styles.fabText, { color: '#fff' }]}>Add Walk-in</Text>
           </TouchableOpacity>
-        )}
+        </View>
 
-        {/* LIVE: operational tools */}
+        {/* LIVE: format + secondary tools */}
         {isLive && (
-          <>
-            <View style={styles.toolbarRow}>
-              <TouchableOpacity
-                onPress={() => router.push(`/admin/scan/${id}` as never)}
-                activeOpacity={0.85}
-                style={[styles.fabBtn, { backgroundColor: colors.primary, flex: 1 }]}
-              >
-                <Feather name="camera" size={18} color={colors.primaryForeground} />
-                <Text style={[styles.fabText, { color: colors.primaryForeground }]}>Scan QR</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push(`/admin/walkin/${id}` as never)}
-                activeOpacity={0.85}
-                style={[styles.fabBtn, { backgroundColor: colors.navy, flex: 1 }]}
-              >
-                <Feather name="user-plus" size={18} color="#fff" />
-                <Text style={[styles.fabText, { color: '#fff' }]}>Walk-in</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.toolbarRow}>
-              <TouchableOpacity
-                onPress={() => router.push(`/admin/americano/${id}` as never)}
-                activeOpacity={0.85}
-                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
-              >
-                <Feather name="shuffle" size={15} color={colors.primary} />
-                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Americano</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
-                activeOpacity={0.85}
-                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
-              >
-                <Feather name="award" size={15} color={colors.primary} />
-                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Standings</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleExport}
-                activeOpacity={0.85}
-                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
-              >
-                <Feather name="download" size={15} color={colors.primary} />
-                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Export</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-
-        {/* UPCOMING: read-only, just export for bookings preview */}
-        {liveStatus === 'upcoming' && (
           <View style={styles.toolbarRow}>
             <TouchableOpacity
-              onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
+              onPress={() => router.push(`/admin/format-setup/${id}` as never)}
               activeOpacity={0.85}
               style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
             >
-              <Feather name="award" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Standings</Text>
+              <Feather name="sliders" size={15} color={colors.primary} />
+              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Format</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push(`/admin/americano/${id}` as never)}
+              activeOpacity={0.85}
+              style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+            >
+              <Feather name="play-circle" size={15} color={colors.primary} />
+              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Manage</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleExport}
@@ -366,31 +334,41 @@ export default function AdminEventDetailScreen() {
               style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
             >
               <Feather name="download" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Export List</Text>
+              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Export</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* ENDED: also show leaderboard access */}
+        {/* ENDED: post-event report + standings */}
         {isEnded && (
-          <View style={styles.toolbarRow}>
+          <>
             <TouchableOpacity
-              onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
+              onPress={handleFullReport}
               activeOpacity={0.85}
-              style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+              style={[styles.fabBtn, { backgroundColor: colors.primary }]}
             >
-              <Feather name="award" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Final Standings</Text>
+              <Feather name="download" size={18} color={colors.primaryForeground} />
+              <Text style={[styles.fabText, { color: colors.primaryForeground }]}>Download Full Report</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleExport}
-              activeOpacity={0.85}
-              style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
-            >
-              <Feather name="users" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Attendance CSV</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.toolbarRow}>
+              <TouchableOpacity
+                onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
+                activeOpacity={0.85}
+                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+              >
+                <Feather name="award" size={15} color={colors.primary} />
+                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Final Standings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleExport}
+                activeOpacity={0.85}
+                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+              >
+                <Feather name="users" size={15} color={colors.primary} />
+                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Attendance CSV</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
       </View>
     </View>

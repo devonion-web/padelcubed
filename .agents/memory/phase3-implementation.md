@@ -1,33 +1,47 @@
 ---
-name: Phase 3 — QR ticket + admin mode
-description: Key decisions, package choices, and integration notes for the QR ticket and admin check-in system.
+name: Phase 3 implementation
+description: Format manager (Americano/Mexicano/Round Robin/Knockout), QR tickets, admin auth — key decisions and notes.
 ---
 
-## QR Payload Format
-Base64-encoded JSON: `{ v: 1, eventId: string, bookingId: number, email: string }`. Encoded with `btoa()` / decoded with `atob()` — both available in Hermes. No HMAC (flagged for future hardening).
+## Format Manager (all 4 formats)
 
-## Package Choices
-- `react-native-qrcode-svg` + `react-native-svg@15.x` — renders QR codes on native and web; react-native-svg was already present.
-- `expo-camera@~17.0.10` — SDK 54 compatible version (NOT 57.x — Expo CLI warns about mismatch if you install 57.x).
+**DB schema additions** (pushed via drizzle-kit push):
+- `americano_sessions`: added `format` (text, default 'americano'), `courts_count` (integer), `round_duration_minutes` (integer)
+- `americano_players`: added `wins` (integer, default 0), `eliminated` (boolean, default false)
+- `americano_rounds`: `started_at` already existed — used for server-synced timer
 
-## Metro Config Fix
-`zxing-wasm` (pulled in by expo-camera) creates a temp dir (`zxing-wasm_tmp_*`) during install that Metro tries to watch after it's deleted → ENOENT crash. Fix: add `/zxing-wasm_tmp_/` to `config.resolver.blockList` in `metro.config.js`.
+**Score entry**: One-team only. Team A enters score X → Team B = 32 − X (fixed 32 total per court, standard padel americano).
+
+**Draw algorithms** (in `artifacts/api-server/src/routes/admin-americano.ts`):
+- `americano`: pure random shuffle every round
+- `mexicano`: round 1 random; round 2+ sort by points desc, pair 1+4 vs 2+3
+- `round_robin`: pure random (same as americano, different label)
+- `knockout`: same as mexicano but after each round, losing team per court marked `eliminated=true`
+
+**Timer sync**: All devices compute `remaining = durationMinutes * 60 - (now - started_at_ms)`. Server sets `started_at` via `PUT /admin/americano/rounds/:id/start`.
+
+**Key API routes**:
+- `POST /admin/events/:id/americano` — start session (accepts format, courtsCount, roundDurationMinutes), generates round 1 draw with no `started_at`
+- `PUT /admin/americano/rounds/:id/start` — sets `started_at = now`, syncing all devices
+- `POST /admin/events/:id/americano/rounds` — next round (validates all courts scored first; for knockout, marks losers eliminated)
+- `POST /admin/americano/courts/:id/score` — one-team entry, handles re-scoring (reverses previous points before applying new)
+- `GET /admin/events/:id/report` — post-event CSV with attendance + americano leaderboard (in admin-events.ts)
+
+**Mobile screens**:
+- `app/admin/format-setup/[id].tsx` — format picker (4 cards) + courts stepper + duration stepper → calls POST to start session → navigates to americano/[id]
+- `app/admin/americano/[id].tsx` — generic format manager: draw display, server-synced countdown ring, per-court score entry, Start Round / Next Round buttons, eliminated players section for knockout
+- `app/admin/event/[id].tsx` — toolbar: Walk-in always visible; LIVE adds Scan QR + Format + Manage + Export; ENDED adds Full Report + Final Standings + Attendance CSV
+
+**Walk-ins**: Always accessible from event detail regardless of liveStatus.
+
+**liveStatus window**: live = eventDate−90min to eventDate+4h; computed server-side and returned in GET /admin/events.
+
+## QR Tickets / Admin Check-in (Phase 3 original)
+- QR ticket in booking confirmation email (base64 encoded booking ID)
+- Scan screen at `app/admin/scan/[id].tsx` uses expo-camera
+- Check-in toggle on booking rows in event detail
 
 ## Admin Auth
-Password validated by calling `GET /api/admin/events?adminPassword=...` — if the server returns 200, the password is correct. Session stored in AsyncStorage (`@pcubed_admin_v1`). Context lives in `AdminContext.tsx` / `useAdmin()`.
-
-## Admin Entry Point
-Hidden shield icon at the bottom of the Profile tab (barely visible). Tapping it opens a `Modal` with a password field. On success, navigates to `/admin` stack (outside tabs, full-screen).
-
-## BookingsContext v2
-Storage key bumped to `@pcubed_bookings_v2` (added `bookingId?: number` field). `handleBook` in `event/[id].tsx` now captures `result.id` from the API response and passes it to `book()`. 409 (duplicate) path stores no bookingId — ticket button hides when `bookingId` is undefined.
-
-## Route Structure
-New routes registered in root Stack (`_layout.tsx`):
-- `ticket/[id]` — attendee QR ticket
-- `admin` — maps to `app/admin/_layout.tsx` (Stack with index, event/[id], scan/[id])
-
-## Admin Refresh
-`useAdminEvents` polled every 15s; `useAdminEventBookings` every 10s (via `refetchInterval`). Manual invalidation after check-in mutations via `queryClient.invalidateQueries`.
-
-**Why:** Events are low-traffic; polling is simpler than WebSockets and sufficient for a door-check-in use case.
+- JWT multi-user; ADMIN_PASSWORD env var is bootstrap-only master key
+- Forgot-password: 6-digit code logged to server stdout (30 min TTL, single-use)
+- Admin email: `info@padelcubed.co.uk`
