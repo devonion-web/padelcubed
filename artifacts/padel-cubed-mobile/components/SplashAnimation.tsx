@@ -186,7 +186,7 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
 
   return (
     <Animated.View
-      style={[styles.overlay, { opacity: overlayOpacity }]}
+      style={[styles.overlay, { opacity: overlayOpacity, paddingBottom: insets.bottom }]}
       pointerEvents="none"
     >
       {/* ── Logo + tagline grouped so the pair is centred as one unit ── */}
@@ -212,8 +212,6 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
           </Text>
         </Animated.View>
       </View>
-
-      <View style={{ height: insets.bottom }} />
     </Animated.View>
   );
 }
