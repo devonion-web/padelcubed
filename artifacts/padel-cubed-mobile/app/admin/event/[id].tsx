@@ -30,6 +30,7 @@ import {
   useCheckIn,
   useUndoCheckIn,
   getAdminEventBookingsQueryKey,
+  useAmericanoState,
 } from '@workspace/api-client-react';
 import type { AdminBooking, LiveStatus } from '@workspace/api-client-react';
 import { EVENTS } from '@/constants/events';
@@ -180,6 +181,10 @@ export default function AdminEventDetailScreen() {
     { query: { refetchInterval: isLive ? 10_000 : false } },
   );
 
+  // Detect whether a format session already exists for this event
+  const { data: americanoState } = useAmericanoState(id ?? '', token);
+  const hasSession = Boolean(americanoState?.session);
+
   const checkInMutation = useCheckIn(id ?? '', token);
   const undoMutation = useUndoCheckIn(id ?? '', token);
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -309,34 +314,49 @@ export default function AdminEventDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* LIVE: format + secondary tools */}
+        {/* LIVE: single smart CTA + secondary row */}
         {isLive && (
-          <View style={styles.toolbarRow}>
+          <>
+            {/* Primary: Begin Event (no session) or Manage Format (session exists) */}
             <TouchableOpacity
-              onPress={() => router.push(`/admin/format-setup/${id}` as never)}
+              onPress={() =>
+                router.push(
+                  (hasSession ? `/admin/americano/${id}` : `/admin/format-setup/${id}`) as never,
+                )
+              }
               activeOpacity={0.85}
-              style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+              style={[styles.fabBtn, { backgroundColor: colors.primary }]}
             >
-              <Feather name="sliders" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Format</Text>
+              <Feather
+                name={hasSession ? 'play-circle' : 'sliders'}
+                size={20}
+                color={colors.primaryForeground}
+              />
+              <Text style={[styles.fabText, { color: colors.primaryForeground }]}>
+                {hasSession ? 'Manage Format' : 'Begin Event'}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push(`/admin/americano/${id}` as never)}
-              activeOpacity={0.85}
-              style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
-            >
-              <Feather name="play-circle" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Manage</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleExport}
-              activeOpacity={0.85}
-              style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
-            >
-              <Feather name="download" size={15} color={colors.primary} />
-              <Text style={[styles.fabTextSm, { color: colors.primary }]}>Export</Text>
-            </TouchableOpacity>
-          </View>
+
+            {/* Secondary: standings + export */}
+            <View style={styles.toolbarRow}>
+              <TouchableOpacity
+                onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
+                activeOpacity={0.85}
+                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+              >
+                <Feather name="award" size={15} color={colors.primary} />
+                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Standings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleExport}
+                activeOpacity={0.85}
+                style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+              >
+                <Feather name="download" size={15} color={colors.primary} />
+                <Text style={[styles.fabTextSm, { color: colors.primary }]}>Export</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
         {/* ENDED: post-event report + standings */}
