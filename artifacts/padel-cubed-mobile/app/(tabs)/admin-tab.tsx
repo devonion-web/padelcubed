@@ -411,9 +411,9 @@ function EventsList() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const isWeb = Platform.OS === 'web';
-  const { adminPassword, logout } = useAdmin();
+  const { token, logout } = useAdmin();
 
-  const { data: events = [], isLoading } = useAdminEvents(adminPassword, {
+  const { data: events = [], isLoading } = useAdminEvents(token, {
     query: { refetchInterval: 15_000 },
   });
 
