@@ -2,9 +2,9 @@ import React from 'react';
 import {
   FlatList,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ export default function EventsScreen() {
     if (tapCount.current >= 5) {
       tapCount.current = 0;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      router.push('/admin' as never);
+      router.navigate('/admin' as never);
       return;
     }
     tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
@@ -53,9 +53,9 @@ export default function EventsScreen() {
           },
         ]}
       >
-        <TouchableOpacity onPress={handleLogoPress} activeOpacity={1}>
+        <Pressable onPress={handleLogoPress}>
           <HeaderLogo size="md" />
-        </TouchableOpacity>
+        </Pressable>
         <View
           style={[
             styles.seasonBadge,
