@@ -10,8 +10,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { db, adminUsersTable } from "@workspace/db";
+import { eq, and, gt, isNull } from "drizzle-orm";
+import { db, adminUsersTable, passwordResetsTable } from "@workspace/db";
 import {
   requireAdmin,
   signAdminToken,
@@ -186,6 +186,120 @@ router.delete("/admin/auth/users/:id", requireAdmin, async (req, res): Promise<v
     console.error(err);
     res.status(500).json({ error: "Failed to delete user" });
   }
+});
+
+// ─── POST /admin/auth/forgot-password ────────────────────────────────────────
+// Generates a 6-digit reset code valid for 30 minutes.
+// The code is logged server-side — a superadmin retrieves it from logs.
+
+router.post("/admin/auth/forgot-password", async (req, res): Promise<void> => {
+  const parsed = z.object({ email: z.string().email() }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Valid email required" });
+    return;
+  }
+
+  const email = parsed.data.email.toLowerCase().trim();
+
+  // Always return the same message regardless of whether the email exists
+  // (prevents user enumeration)
+  const [user] = await db
+    .select()
+    .from(adminUsersTable)
+    .where(eq(adminUsersTable.email, email));
+
+  if (user) {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+    // Invalidate any existing unused codes for this user
+    await db
+      .delete(passwordResetsTable)
+      .where(
+        and(
+          eq(passwordResetsTable.adminUserId, user.id),
+          isNull(passwordResetsTable.usedAt)
+        )
+      );
+
+    await db.insert(passwordResetsTable).values({
+      adminUserId: user.id,
+      code,
+      expiresAt,
+    });
+
+    // Log clearly so the superadmin can retrieve it
+    console.log(
+      `\n🔑  PASSWORD RESET CODE for ${email}: ${code}  (expires in 30 min)\n`
+    );
+  }
+
+  res.json({
+    message:
+      "If that email is registered, a reset code has been generated. Ask your administrator to check the server logs for the 6-digit code.",
+  });
+});
+
+// ─── POST /admin/auth/reset-password ─────────────────────────────────────────
+
+const ResetPasswordBody = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+router.post("/admin/auth/reset-password", async (req, res): Promise<void> => {
+  const parsed = ResetPasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Invalid input" });
+    return;
+  }
+
+  const { email, code, newPassword } = parsed.data;
+
+  const [user] = await db
+    .select()
+    .from(adminUsersTable)
+    .where(eq(adminUsersTable.email, email.toLowerCase().trim()));
+
+  if (!user) {
+    res.status(400).json({ error: "Invalid code or email" });
+    return;
+  }
+
+  const now = new Date();
+  const [reset] = await db
+    .select()
+    .from(passwordResetsTable)
+    .where(
+      and(
+        eq(passwordResetsTable.adminUserId, user.id),
+        eq(passwordResetsTable.code, code),
+        isNull(passwordResetsTable.usedAt),
+        gt(passwordResetsTable.expiresAt, now)
+      )
+    );
+
+  if (!reset) {
+    res.status(400).json({ error: "Invalid or expired code" });
+    return;
+  }
+
+  // Mark code as used and update password
+  const newHash = await bcrypt.hash(newPassword, 12);
+  await Promise.all([
+    db
+      .update(passwordResetsTable)
+      .set({ usedAt: now })
+      .where(eq(passwordResetsTable.id, reset.id)),
+    db
+      .update(adminUsersTable)
+      .set({ passwordHash: newHash })
+      .where(eq(adminUsersTable.id, user.id)),
+  ]);
+
+  console.log(`✅  Password reset completed for ${email}`);
+  res.json({ ok: true });
 });
 
 export default router;

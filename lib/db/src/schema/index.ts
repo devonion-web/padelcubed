@@ -3,6 +3,7 @@ export * from "./corporate-enquiries";
 export * from "./events";
 export * from "./bookings";
 export * from "./admin-users";
+export * from "./password-resets";
 export * from "./walkins";
 export * from "./americano-sessions";
 export * from "./americano-players";
