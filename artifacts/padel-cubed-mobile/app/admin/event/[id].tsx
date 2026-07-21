@@ -7,8 +7,10 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -117,6 +119,22 @@ export default function AdminEventDetailScreen() {
 
   const { token } = useAdmin();
   const event = EVENTS.find((e) => e.id === id);
+
+  const handleExport = async () => {
+    try {
+      const base = process.env.EXPO_PUBLIC_DOMAIN
+        ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+        : '';
+      const res = await fetch(`${base}/api/admin/events/${id}/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const csv = await res.text();
+      await Share.share({ message: csv, title: `event-${id}.csv` });
+    } catch {
+      Alert.alert('Export failed', 'Could not export attendance list');
+    }
+  };
 
   const { data: bookings = [], isLoading } = useAdminEventBookings(
     id ?? '',
@@ -230,20 +248,55 @@ export default function AdminEventDetailScreen() {
         </ScrollView>
       )}
 
-      {/* QR Scan FAB */}
-      <View
-        style={[styles.fab, { bottom: insets.bottom + 24 }]}
-      >
-        <TouchableOpacity
-          onPress={() => router.push(`/admin/scan/${id}` as never)}
-          activeOpacity={0.85}
-          style={[styles.fabBtn, { backgroundColor: colors.primary }]}
-        >
-          <Feather name="camera" size={20} color={colors.primaryForeground} />
-          <Text style={[styles.fabText, { color: colors.primaryForeground }]}>
-            Scan QR
-          </Text>
-        </TouchableOpacity>
+      {/* Action toolbar */}
+      <View style={[styles.toolbar, { bottom: insets.bottom + 16 }]}>
+        {/* Row 1: Scan QR + Walk-in */}
+        <View style={styles.toolbarRow}>
+          <TouchableOpacity
+            onPress={() => router.push(`/admin/scan/${id}` as never)}
+            activeOpacity={0.85}
+            style={[styles.fabBtn, { backgroundColor: colors.primary, flex: 1 }]}
+          >
+            <Feather name="camera" size={18} color={colors.primaryForeground} />
+            <Text style={[styles.fabText, { color: colors.primaryForeground }]}>Scan QR</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push(`/admin/walkin/${id}` as never)}
+            activeOpacity={0.85}
+            style={[styles.fabBtn, { backgroundColor: colors.navy, flex: 1 }]}
+          >
+            <Feather name="user-plus" size={18} color="#fff" />
+            <Text style={[styles.fabText, { color: '#fff' }]}>Walk-in</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Row 2: Americano + Leaderboard + Export */}
+        <View style={styles.toolbarRow}>
+          <TouchableOpacity
+            onPress={() => router.push(`/admin/americano/${id}` as never)}
+            activeOpacity={0.85}
+            style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+          >
+            <Feather name="shuffle" size={15} color={colors.primary} />
+            <Text style={[styles.fabTextSm, { color: colors.primary }]}>Americano</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
+            activeOpacity={0.85}
+            style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+          >
+            <Feather name="award" size={15} color={colors.primary} />
+            <Text style={[styles.fabTextSm, { color: colors.primary }]}>Standings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleExport}
+            activeOpacity={0.85}
+            style={[styles.fabBtnSm, { backgroundColor: `${colors.primary}22`, flex: 1 }]}
+          >
+            <Feather name="download" size={15} color={colors.primary} />
+            <Text style={[styles.fabTextSm, { color: colors.primary }]}>Export</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -318,10 +371,15 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
 
-  fab: {
+  toolbar: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 16,
+    right: 16,
+    gap: 8,
+  },
+  toolbarRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
   fabBtn: {
     height: 54,
@@ -329,12 +387,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 8,
   },
-  fabText: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
+  fabBtnSm: {
+    height: 42,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  fabText: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
+  fabTextSm: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 });

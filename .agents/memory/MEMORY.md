@@ -1,2 +1,4 @@
 - [Mobile app setup](mobile-app-setup.md) — Expo app at artifacts/padel-cubed-mobile; brand tokens synced from web CSS; Phase 1 built (events, registration, profile).
 - [Phase 3 implementation](phase3-implementation.md) — QR ticket + admin mode; key decisions and package notes.
+- [Admin auth system](admin-auth.md) — JWT multi-user auth; ADMIN_PASSWORD is bootstrap-only master key; first user seeded.
+- [Americano engine](americano-engine.md) — DB tables, API routes, mobile screens for on-site event management.
