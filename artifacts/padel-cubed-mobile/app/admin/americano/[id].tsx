@@ -34,6 +34,15 @@ import {
 } from '@workspace/api-client-react';
 import type { AmericanoPlayer, AmericanoCourt, AmericanoState, GameFormat } from '@workspace/api-client-react';
 
+const formatTotalTime = (rounds: number, minutesPerRound: number): string => {
+  const total = rounds * minutesPerRound;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+};
+
 const FORMAT_LABELS: Record<GameFormat, string> = {
   americano: 'Americano',
   mexicano: 'Mexicano',
@@ -300,10 +309,12 @@ export default function FormatManagerScreen() {
   const currentRound = state?.currentRound ?? null;
   const courts = state?.currentCourts ?? [];
   const players = state?.players ?? [];
+  const plannedRounds = state?.plannedRounds ?? null;
 
   const roundStarted = Boolean(currentRound?.startedAt);
   const allScored = courts.length > 0 && courts.every((c) => c.teamAScore !== null && c.teamBScore !== null);
   const roundEnded = Boolean(currentRound?.endedAt);
+  const isLastRound = plannedRounds !== null && (session?.currentRound ?? 0) >= plannedRounds;
 
   const timer = useServerTimer(
     currentRound?.startedAt ?? null,
@@ -448,10 +459,17 @@ export default function FormatManagerScreen() {
         </View>
 
         <Text style={[styles.roundHeading, { color: colors.foreground }]}>
-          {sessionComplete ? 'Final Results' : `Round ${session?.currentRound ?? 1}`}
+          {sessionComplete
+            ? 'Final Results'
+            : plannedRounds
+              ? `Round ${session?.currentRound ?? 1} of ${plannedRounds}`
+              : `Round ${session?.currentRound ?? 1}`}
         </Text>
         <Text style={[styles.eventSub, { color: colors.mutedForeground }]}>
           {adminEvent?.title ?? `Event ${id}`} · {activePlayers.length} players
+          {plannedRounds && session?.roundDurationMinutes
+            ? ` · ${formatTotalTime(plannedRounds, session.roundDurationMinutes)}`
+            : ''}
         </Text>
 
         {/* Timer */}
@@ -526,7 +544,7 @@ export default function FormatManagerScreen() {
       {!sessionComplete && (
         <View style={[styles.actionBar, { bottom: insets.bottom + 16 }]}>
           {!roundStarted ? (
-            /* START ROUND */
+            /* DRAW READY — START ROUND */
             <TouchableOpacity
               onPress={handleStartRound}
               disabled={startRound.isPending}
@@ -543,44 +561,74 @@ export default function FormatManagerScreen() {
               )}
             </TouchableOpacity>
           ) : allScored ? (
-            /* ALL SCORED — Next Round (primary) + End Tournament (ghost, below) */
+            /* ALL SCORED */
             <>
-              <TouchableOpacity
-                onPress={handleNextRound}
-                disabled={nextRound.isPending}
-                activeOpacity={0.85}
-                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-              >
-                {nextRound.isPending ? (
-                  <ActivityIndicator color={colors.primaryForeground} />
-                ) : (
-                  <>
-                    <Feather name="skip-forward" size={20} color={colors.primaryForeground} />
-                    <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>
-                      Next Round
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEndSession}
-                disabled={endSession.isPending}
-                activeOpacity={0.7}
-                style={styles.endTournamentLink}
-              >
-                <Feather name="flag" size={13} color="#ef444488" />
-                <Text style={styles.endTournamentText}>End Tournament</Text>
-              </TouchableOpacity>
+              {isLastRound ? (
+                /* LAST ROUND — Finish Tournament */
+                <TouchableOpacity
+                  onPress={handleEndSession}
+                  disabled={endSession.isPending}
+                  activeOpacity={0.85}
+                  style={[styles.primaryBtn, { backgroundColor: '#22c55e' }]}
+                >
+                  {endSession.isPending ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Feather name="flag" size={20} color="#fff" />
+                      <Text style={[styles.primaryBtnText, { color: '#fff' }]}>Finish Tournament</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                /* MORE ROUNDS TO GO — Next Round + subtle end link */
+                <>
+                  <TouchableOpacity
+                    onPress={handleNextRound}
+                    disabled={nextRound.isPending}
+                    activeOpacity={0.85}
+                    style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                  >
+                    {nextRound.isPending ? (
+                      <ActivityIndicator color={colors.primaryForeground} />
+                    ) : (
+                      <>
+                        <Feather name="skip-forward" size={20} color={colors.primaryForeground} />
+                        <Text style={[styles.primaryBtnText, { color: colors.primaryForeground }]}>Next Round</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleEndSession}
+                    disabled={endSession.isPending}
+                    activeOpacity={0.7}
+                    style={styles.endTournamentLink}
+                  >
+                    <Feather name="flag" size={13} color="#ef444488" />
+                    <Text style={styles.endTournamentText}>End Tournament Early</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </>
           ) : (
-            /* WAITING FOR SCORES — shows how many courts still need scores, no End button */
-            <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <ActivityIndicator size="small" color={colors.mutedForeground} />
-              <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
-                {courts.filter((c) => c.teamAScore === null || c.teamBScore === null).length} court
-                {courts.filter((c) => c.teamAScore === null || c.teamBScore === null).length !== 1 ? 's' : ''} still need scores
-              </Text>
-            </View>
+            /* WAITING FOR SCORES */
+            <>
+              {timer.expired && (
+                <View style={[styles.timeUpBanner, { backgroundColor: '#ef444415', borderColor: '#ef444440' }]}>
+                  <Feather name="clock" size={14} color="#ef4444" />
+                  <Text style={[styles.timeUpText, { color: '#ef4444' }]}>
+                    Time's up — enter scores for each court below, then tap Next Round
+                  </Text>
+                </View>
+              )}
+              <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <ActivityIndicator size="small" color={colors.mutedForeground} />
+                <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
+                  {courts.filter((c) => c.teamAScore === null || c.teamBScore === null).length} court
+                  {courts.filter((c) => c.teamAScore === null || c.teamBScore === null).length !== 1 ? 's' : ''} still need scores
+                </Text>
+              </View>
+            </>
           )}
         </View>
       )}
@@ -660,6 +708,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6,
   },
   endTournamentText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#ef444488' },
+  timeUpBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
+  },
+  timeUpText: { fontFamily: 'Inter_500Medium', fontSize: 13, flex: 1, lineHeight: 18 },
   resetBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     marginTop: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1,

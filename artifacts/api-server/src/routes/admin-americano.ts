@@ -81,6 +81,15 @@ async function getSession(eventId: string) {
   return rows[rows.length - 1] ?? null;
 }
 
+/** How many rounds a full Americano/Mexicano/Round Robin rotation takes for n players. */
+function calcPlannedRounds(format: string, numPlayers: number): number {
+  if (format === "knockout") {
+    return Math.max(1, Math.ceil(Math.log2(Math.max(numPlayers, 2))));
+  }
+  // Americano / Mexicano / Round Robin: n-1 so every player partners with everyone else once
+  return Math.max(1, numPlayers - 1);
+}
+
 async function getFullState(sessionId: number) {
   const [session, players, allRounds] = await Promise.all([
     db.select().from(americanoSessionsTable).where(eq(americanoSessionsTable.id, sessionId)).then((r) => r[0]!),
@@ -93,12 +102,15 @@ async function getFullState(sessionId: number) {
     ? await db.select().from(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, currentRound.id)).orderBy(americanoCourtsTable.courtNumber)
     : [];
 
+  const plannedRounds = calcPlannedRounds(session.format, players.length);
+
   return {
     session,
     players: [...players].sort((a, b) => b.totalPoints - a.totalPoints),
     currentRound,
     currentCourts,
     totalRounds: allRounds.length,
+    plannedRounds,
   };
 }
 
@@ -231,7 +243,7 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
   if (!lastRound) { res.status(400).json({ error: "No rounds exist" }); return; }
 
   const courts = await db.select().from(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, lastRound.id));
-  const unscored = courts.filter((c) => c.teamAScore === null);
+  const unscored = courts.filter((c) => c.teamAScore === null || c.teamBScore === null);
   if (unscored.length > 0) {
     res.status(400).json({ error: `${unscored.length} court(s) still need scores` });
     return;

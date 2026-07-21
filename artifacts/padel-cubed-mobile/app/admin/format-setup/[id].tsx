@@ -20,9 +20,8 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAdmin } from '@/context/AdminContext';
-import { useStartSession } from '@workspace/api-client-react';
+import { useStartSession, useAdminEvent } from '@workspace/api-client-react';
 import type { GameFormat } from '@workspace/api-client-react';
-import { EVENTS } from '@/constants/events';
 
 // ─── Format definitions ────────────────────────────────────────────────────────
 
@@ -114,7 +113,7 @@ export default function FormatSetupScreen() {
   const isWeb = Platform.OS === 'web';
   const { token } = useAdmin();
 
-  const event = EVENTS.find((e) => e.id === id);
+  const { data: adminEvent } = useAdminEvent(id ?? '', token);
 
   const [selectedFormat, setSelectedFormat] = useState<GameFormat>('americano');
   const [courts, setCourts] = useState(3);
@@ -155,7 +154,7 @@ export default function FormatSetupScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Set Up Format</Text>
         <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-          {event?.title ?? `Event ${id}`}
+          {adminEvent?.title ?? `Event ${id}`}
         </Text>
       </LinearGradient>
 

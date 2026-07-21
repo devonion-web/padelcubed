@@ -51,6 +51,7 @@ export interface AmericanoState {
   currentRound: AmericanoRound | null;
   currentCourts: AmericanoCourt[];
   totalRounds: number;
+  plannedRounds: number;
 }
 
 export interface StartSessionInput {
