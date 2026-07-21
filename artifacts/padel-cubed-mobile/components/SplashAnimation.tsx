@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   // flush against the tagline with no dead space between them.
   reelSlotLogo: {
     justifyContent: 'flex-end',
-    paddingBottom: 8,
+    paddingBottom: 2,
   },
 
   // Transparent silhouette — contain so the full figure is visible
