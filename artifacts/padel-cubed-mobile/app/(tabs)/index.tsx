@@ -23,6 +23,21 @@ export default function EventsScreen() {
   const isWeb = Platform.OS === 'web';
   const { isBooked } = useBookings();
 
+  // Hidden admin trigger: 5 taps on the logo within 2 seconds
+  const tapCount = React.useRef(0);
+  const tapTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleLogoPress = () => {
+    tapCount.current += 1;
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    if (tapCount.current >= 5) {
+      tapCount.current = 0;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      router.push('/(tabs)/admin-tab' as never);
+      return;
+    }
+    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
+  };
+
   const topPadding = isWeb ? 67 : insets.top;
 
   return (
@@ -38,14 +53,7 @@ export default function EventsScreen() {
           },
         ]}
       >
-        <TouchableOpacity
-          onLongPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            router.push('/(tabs)/admin-tab' as never);
-          }}
-          delayLongPress={800}
-          activeOpacity={1}
-        >
+        <TouchableOpacity onPress={handleLogoPress} activeOpacity={1}>
           <HeaderLogo size="md" />
         </TouchableOpacity>
         <View
