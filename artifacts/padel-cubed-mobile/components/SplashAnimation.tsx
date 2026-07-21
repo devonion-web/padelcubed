@@ -244,10 +244,9 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 
-  // Sizes to the slot window only — tagline is absolute so it never
-  // shifts the group's centre during the cycling animation
   group: {
     alignItems: 'center',
+    gap: 6,
   },
 
   // Clips the reel to exactly one slot height
@@ -295,8 +294,6 @@ const styles = StyleSheet.create({
   },
 
   taglineWrap: {
-    position: 'absolute',
-    top: SLOT_SIZE + 8,
     alignItems: 'center',
   },
   tagline: {
