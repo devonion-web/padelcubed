@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   // Logo + tagline sit together as one centred unit
   group: {
     alignItems: 'center',
-    gap: 16,
+    gap: 8,
   },
 
   // Clips the reel to exactly one slot height
