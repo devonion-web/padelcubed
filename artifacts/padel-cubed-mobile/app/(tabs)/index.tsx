@@ -32,7 +32,7 @@ export default function EventsScreen() {
     if (tapCount.current >= 5) {
       tapCount.current = 0;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      router.push('/(tabs)/admin-tab' as never);
+      router.push('/admin' as never);
       return;
     }
     tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
