@@ -108,8 +108,8 @@ function ClassicTabLayout() {
         name="admin-tab"
         options={{
           title: 'Admin',
-          // href:null hides the tab from the bar; undefined shows it
-          href: isAdmin ? undefined : null,
+          // tabBarButton:null hides from bar but keeps route navigable (href:null blocks navigation)
+          tabBarButton: isAdmin ? undefined : () => null,
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="shield" tintColor={color} size={24} />
