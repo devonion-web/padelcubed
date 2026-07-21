@@ -66,12 +66,12 @@ export const getEventsQueryKey = () => [getEventsUrl()] as const;
 
 export function useEvents<TData = ApiEvent[], TError = ErrorType<unknown>>(
   options?: {
-    query?: UseQueryOptions<ApiEvent[], TError, TData>;
+    query?: Omit<UseQueryOptions<ApiEvent[], TError, TData>, 'queryKey'>;
   },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
-    queryKey: queryOptions?.queryKey ?? getEventsQueryKey(),
+    queryKey: getEventsQueryKey(),
     queryFn: ({ signal }) =>
       customFetch<ApiEvent[]>(getEventsUrl(), { signal }),
     ...queryOptions,
@@ -88,12 +88,12 @@ export const getEventAttendeesQueryKey = (id: string) =>
 export function useEventAttendees<TData = Attendee[], TError = ErrorType<unknown>>(
   eventId: string,
   options?: {
-    query?: UseQueryOptions<Attendee[], TError, TData>;
+    query?: Omit<UseQueryOptions<Attendee[], TError, TData>, 'queryKey'>;
   },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
-    queryKey: queryOptions?.queryKey ?? getEventAttendeesQueryKey(eventId),
+    queryKey: getEventAttendeesQueryKey(eventId),
     queryFn: ({ signal }) =>
       customFetch<Attendee[]>(getEventAttendeesUrl(eventId), { signal }),
     enabled: Boolean(eventId),

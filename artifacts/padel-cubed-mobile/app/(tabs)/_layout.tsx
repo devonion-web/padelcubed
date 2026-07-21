@@ -1,7 +1,6 @@
 import React from 'react';
 import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
-import { useAdmin } from '@/context/AdminContext';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -11,8 +10,6 @@ import { SymbolView } from 'expo-symbols';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function NativeTabLayout() {
-  // NativeTabs doesn't support conditional children — admin-tab always present;
-  // the screen itself shows a login form if the session has lapsed.
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -27,7 +24,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} />
         <Label>Profile</Label>
       </NativeTabs.Trigger>
-      {/* Admin tab intentionally omitted — accessed via long-press on logo */}
+      <NativeTabs.Trigger name="admin-tab">
+        <Icon sf={{ default: 'shield', selected: 'shield.fill' }} />
+        <Label>Admin</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -35,7 +35,6 @@ function NativeTabLayout() {
 function ClassicTabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();
-  const { isAdmin } = useAdmin();
   const isDark = colorScheme === 'dark';
   const isIOS = Platform.OS === 'ios';
   const isWeb = Platform.OS === 'web';
@@ -108,8 +107,6 @@ function ClassicTabLayout() {
         name="admin-tab"
         options={{
           title: 'Admin',
-          // tabBarButton:null hides from bar but keeps route navigable (href:null blocks navigation)
-          tabBarButton: isAdmin ? undefined : () => null,
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="shield" tintColor={color} size={24} />

@@ -53,11 +53,11 @@ export const getAdminEventsQueryKey = (token: string) =>
 
 export function useAdminEvents<TData = AdminEvent[], TError = ErrorType<unknown>>(
   token: string,
-  options?: { query?: UseQueryOptions<AdminEvent[], TError, TData> },
+  options?: { query?: Omit<UseQueryOptions<AdminEvent[], TError, TData>, 'queryKey'> },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
-    queryKey: queryOptions?.queryKey ?? getAdminEventsQueryKey(token),
+    queryKey: getAdminEventsQueryKey(token),
     queryFn: ({ signal }) =>
       customFetch<AdminEvent[]>("/api/admin/events", {
         signal,
@@ -76,12 +76,12 @@ export const getAdminEventBookingsQueryKey = (id: string, token: string) =>
 export function useAdminEventBookings<TData = AdminBooking[], TError = ErrorType<unknown>>(
   eventId: string,
   token: string,
-  options?: { query?: UseQueryOptions<AdminBooking[], TError, TData> },
+  options?: { query?: Omit<UseQueryOptions<AdminBooking[], TError, TData>, 'queryKey'> },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
     queryKey:
-      queryOptions?.queryKey ?? getAdminEventBookingsQueryKey(eventId, token),
+      getAdminEventBookingsQueryKey(eventId, token),
     queryFn: ({ signal }) =>
       customFetch<AdminBooking[]>(`/api/admin/events/${eventId}/bookings`, {
         signal,
