@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const eventsTable = pgTable("events", {
@@ -20,6 +21,7 @@ export const eventsTable = pgTable("events", {
   description: text("description"),
   maxSpots: integer("max_spots").default(16),
   eventDate: timestamp("event_date", { withTimezone: true }),
+  published: boolean("published").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

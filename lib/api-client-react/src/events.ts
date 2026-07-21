@@ -30,6 +30,7 @@ export interface ApiEvent {
   description: string | null;
   maxSpots: number | null;
   eventDate: string | null;
+  published: boolean;
   createdAt: string;
   attendeeCount?: number;
 }
@@ -66,7 +67,7 @@ export const getEventsQueryKey = () => [getEventsUrl()] as const;
 
 export function useEvents<TData = ApiEvent[], TError = ErrorType<unknown>>(
   options?: {
-    query?: Omit<UseQueryOptions<ApiEvent[], TError, TData>, 'queryKey'>;
+    query?: Omit<UseQueryOptions<ApiEvent[], TError, TData>, "queryKey">;
   },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
@@ -74,6 +75,27 @@ export function useEvents<TData = ApiEvent[], TError = ErrorType<unknown>>(
     queryKey: getEventsQueryKey(),
     queryFn: ({ signal }) =>
       customFetch<ApiEvent[]>(getEventsUrl(), { signal }),
+    ...queryOptions,
+  });
+}
+
+// ─── GET /events/:id ──────────────────────────────────────────────────────────
+
+export const getEventUrl = (id: string) => `/api/events/${id}`;
+export const getEventQueryKey = (id: string) => [getEventUrl(id)] as const;
+
+export function useEvent<TData = ApiEvent, TError = ErrorType<unknown>>(
+  eventId: string,
+  options?: {
+    query?: Omit<UseQueryOptions<ApiEvent, TError, TData>, "queryKey">;
+  },
+): UseQueryResult<TData, TError> {
+  const { query: queryOptions } = options ?? {};
+  return useQuery({
+    queryKey: getEventQueryKey(eventId),
+    queryFn: ({ signal }) =>
+      customFetch<ApiEvent>(getEventUrl(eventId), { signal }),
+    enabled: Boolean(eventId),
     ...queryOptions,
   });
 }
@@ -88,7 +110,7 @@ export const getEventAttendeesQueryKey = (id: string) =>
 export function useEventAttendees<TData = Attendee[], TError = ErrorType<unknown>>(
   eventId: string,
   options?: {
-    query?: Omit<UseQueryOptions<Attendee[], TError, TData>, 'queryKey'>;
+    query?: Omit<UseQueryOptions<Attendee[], TError, TData>, "queryKey">;
   },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};

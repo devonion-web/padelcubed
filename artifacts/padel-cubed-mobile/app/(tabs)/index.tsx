@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -13,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
 import { EventCard } from '@/components/EventCard';
 import { HeaderLogo } from '@/components/HeaderLogo';
-import { EVENTS } from '@/constants/events';
+import { useEvents } from '@workspace/api-client-react';
 import { useBookings } from '@/context/BookingsContext';
 
 export default function EventsScreen() {
@@ -22,6 +23,8 @@ export default function EventsScreen() {
   const router = useRouter();
   const isWeb = Platform.OS === 'web';
   const { isBooked } = useBookings();
+
+  const { data: events = [], isLoading, error } = useEvents();
 
   // Hidden admin trigger: 5 taps on the logo within 2 seconds
   const tapCount = React.useRef(0);
@@ -68,41 +71,61 @@ export default function EventsScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={EVENTS}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <EventCard
-            event={item}
-            isBooked={isBooked(item.id)}
-            onPress={() => router.push(`/event/${item.id}` as never)}
-          />
-        )}
-        contentContainerStyle={[
-          styles.list,
-          { paddingBottom: isWeb ? 84 + 20 : insets.bottom + 100 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <Text style={[styles.listTitle, { color: colors.foreground }]}>
-              Upcoming Events
-            </Text>
-            <Text
-              style={[styles.listSubtitle, { color: colors.mutedForeground }]}
-            >
-              {EVENTS.length} events · City of London
-            </Text>
-          </View>
-        }
-        scrollEnabled={EVENTS.length > 0}
-      />
+      {isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
+            Could not load events. Please try again.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={events}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <EventCard
+              event={item}
+              isBooked={isBooked(item.id)}
+              onPress={() => router.push(`/event/${item.id}` as never)}
+            />
+          )}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: isWeb ? 84 + 20 : insets.bottom + 100 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              <Text style={[styles.listTitle, { color: colors.foreground }]}>
+                Upcoming Events
+              </Text>
+              <Text
+                style={[styles.listSubtitle, { color: colors.mutedForeground }]}
+              >
+                {events.length} events · City of London
+              </Text>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Text style={[styles.errorText, { color: colors.mutedForeground }]}>
+                No events scheduled yet.
+              </Text>
+            </View>
+          }
+          scrollEnabled={events.length > 0}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, marginTop: 60 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -130,5 +153,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   listSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+  errorText: { fontFamily: 'Inter_400Regular', fontSize: 14, textAlign: 'center' },
   list: { padding: 20 },
 });

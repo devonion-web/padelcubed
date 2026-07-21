@@ -40,10 +40,31 @@ export interface AdminUserInfo {
   role: "superadmin" | "admin";
 }
 
+export interface EventInput {
+  title: string;
+  date: string;
+  dateShort: string;
+  time: string;
+  venue: string;
+  location: string;
+  format?: string;
+  sponsor?: string | null;
+  price?: string;
+  status?: "available" | "limited" | "soon";
+  description?: string | null;
+  maxSpots?: number;
+  eventDate?: string | null;
+  published?: boolean;
+}
+
+export interface CreateEventInput extends EventInput {
+  id: string;
+}
+
 // ─── Shared auth header helper ────────────────────────────────────────────────
 
 function authHeaders(token: string): Record<string, string> {
-  return { Authorization: `Bearer ${token}` };
+  return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 }
 
 // ─── GET /admin/events ────────────────────────────────────────────────────────
@@ -53,7 +74,7 @@ export const getAdminEventsQueryKey = (token: string) =>
 
 export function useAdminEvents<TData = AdminEvent[], TError = ErrorType<unknown>>(
   token: string,
-  options?: { query?: Omit<UseQueryOptions<AdminEvent[], TError, TData>, 'queryKey'> },
+  options?: { query?: Omit<UseQueryOptions<AdminEvent[], TError, TData>, "queryKey"> },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
@@ -68,6 +89,68 @@ export function useAdminEvents<TData = AdminEvent[], TError = ErrorType<unknown>
   });
 }
 
+// ─── GET /admin/events/:id ────────────────────────────────────────────────────
+
+export const getAdminEventQueryKey = (id: string, token: string) =>
+  ["/api/admin/events", id, token] as const;
+
+export function useAdminEvent<TData = AdminEvent, TError = ErrorType<unknown>>(
+  eventId: string,
+  token: string,
+  options?: { query?: Omit<UseQueryOptions<AdminEvent, TError, TData>, "queryKey"> },
+): UseQueryResult<TData, TError> {
+  const { query: queryOptions } = options ?? {};
+  return useQuery({
+    queryKey: getAdminEventQueryKey(eventId, token),
+    queryFn: ({ signal }) =>
+      customFetch<AdminEvent>(`/api/admin/events/${eventId}`, {
+        signal,
+        headers: authHeaders(token),
+      }),
+    enabled: Boolean(eventId) && Boolean(token),
+    ...queryOptions,
+  });
+}
+
+// ─── POST /admin/events ───────────────────────────────────────────────────────
+
+export function useAdminCreateEvent<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: {
+    mutation?: UseMutationOptions<AdminEvent, TError, BodyType<CreateEventInput>, TContext>;
+  },
+): UseMutationResult<AdminEvent, TError, BodyType<CreateEventInput>, TContext> {
+  return useMutation({
+    mutationFn: (data) =>
+      customFetch<AdminEvent>("/api/admin/events", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify(data),
+      }),
+    ...options?.mutation,
+  });
+}
+
+// ─── PUT /admin/events/:id ────────────────────────────────────────────────────
+
+export function useAdminUpdateEvent<TError = ErrorType<unknown>, TContext = unknown>(
+  eventId: string,
+  token: string,
+  options?: {
+    mutation?: UseMutationOptions<AdminEvent, TError, BodyType<EventInput>, TContext>;
+  },
+): UseMutationResult<AdminEvent, TError, BodyType<EventInput>, TContext> {
+  return useMutation({
+    mutationFn: (data) =>
+      customFetch<AdminEvent>(`/api/admin/events/${eventId}`, {
+        method: "PUT",
+        headers: authHeaders(token),
+        body: JSON.stringify(data),
+      }),
+    ...options?.mutation,
+  });
+}
+
 // ─── GET /admin/events/:id/bookings ──────────────────────────────────────────
 
 export const getAdminEventBookingsQueryKey = (id: string, token: string) =>
@@ -76,12 +159,11 @@ export const getAdminEventBookingsQueryKey = (id: string, token: string) =>
 export function useAdminEventBookings<TData = AdminBooking[], TError = ErrorType<unknown>>(
   eventId: string,
   token: string,
-  options?: { query?: Omit<UseQueryOptions<AdminBooking[], TError, TData>, 'queryKey'> },
+  options?: { query?: Omit<UseQueryOptions<AdminBooking[], TError, TData>, "queryKey"> },
 ): UseQueryResult<TData, TError> {
   const { query: queryOptions } = options ?? {};
   return useQuery({
-    queryKey:
-      getAdminEventBookingsQueryKey(eventId, token),
+    queryKey: getAdminEventBookingsQueryKey(eventId, token),
     queryFn: ({ signal }) =>
       customFetch<AdminBooking[]>(`/api/admin/events/${eventId}/bookings`, {
         signal,
@@ -102,7 +184,7 @@ const checkInFn =
   ({ data }) =>
     customFetch<AdminBooking>(`/api/admin/events/${eventId}/checkin`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders(token) },
+      headers: authHeaders(token),
       body: JSON.stringify(data),
     });
 
@@ -134,7 +216,7 @@ const undoCheckInFn =
   ({ data }) =>
     customFetch<AdminBooking>(`/api/admin/events/${eventId}/checkin`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json", ...authHeaders(token) },
+      headers: authHeaders(token),
       body: JSON.stringify(data),
     });
 

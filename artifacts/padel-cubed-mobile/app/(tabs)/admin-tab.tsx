@@ -454,16 +454,26 @@ function EventsList() {
       >
         <View style={styles.headerRow}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Admin</Text>
-          <TouchableOpacity
-            onPress={async () => {
-              await logout();
-            }}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            style={[styles.logoutBtn, { borderColor: colors.border }]}
-          >
-            <Feather name="log-out" size={14} color={colors.mutedForeground} />
-            <Text style={[styles.logoutText, { color: colors.mutedForeground }]}>Sign out</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => router.push('/admin/event-form/new' as never)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={[styles.createBtn, { backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}44` }]}
+            >
+              <Feather name="plus" size={15} color={colors.primary} />
+              <Text style={[styles.createBtnText, { color: colors.primary }]}>New</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => {
+                await logout();
+              }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={[styles.logoutBtn, { borderColor: colors.border }]}
+            >
+              <Feather name="log-out" size={14} color={colors.mutedForeground} />
+              <Text style={[styles.logoutText, { color: colors.mutedForeground }]}>Sign out</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
           Event dashboard
@@ -533,6 +543,17 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24, letterSpacing: -0.5 },
   headerSub: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  createBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  createBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

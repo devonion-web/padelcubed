@@ -5,6 +5,7 @@ export default function AdminLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="event/[id]" />
+      <Stack.Screen name="event-form/[id]" />
       <Stack.Screen name="scan/[id]" />
       <Stack.Screen name="walkin/[id]" />
       <Stack.Screen name="americano/[id]" />

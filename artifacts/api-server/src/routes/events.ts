@@ -5,8 +5,9 @@ import { db, eventsTable, bookingsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
-// ─── Seed data (mirrors constants/events.ts in the mobile app) ────────────────
-const SEED_EVENTS = [
+// ─── Seed data ────────────────────────────────────────────────────────────────
+// Called once at server startup (see index.ts), NOT on every request.
+export const SEED_EVENTS = [
   {
     id: "1",
     title: "The City Kickoff",
@@ -94,25 +95,37 @@ const SEED_EVENTS = [
   },
 ];
 
-async function seedIfEmpty() {
+export async function seedIfEmpty() {
   const existing = await db
     .select({ id: eventsTable.id })
     .from(eventsTable)
     .limit(1);
   if (existing.length === 0) {
     await db.insert(eventsTable).values(SEED_EVENTS);
+    console.log("Seeded events table with default events.");
   }
 }
 
 // ─── GET /events ──────────────────────────────────────────────────────────────
 router.get("/events", async (_req, res): Promise<void> => {
   try {
-    await seedIfEmpty();
     const events = await db
       .select()
       .from(eventsTable)
-      .orderBy(eventsTable.id);
-    res.json(events);
+      .where(eq(eventsTable.published, true))
+      .orderBy(eventsTable.eventDate);
+
+    // Fetch attendee counts for all events in one query
+    const bookingCounts = await db
+      .select({ eventId: bookingsTable.eventId, total: count() })
+      .from(bookingsTable)
+      .where(eq(bookingsTable.status, "confirmed"))
+      .groupBy(bookingsTable.eventId);
+
+    const countMap: Record<string, number> = {};
+    for (const row of bookingCounts) countMap[row.eventId] = Number(row.total);
+
+    res.json(events.map((e) => ({ ...e, attendeeCount: countMap[e.id] ?? 0 })));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to load events" });
@@ -122,7 +135,6 @@ router.get("/events", async (_req, res): Promise<void> => {
 // ─── GET /events/:id ──────────────────────────────────────────────────────────
 router.get("/events/:id", async (req, res): Promise<void> => {
   try {
-    await seedIfEmpty();
     const [event] = await db
       .select()
       .from(eventsTable)

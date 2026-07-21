@@ -1,0 +1,209 @@
+You are working on the existing P³ — People · Padel · Places monorepo.
+
+P³ is one platform delivered through web and mobile. The public experience allows users to discover events, register, book and participate. Authorised administrators have additional tools for operating live events.
+
+Your task is to implement one complete, testable vertical slice. Do not redesign unrelated areas or create placeholder functionality.
+
+Feature
+
+Create a canonical event-management flow so that administrators can create and edit events, and both the website and mobile app display those same events from the database.
+
+Current problem
+
+Event information is currently duplicated in static arrays in the web and mobile applications. The copies have diverged on price, venue, availability and event status.
+
+The database already contains an events table, but the public interfaces do not consistently use it as their source of truth.
+
+Required outcome
+
+An authorised administrator must be able to:
+
+1. Open the admin event-management screen.
+2. View database-backed events.
+3. Create a new event.
+4. Edit an existing event.
+5. Save the changes.
+6. See the updated event immediately in the admin interface.
+7. See the same event information in the public mobile app.
+8. See the same event information on the public website.
+9. Refresh or restart the clients without losing the changes.
+
+The database must be the only source of truth for event information.
+
+Inspect before changing code
+
+First inspect and briefly summarise:
+
+* The current events database schema.
+* Existing event API routes.
+* Existing admin authentication and role checks.
+* The mobile events list and event-detail screens.
+* The website events section.
+* Any event seed logic.
+* The shared API client.
+
+Reuse existing patterns wherever possible.
+
+Do not begin implementation until you understand the existing data flow.
+
+Backend requirements
+
+Implement or complete these routes:
+
+* GET /api/events
+* GET /api/events/:id
+* POST /api/admin/events
+* PUT or PATCH /api/admin/events/:id
+
+Public GET routes must not require admin authentication.
+
+Create and update routes must require a valid JWT and an authorised admin role. Do not use query-string passwords.
+
+Validate request bodies using Zod.
+
+Return consistent typed responses through the shared API client.
+
+The event model should support the fields already required by the existing UI, including where applicable:
+
+* id
+* title
+* description
+* venue name
+* venue address or location
+* start date and time
+* end date and time
+* capacity
+* available spots or booking count
+* price
+* currency
+* event status
+* booking status
+* image or hero reference
+* padel format
+* visibility or publication status
+
+Do not add duplicate fields where equivalent fields already exist. Adapt the clients to the existing canonical schema.
+
+Remove seedIfEmpty() from the public request hot path. Seeding should happen through an explicit startup, migration or development seed process rather than on every GET request.
+
+Admin interface requirements
+
+Create or complete an admin event-management screen.
+
+It must include:
+
+* Events list.
+* Create event action.
+* Edit event action.
+* Form validation.
+* Loading state.
+* Saving state.
+* Success confirmation.
+* Clear API error messages.
+* Protection against accidental duplicate submission.
+
+After a successful create or update, invalidate or refresh the relevant TanStack Query caches so that the new database state appears without restarting the app.
+
+Do not make admin access dependent on the five-tap gesture. The gesture may remain as a shortcut to the admin login screen, but server-authorised role access must control the tools.
+
+Mobile requirements
+
+Replace static event imports with API-backed TanStack Query calls.
+
+The events list and event-detail screen must use the canonical API data.
+
+Support:
+
+* Loading state.
+* Empty state.
+* Error state with retry.
+* Correct price display.
+* Correct venue display.
+* Correct availability.
+* Correct event status.
+* Existing booking CTA logic.
+
+Do not silently fall back to stale static event data.
+
+Website requirements
+
+Replace the hardcoded events array with the same public events API.
+
+Preserve the existing visual design while making the content database-backed.
+
+Support:
+
+* Loading state.
+* Empty state.
+* Error state.
+* Correct price, venue, date and availability.
+
+Data migration and compatibility
+
+Preserve existing event and booking data.
+
+Do not drop or rename database columns using drizzle push without a reviewed migration.
+
+Use drizzle-kit migration generation and migration execution where schema changes are required.
+
+If no schema change is needed, do not generate an unnecessary migration.
+
+Testing requirements
+
+Before reporting completion, test the entire flow using a newly created event.
+
+Test scenario:
+
+1. Sign in as an authorised administrator.
+2. Create an event called “P³ Test Event”.
+3. Set a recognisable venue, date, capacity and non-zero price.
+4. Confirm it appears in the admin events list.
+5. Confirm it appears on the website.
+6. Confirm it appears in the mobile events list.
+7. Open its event-detail screen.
+8. Edit the price and venue in admin.
+9. Confirm both public clients display the updated values.
+10. Refresh the website.
+11. Restart or reload the mobile application.
+12. Confirm the data still appears.
+13. Confirm an unauthenticated request cannot create or edit an event.
+14. Confirm the public GET routes remain accessible without authentication.
+
+Also run:
+
+* TypeScript checking.
+* Existing lint or validation scripts.
+* A production build for affected packages.
+* Any relevant automated tests.
+
+If the repository has no suitable automated test setup, add focused API tests for event listing, creation, update and unauthorised access. Do not introduce an oversized test framework solely for this feature.
+
+Completion standard
+
+Do not state that this feature is complete merely because routes, forms or buttons have been created.
+
+It is complete only when:
+
+* Event data is persisted in Postgres.
+* Admin create and edit operations work.
+* Authentication is enforced by the server.
+* Both public clients use the database-backed API.
+* Both clients show identical canonical values.
+* The data survives refresh and restart.
+* Type checking and builds pass.
+* The stated test scenario has been executed successfully.
+
+Final response format
+
+When finished, provide:
+
+1. What was changed.
+2. Files changed.
+3. Database or migration changes.
+4. API routes added or modified.
+5. Tests and commands run.
+6. Results of the complete test scenario.
+7. Any unresolved issue or limitation.
+8. Exact manual steps I can use to verify the feature myself.
+
+Do not include speculative claims. Clearly distinguish what was implemented from what was only reviewed.

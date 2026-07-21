@@ -29,6 +29,32 @@ function getLiveStatus(eventDate: Date | string | null): LiveStatus {
   return "ended";
 }
 
+// ─── Zod schema for event create / update ────────────────────────────────────
+
+const EventBody = z.object({
+  title: z.string().min(1, "Title is required"),
+  date: z.string().min(1, "Date is required"),
+  dateShort: z.string().min(1, "Short date is required"),
+  time: z.string().min(1, "Time is required"),
+  venue: z.string().min(1, "Venue is required"),
+  location: z.string().min(1, "Location is required"),
+  format: z.string().default("Americano"),
+  sponsor: z.string().optional().nullable(),
+  price: z.string().default("Free"),
+  status: z.enum(["available", "limited", "soon"]).default("available"),
+  description: z.string().optional().nullable(),
+  maxSpots: z.number().int().min(1).default(16),
+  eventDate: z.string().datetime({ offset: true }).optional().nullable(),
+  published: z.boolean().default(true),
+});
+
+const CreateEventBody = EventBody.extend({
+  id: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/, "ID must be lowercase letters, numbers or hyphens"),
+});
+
 // ─── GET /admin/events ────────────────────────────────────────────────────────
 
 router.get("/admin/events", requireAdmin, async (req, res): Promise<void> => {
@@ -72,7 +98,6 @@ router.get("/admin/events", requireAdmin, async (req, res): Promise<void> => {
       if (od !== 0) return od;
       const da = a.eventDate ? new Date(a.eventDate).getTime() : 0;
       const db2 = b.eventDate ? new Date(b.eventDate).getTime() : 0;
-      // upcoming: soonest first; ended: most recent first
       return a.liveStatus === "ended" ? db2 - da : da - db2;
     });
 
@@ -80,6 +105,103 @@ router.get("/admin/events", requireAdmin, async (req, res): Promise<void> => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to load events" });
+  }
+});
+
+// ─── GET /admin/events/:id ────────────────────────────────────────────────────
+
+router.get("/admin/events/:id", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const [event] = await db
+      .select()
+      .from(eventsTable)
+      .where(eq(eventsTable.id, req.params.id));
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    const [booked] = await db
+      .select({ total: count() })
+      .from(bookingsTable)
+      .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.status, "confirmed")));
+
+    res.json({
+      ...event,
+      bookedCount: Number(booked?.total ?? 0),
+      liveStatus: getLiveStatus(event.eventDate),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load event" });
+  }
+});
+
+// ─── POST /admin/events ───────────────────────────────────────────────────────
+
+router.post("/admin/events", requireAdmin, async (req, res): Promise<void> => {
+  const parsed = CreateEventBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  try {
+    // Check for duplicate ID
+    const [existing] = await db
+      .select({ id: eventsTable.id })
+      .from(eventsTable)
+      .where(eq(eventsTable.id, parsed.data.id));
+
+    if (existing) {
+      res.status(409).json({ error: `Event with id "${parsed.data.id}" already exists` });
+      return;
+    }
+
+    const [event] = await db
+      .insert(eventsTable)
+      .values({
+        ...parsed.data,
+        eventDate: parsed.data.eventDate ? new Date(parsed.data.eventDate) : null,
+      })
+      .returning();
+
+    res.status(201).json(event);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create event" });
+  }
+});
+
+// ─── PUT /admin/events/:id ────────────────────────────────────────────────────
+
+router.put("/admin/events/:id", requireAdmin, async (req, res): Promise<void> => {
+  const parsed = EventBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  try {
+    const [event] = await db
+      .update(eventsTable)
+      .set({
+        ...parsed.data,
+        eventDate: parsed.data.eventDate ? new Date(parsed.data.eventDate) : null,
+      })
+      .where(eq(eventsTable.id, req.params.id))
+      .returning();
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    res.json(event);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update event" });
   }
 });
 
@@ -141,7 +263,7 @@ router.delete("/admin/events/:id/checkin", requireAdmin, async (req, res): Promi
   }
 });
 
-// ─── GET /admin/events/:id/export  (attendance CSV — existing) ───────────────
+// ─── GET /admin/events/:id/export  (attendance CSV) ──────────────────────────
 
 router.get("/admin/events/:id/export", requireAdmin, async (req, res): Promise<void> => {
   try {
@@ -182,7 +304,6 @@ router.get("/admin/events/:id/report", requireAdmin, async (req, res): Promise<v
   try {
     const { id } = req.params;
 
-    // Fetch all data in parallel
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, id));
     const [bookings, walkins, session] = await Promise.all([
       db.select().from(bookingsTable)
@@ -199,14 +320,12 @@ router.get("/admin/events/:id/report", requireAdmin, async (req, res): Promise<v
     const lines: string[] = [];
     const eventTitle = event?.title ?? id;
 
-    // ── Section 1: Event summary ──
     lines.push(`"EVENT REPORT: ${eventTitle}"`);
     lines.push(`"Date:","${event?.date ?? ""}"`);
     lines.push(`"Venue:","${event?.venue ?? ""}"`);
     lines.push(`"Generated:","${new Date().toUTCString()}"`);
     lines.push("");
 
-    // ── Section 2: Attendance ──
     lines.push("ATTENDANCE");
     lines.push("Type,Name,Company,Email,Checked In,Walk-in Paid");
     for (const b of bookings) {
@@ -221,7 +340,6 @@ router.get("/admin/events/:id/report", requireAdmin, async (req, res): Promise<v
     lines.push(`"Walk-ins:","${walkins.length}"`);
     lines.push("");
 
-    // ── Section 3: Americano leaderboard (if played) ──
     if (session) {
       const players = await db
         .select()
@@ -229,7 +347,6 @@ router.get("/admin/events/:id/report", requireAdmin, async (req, res): Promise<v
         .where(eq(americanoPlayersTable.sessionId, session.id))
         .orderBy(americanoPlayersTable.totalPoints);
 
-      // Resolve player names from bookings/walkins
       const bookingMap = Object.fromEntries(bookings.map((b) => [b.id, b.fullName]));
       const walkinMap = Object.fromEntries(walkins.map((w) => [w.id, w.name]));
 
@@ -244,7 +361,7 @@ router.get("/admin/events/:id/report", requireAdmin, async (req, res): Promise<v
         .sort((a, b) => b.points - a.points);
 
       lines.push("AMERICANO LEADERBOARD");
-      lines.push(`"Rounds played:","${session.roundsCompleted ?? 0}"`);
+      lines.push(`"Rounds played:","${session.currentRound ?? 0}"`);
       lines.push("");
       lines.push("Rank,Name,Points,Rounds Played");
       named.forEach((p, i) => {

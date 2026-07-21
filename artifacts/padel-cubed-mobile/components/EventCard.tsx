@@ -2,10 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
-import type { Event } from '@/constants/events';
+import type { ApiEvent } from '@workspace/api-client-react';
 
 interface EventCardProps {
-  event: Event;
+  event: ApiEvent;
   onPress: () => void;
   isBooked?: boolean;
 }
@@ -27,6 +27,9 @@ export function EventCard({ event, onPress, isBooked = false }: EventCardProps) 
       ? 'Limited'
       : 'Coming soon';
 
+  // dateShort is "6 Aug" — day first, then month
+  const [day, month] = event.dateShort ? event.dateShort.split(' ') : ['—', ''];
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -43,10 +46,10 @@ export function EventCard({ event, onPress, isBooked = false }: EventCardProps) 
       {/* Date strip */}
       <View style={[styles.dateStrip, { backgroundColor: colors.primary }]}>
         <Text style={[styles.dateMonth, { color: colors.primaryForeground }]}>
-          {event.dateShort.split(' ')[1]}
+          {month}
         </Text>
         <Text style={[styles.dateDay, { color: colors.primaryForeground }]}>
-          {event.dateShort.split(' ')[0]}
+          {day}
         </Text>
       </View>
 
@@ -101,7 +104,7 @@ export function EventCard({ event, onPress, isBooked = false }: EventCardProps) 
             ]}
           >
             <Text style={[styles.sponsorText, { color: colors.foreground }]}>
-              {event.sponsor}
+              {event.sponsor ?? 'P³'}
             </Text>
           </View>
           <View style={styles.timeRow}>

@@ -17,22 +17,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useProfile } from '@/context/ProfileContext';
 import { useBookings } from '@/context/BookingsContext';
-import { EVENTS } from '@/constants/events';
 import {
+  useEvent,
   useEventAttendees,
   useBookEvent,
   useCancelBooking,
   getEventAttendeesQueryKey,
 } from '@workspace/api-client-react';
-
-// ─── Event datetimes (UTC) for local notification scheduling ──────────────────
-const EVENT_TIMESTAMPS: Record<string, number> = {
-  '1': Date.UTC(2026, 7, 6, 17, 30),   // 6 Aug 18:30 BST
-  '2': Date.UTC(2026, 8, 10, 17, 30),  // 10 Sep 18:30 BST
-  '3': Date.UTC(2026, 9, 8, 17, 30),   // 8 Oct 18:30 BST
-  '4': Date.UTC(2026, 9, 29, 18, 30),  // 29 Oct 18:30 GMT
-  '5': Date.UTC(2026, 11, 3, 18, 30),  // 3 Dec 18:30 GMT
-};
 
 const AVATAR_COLORS = [
   '#19C3B0', '#6366F1', '#F59E0B', '#EC4899',
@@ -44,20 +35,22 @@ const AVATAR_COLORS = [
 async function scheduleReminder(
   eventId: string,
   title: string,
+  eventDate?: string | null,
 ): Promise<string | undefined> {
   if (Platform.OS === 'web') return undefined;
+  if (!eventDate) return undefined;
   try {
     // Dynamic import so the app doesn't crash if the package is absent
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Notifications = require('expo-notifications') as typeof import('expo-notifications');
-    const ts = EVENT_TIMESTAMPS[eventId];
+    const ts = new Date(eventDate).getTime();
     if (!ts) return undefined;
     const trigger = new Date(ts - 24 * 60 * 60 * 1000); // 24h before
     if (trigger <= new Date()) return undefined;
     return await Notifications.scheduleNotificationAsync({
       content: {
         title: '🎾 P³ event tomorrow',
-        body: `${title} — 6:30 pm tonight. See you on court!`,
+        body: `${title} — tonight. See you on court!`,
         data: { eventId },
       },
       trigger: {
@@ -144,7 +137,9 @@ export default function EventDetailScreen() {
   const { profile, isRegistered } = useProfile();
   const { isBooked, getBookingId, book, cancel: cancelLocal } = useBookings();
 
-  const event = EVENTS.find((e) => e.id === id);
+  const { data: event, isLoading: eventLoading } = useEvent(id ?? '', {
+    query: { enabled: Boolean(id) },
+  });
   const booked = isBooked(id ?? '');
   const bookingId = getBookingId(id ?? '');
   const canBook = event?.status !== 'soon';
@@ -170,7 +165,7 @@ export default function EventDetailScreen() {
           company: profile.company,
         },
       });
-      const notifId = await scheduleReminder(id, event.title);
+      const notifId = await scheduleReminder(id, event.title, event.eventDate);
       // Store bookingId so the QR ticket can encode it
       await book(id, result.id, notifId);
       queryClient.invalidateQueries({
@@ -204,6 +199,14 @@ export default function EventDetailScreen() {
       setIsCancelling(false);
     }
   }, [profile, id, cancelMutation, cancelLocal, queryClient]);
+
+  if (eventLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
 
   if (!event) {
     return (

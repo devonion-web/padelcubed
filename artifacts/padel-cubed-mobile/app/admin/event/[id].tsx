@@ -27,13 +27,13 @@ import { useColors } from '@/hooks/useColors';
 import { useAdmin } from '@/context/AdminContext';
 import {
   useAdminEventBookings,
+  useAdminEvent,
   useCheckIn,
   useUndoCheckIn,
   getAdminEventBookingsQueryKey,
   useAmericanoState,
 } from '@workspace/api-client-react';
 import type { AdminBooking, LiveStatus } from '@workspace/api-client-react';
-import { EVENTS } from '@/constants/events';
 
 // ─── Booking row ──────────────────────────────────────────────────────────────
 
@@ -162,7 +162,7 @@ export default function AdminEventDetailScreen() {
   const queryClient = useQueryClient();
   const { token } = useAdmin();
 
-  const event = EVENTS.find((e) => e.id === id);
+  const { data: adminEvent } = useAdminEvent(id ?? '', token);
   const base = process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : '';
 
   // ── Data ──────────────────────────────────────────────────────────────────
@@ -254,10 +254,10 @@ export default function AdminEventDetailScreen() {
         </View>
 
         <Text style={[styles.eventTitle, { color: colors.foreground }]} numberOfLines={2}>
-          {event?.title ?? `Event ${id}`}
+          {adminEvent?.title ?? `Event ${id}`}
         </Text>
         <Text style={[styles.eventDate, { color: colors.mutedForeground }]}>
-          {event?.date} · {event?.time}
+          {adminEvent?.date ?? '—'} · {adminEvent?.time ?? '—'}
         </Text>
 
         <View style={styles.statsRow}>
@@ -372,6 +372,16 @@ export default function AdminEventDetailScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Row 4: Edit event */}
+        <TouchableOpacity
+          onPress={() => router.push(`/admin/event-form/${id}` as never)}
+          activeOpacity={0.85}
+          style={[styles.btnGhost]}
+        >
+          <Feather name="edit-2" size={15} color={colors.mutedForeground} />
+          <Text style={[styles.btnGhostText, { color: colors.mutedForeground }]}>Edit Event Details</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

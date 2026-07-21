@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { IntentModal } from "@/components/IntentModal";
@@ -29,76 +30,25 @@ import {
   Ticket,
 } from "lucide-react";
 
-// ─── Events data ──────────────────────────────────────────────────────────────
-// To add, remove or edit upcoming events, update this array only.
-// status: "available" | "limited" | "soon"
-const events = [
-  {
-    title: "The City Kickoff",
-    date: "Thursday 6 August 2026",
-    time: "6:30pm – 9:30pm",
-    venue: "Racketeer",
-    location: "Acton, London W3",
-    format: "Americano · 16 players",
-    sponsor: "Corlytics",
-    price: 28,
-    fullPrice: 65,
-    status: "available" as const,
-    spotsLeft: 6,
-  },
-  {
-    title: "The Finance Edition",
-    date: "Thursday 10 September 2026",
-    time: "6:30pm – 9:30pm",
-    venue: "Surbiton Racquet Club",
-    location: "Surbiton, Surrey",
-    format: "Americano · 12 players",
-    sponsor: "Finativ",
-    price: 32,
-    fullPrice: 75,
-    status: "soon" as const,
-    spotsLeft: null,
-  },
-  {
-    title: "The GRC Exchange",
-    date: "Thursday 8 October 2026",
-    time: "6:30pm – 9:30pm",
-    venue: "Racketeer",
-    location: "Acton, London W3",
-    format: "Americano · 16 players",
-    sponsor: "GRC Edge",
-    price: 28,
-    fullPrice: 65,
-    status: "soon" as const,
-    spotsLeft: null,
-  },
-  {
-    title: "The October Smash",
-    date: "Thursday 29 October 2026",
-    time: "6:30pm – 9:30pm",
-    venue: "Padium",
-    location: "London",
-    format: "Americano · 12 players",
-    sponsor: "Apollo 1971",
-    price: 32,
-    fullPrice: 75,
-    status: "soon" as const,
-    spotsLeft: null,
-  },
-  {
-    title: "The Year Closer",
-    date: "Thursday 3 December 2026",
-    time: "6:30pm – 9:30pm",
-    venue: "Racketeer",
-    location: "Acton, London W3",
-    format: "Americano · 16 players",
-    sponsor: "byrne·dean",
-    price: 28,
-    fullPrice: 65,
-    status: "soon" as const,
-    spotsLeft: null,
-  },
-];
+// ─── Event type ───────────────────────────────────────────────────────────────
+interface ApiEvent {
+  id: string;
+  title: string;
+  date: string;
+  dateShort: string;
+  time: string;
+  venue: string;
+  location: string;
+  format: string;
+  sponsor: string | null;
+  price: string;
+  status: string;
+  description: string | null;
+  maxSpots: number | null;
+  eventDate: string | null;
+  published: boolean;
+  attendeeCount?: number;
+}
 
 // ─── Founders data ────────────────────────────────────────────────────────────
 // To add or remove founders, edit this array only. Each entry maps to one card.
@@ -243,6 +193,13 @@ export default function Home() {
 
   const openModal = () => setModalOpen(true);
 
+  // ─── Events from API ─────────────────────────────────────────────────────
+  const { data: events = [] } = useQuery<ApiEvent[]>({
+    queryKey: ["/api/events"],
+    queryFn: () => fetch("/api/events").then((r) => r.json()),
+    staleTime: 60_000,
+  });
+
   const scrollToHow = () => {
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -354,11 +311,13 @@ export default function Home() {
               </div>
 
               {/* Layout: featured card left, two smaller cards stacked right */}
+              {events.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
 
                 {/* ── Featured event (first / soonest) ── */}
                 {(() => {
                   const ev = events[0];
+                  if (!ev) return null;
                   return (
                     <a
                       href="#events"
@@ -379,7 +338,7 @@ export default function Home() {
                           <div className="flex items-center gap-2">
                             <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-primary text-white shadow-lg">
                               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                              {ev.spotsLeft} spots left — book now
+                              {ev.maxSpots ? `${ev.maxSpots - (ev.attendeeCount ?? 0)} spots left` : "Spaces available"} — book now
                             </span>
                           </div>
                         )}
@@ -408,8 +367,7 @@ export default function Home() {
                         {/* Bottom row: price + format + sponsor */}
                         <div className="flex items-center justify-between pt-4 border-t border-white/20">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl font-bold text-white">£{ev.price}</span>
-                            <span className="text-sm text-white/50 line-through">£{ev.fullPrice}</span>
+                            <span className="text-2xl font-bold text-white">{ev.price}</span>
                             <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full">{ev.format}</span>
                           </div>
                           <span className="text-xs text-white/50">Sponsored by {ev.sponsor}</span>
@@ -430,12 +388,9 @@ export default function Home() {
                       {/* Status + price */}
                       <div className="flex items-center justify-between gap-2">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-                          Opening soon
+                          {ev.status === "available" ? "Spaces available" : ev.status === "limited" ? "Limited spaces" : "Opening soon"}
                         </span>
-                        <span className="text-sm font-bold text-foreground">
-                          £{ev.price}
-                          <span className="text-muted-foreground font-normal line-through ml-1.5 text-xs">£{ev.fullPrice}</span>
-                        </span>
+                        <span className="text-sm font-bold text-foreground">{ev.price}</span>
                       </div>
 
                       {/* Title */}
@@ -465,6 +420,7 @@ export default function Home() {
                 </div>
 
               </div>
+              )}
             </FadeIn>
           </div>
         </section>
@@ -755,11 +711,12 @@ export default function Home() {
 
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
               {events.map((ev, i) => {
-                const statusConfig = {
+                const statusConfig = ({
                   available: { dot: "bg-emerald-400", label: "Spaces available", labelClass: "text-emerald-400" },
                   limited:   { dot: "bg-amber-400",   label: "Limited spaces",   labelClass: "text-amber-400" },
                   soon:      { dot: "bg-muted-foreground/40", label: "Opening soon", labelClass: "text-muted-foreground" },
-                }[ev.status];
+                } as Record<string, { dot: string; label: string; labelClass: string }>)[ev.status]
+                  ?? { dot: "bg-muted-foreground/40", label: "Opening soon", labelClass: "text-muted-foreground" };
 
                 return (
                   <FadeIn key={ev.title} delay={i * 0.07}>
@@ -774,7 +731,9 @@ export default function Home() {
                             <span className={`flex h-2 w-2 rounded-full ${statusConfig.dot}`} />
                             <span className={`text-xs font-semibold ${statusConfig.labelClass}`}>
                               {statusConfig.label}
-                              {ev.spotsLeft !== null && ` · ${ev.spotsLeft} left`}
+                              {ev.status === "available" && ev.maxSpots && ev.attendeeCount !== undefined
+                                ? ` · ${ev.maxSpots - ev.attendeeCount} left`
+                                : null}
                             </span>
                           </div>
                           <span className="text-[11px] font-medium text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border">
@@ -808,12 +767,12 @@ export default function Home() {
                         <div className="pt-5 border-t border-border flex items-center justify-between gap-4">
                           <div>
                             <div className="flex items-baseline gap-2">
-                              <span className="text-2xl font-bold text-foreground">£{ev.price}</span>
+                              <span className="text-2xl font-bold text-foreground">{ev.price}</span>
                               <span className="text-sm text-muted-foreground">/person</span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               <Ticket className="inline h-3 w-3 mr-1 opacity-60" />
-                              Full rate ~£{ev.fullPrice} · sponsor subsidy applied
+                              Sponsored event · subsidised rate
                             </p>
                           </div>
                           <Button
