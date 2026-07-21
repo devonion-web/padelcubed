@@ -33,10 +33,23 @@ type ImageIcon = { kind: 'image'; src: (typeof PADEL_IMAGES)[number] };
 type LogoIcon  = { kind: 'logo' };
 type IconDef   = ImageIcon | LogoIcon;
 
-const ICONS: IconDef[] = [
-  ...PADEL_IMAGES.map((src) => ({ kind: 'image' as const, src })),
-  { kind: 'logo' },
-];
+/** Fisher-Yates shuffle — returns a new array */
+function shuffle<T>(arr: readonly T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+
+/** Build a fresh randomised run ending with the P³ logo */
+function buildIconSequence(): IconDef[] {
+  const images = shuffle(PADEL_IMAGES).map(
+    (src) => ({ kind: 'image' as const, src }),
+  );
+  return [...images, { kind: 'logo' }];
+}
 
 // ─── Acceleration curve ───────────────────────────────────────────────────────
 // 4 padel icons → P³ spring land
@@ -99,6 +112,9 @@ interface SplashAnimationProps {
 export function SplashAnimation({ onComplete }: SplashAnimationProps) {
   const insets = useSafeAreaInsets();
 
+  // Build a fresh shuffled sequence once per mount
+  const icons = useRef<IconDef[]>(buildIconSequence()).current;
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [nextIdx,    setNextIdx]    = useState(1);
 
@@ -111,7 +127,7 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
       new Promise((resolve) => {
         setNextIdx(toIndex);
         requestAnimationFrame(() => {
-          const isFinal = toIndex === ICONS.length - 1;
+          const isFinal = toIndex === icons.length - 1;
 
           if (isFinal) {
             Animated.spring(slideY, {
@@ -148,7 +164,7 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
     const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
     async function run() {
-      for (let i = 1; i < ICONS.length; i++) {
+      for (let i = 1; i < icons.length; i++) {
         if (cancelled) return;
         await delay(HOLD_MS[i - 1] ?? 65);
         if (cancelled) return;
@@ -197,8 +213,8 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
           <Animated.View
             style={[styles.reel, { transform: [{ translateY: slideY }] }]}
           >
-            <ReelSlot icon={ICONS[currentIdx]} />
-            <ReelSlot icon={ICONS[nextIdx]} />
+            <ReelSlot icon={icons[currentIdx]!} />
+            <ReelSlot icon={icons[nextIdx]!} />
           </Animated.View>
         </View>
 
