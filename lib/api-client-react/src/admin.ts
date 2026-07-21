@@ -16,9 +16,13 @@ import type { ApiEvent, ApiBooking } from "./events";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type LiveStatus = "live" | "upcoming" | "ended";
+
 export interface AdminEvent extends ApiEvent {
   bookedCount: number;
   checkedInCount: number;
+  walkinCount: number;
+  liveStatus: LiveStatus;
 }
 
 export interface AdminBooking extends ApiBooking {

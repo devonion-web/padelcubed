@@ -125,12 +125,22 @@ function EventRow({ event, onPress }: { event: AdminEvent; onPress: () => void }
   const colors = useColors();
   const pct        = event.maxSpots ? Math.min(event.bookedCount / event.maxSpots, 1) : 0;
   const checkedPct = event.bookedCount ? Math.min(event.checkedInCount / event.bookedCount, 1) : 0;
+  const isLive   = event.liveStatus === 'live';
+  const isEnded  = event.liveStatus === 'ended';
 
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      style={[styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}
+      style={[
+        styles.eventRow,
+        {
+          backgroundColor: colors.card,
+          borderColor: isLive ? '#22c55e55' : colors.border,
+          borderRadius: colors.radius,
+          opacity: isEnded ? 0.65 : 1,
+        },
+      ]}
     >
       <View style={styles.eventRowTop}>
         <View style={{ flex: 1 }}>
@@ -141,7 +151,18 @@ function EventRow({ event, onPress }: { event: AdminEvent; onPress: () => void }
             {event.date}
           </Text>
         </View>
-        <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        {isLive && (
+          <View style={styles.livePill}>
+            <View style={styles.liveDot} />
+            <Text style={styles.livePillText}>LIVE</Text>
+          </View>
+        )}
+        {isEnded && (
+          <View style={[styles.endedPill, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
+            <Text style={[styles.endedPillText, { color: colors.mutedForeground }]}>ENDED</Text>
+          </View>
+        )}
+        <Feather name="chevron-right" size={18} color={colors.mutedForeground} style={{ marginLeft: 6 }} />
       </View>
 
       <View style={styles.statsRow}>
@@ -154,6 +175,15 @@ function EventRow({ event, onPress }: { event: AdminEvent; onPress: () => void }
           <Text style={[styles.statNum, { color: '#19C3B0' }]}>{event.checkedInCount}</Text>
           <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>checked in</Text>
         </View>
+        {(event.walkinCount ?? 0) > 0 && (
+          <>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.stat}>
+              <Text style={[styles.statNum, { color: colors.foreground }]}>{event.walkinCount}</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>walk-ins</Text>
+            </View>
+          </>
+        )}
       </View>
 
       <View style={[styles.bar, { backgroundColor: `${colors.primary}22` }]}>
@@ -210,7 +240,11 @@ function AdminEventsList() {
           showsVerticalScrollIndicator={false}
         >
           {events.map((ev) => (
-            <EventRow key={ev.id} event={ev} onPress={() => router.push(`/admin/event/${ev.id}` as never)} />
+            <EventRow
+              key={ev.id}
+              event={ev}
+              onPress={() => router.push(`/admin/event/${ev.id}?status=${ev.liveStatus}` as never)}
+            />
           ))}
         </ScrollView>
       )}
@@ -250,7 +284,7 @@ const styles = StyleSheet.create({
 
   list: { padding: 16, gap: 12 },
   eventRow: { borderWidth: 1, padding: 16, gap: 12 },
-  eventRowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  eventRowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   eventRowTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
   eventRowDate: { fontFamily: 'Inter_400Regular', fontSize: 13, marginTop: 2 },
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -261,4 +295,9 @@ const styles = StyleSheet.create({
   bar: { height: 4, borderRadius: 2, overflow: 'hidden', position: 'relative' },
   barFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 2 },
   barChecked: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 2 },
+  livePill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#22c55e22', borderWidth: 1, borderColor: '#22c55e55', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' },
+  livePillText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: '#22c55e', letterSpacing: 0.5 },
+  endedPill: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
+  endedPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.5 },
 });
