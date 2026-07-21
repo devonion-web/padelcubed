@@ -144,6 +144,15 @@ export function useEndSession(eventId: string, token: string) {
   });
 }
 
+export function useResetSession(eventId: string, token: string) {
+  const qc = useQueryClient();
+  return useMutation<void, Error>({
+    mutationFn: () =>
+      apiFetch<void>(`/api/admin/events/${eventId}/americano`, token, { method: 'DELETE' }),
+    onSuccess: () => qc.removeQueries({ queryKey: getAmericanoQueryKey(eventId) }),
+  });
+}
+
 export function useLeaderboard(eventId: string, token: string) {
   return useQuery<{ session: AmericanoSession; players: AmericanoPlayer[] }>({
     queryKey: ['leaderboard', eventId],

@@ -6,7 +6,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -29,10 +28,11 @@ import {
   useNextRound,
   useEnterScore,
   useEndSession,
+  useResetSession,
+  useAdminEvent,
   getAmericanoQueryKey,
 } from '@workspace/api-client-react';
 import type { AmericanoPlayer, AmericanoCourt, AmericanoState, GameFormat } from '@workspace/api-client-react';
-import { useAdminEvent } from '@workspace/api-client-react';
 
 const FORMAT_LABELS: Record<GameFormat, string> = {
   americano: 'Americano',
@@ -294,6 +294,7 @@ export default function FormatManagerScreen() {
   const startRound = useStartRound(token);
   const nextRound = useNextRound(id ?? '', token);
   const endSession = useEndSession(id ?? '', token);
+  const resetSession = useResetSession(id ?? '', token);
 
   const session = state?.session;
   const currentRound = state?.currentRound ?? null;
@@ -331,17 +332,40 @@ export default function FormatManagerScreen() {
 
   const handleEndSession = () => {
     Alert.alert(
-      'End Session Early?',
-      'This will close the current round and finalise the standings. You can still view results afterwards.',
+      'End Tournament?',
+      'This will finalise the standings and close the tournament. This cannot be undone from the app.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'End Session',
+          text: 'End Tournament',
           style: 'destructive',
           onPress: async () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             try {
               await endSession.mutateAsync();
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleResetSession = () => {
+    Alert.alert(
+      'Reset Tournament?',
+      'This will delete all scores and the current draw. Players will keep their check-in status. You can start a fresh session from the event screen.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            try {
+              await resetSession.mutateAsync();
+              router.replace(`/admin/event/${id}` as never);
             } catch (err: any) {
               Alert.alert('Error', err.message);
             }
@@ -440,7 +464,24 @@ export default function FormatManagerScreen() {
         showsVerticalScrollIndicator={false}
       >
         {sessionComplete ? (
-          <MiniLeaderboard players={players} />
+          <>
+            <MiniLeaderboard players={players} />
+            {/* Reset escape hatch */}
+            <TouchableOpacity
+              onPress={handleResetSession}
+              disabled={resetSession.isPending}
+              activeOpacity={0.7}
+              style={[styles.resetBtn, { borderColor: colors.border }]}
+            >
+              {resetSession.isPending
+                ? <ActivityIndicator size="small" color={colors.mutedForeground} />
+                : <>
+                    <Feather name="refresh-cw" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.resetBtnText, { color: colors.mutedForeground }]}>Reset & Start Over</Text>
+                  </>
+              }
+            </TouchableOpacity>
+          </>
         ) : (
           <>
             {/* Court draw notice if round not started */}
@@ -502,13 +543,13 @@ export default function FormatManagerScreen() {
               )}
             </TouchableOpacity>
           ) : allScored ? (
-            /* ALL SCORED — Next Round + End Session row */
-            <View style={styles.actionRow}>
+            /* ALL SCORED — Next Round (primary) + End Tournament (ghost, below) */
+            <>
               <TouchableOpacity
                 onPress={handleNextRound}
                 disabled={nextRound.isPending}
                 activeOpacity={0.85}
-                style={[styles.primaryBtn, { backgroundColor: colors.primary, flex: 1 }]}
+                style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
               >
                 {nextRound.isPending ? (
                   <ActivityIndicator color={colors.primaryForeground} />
@@ -524,31 +565,21 @@ export default function FormatManagerScreen() {
               <TouchableOpacity
                 onPress={handleEndSession}
                 disabled={endSession.isPending}
-                activeOpacity={0.85}
-                style={[styles.endBtn, { borderColor: '#ef4444' }]}
+                activeOpacity={0.7}
+                style={styles.endTournamentLink}
               >
-                <Feather name="flag" size={17} color="#ef4444" />
-                <Text style={[styles.endBtnText, { color: '#ef4444' }]}>End</Text>
+                <Feather name="flag" size={13} color="#ef444488" />
+                <Text style={styles.endTournamentText}>End Tournament</Text>
               </TouchableOpacity>
-            </View>
+            </>
           ) : (
-            /* WAITING FOR SCORES — pending count + End Session */
-            <View style={styles.actionRow}>
-              <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}>
-                <ActivityIndicator size="small" color={colors.mutedForeground} />
-                <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
-                  {courts.filter((c) => c.teamAScore === null).length} court{courts.filter((c) => c.teamAScore === null).length !== 1 ? 's' : ''} still need scores
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={handleEndSession}
-                disabled={endSession.isPending}
-                activeOpacity={0.85}
-                style={[styles.endBtn, { borderColor: '#ef4444' }]}
-              >
-                <Feather name="flag" size={17} color="#ef4444" />
-                <Text style={[styles.endBtnText, { color: '#ef4444' }]}>End</Text>
-              </TouchableOpacity>
+            /* WAITING FOR SCORES — shows how many courts still need scores, no End button */
+            <View style={[styles.waitingBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+              <Text style={[styles.waitingText, { color: colors.mutedForeground }]}>
+                {courts.filter((c) => c.teamAScore === null || c.teamBScore === null).length} court
+                {courts.filter((c) => c.teamAScore === null || c.teamBScore === null).length !== 1 ? 's' : ''} still need scores
+              </Text>
             </View>
           )}
         </View>
@@ -599,12 +630,6 @@ const styles = StyleSheet.create({
     width: 56, height: 52, borderRadius: 10, borderWidth: 1.5,
     textAlign: 'center', fontFamily: 'Inter_700Bold', fontSize: 22,
   },
-  scoreDisplay: {
-    width: 56, height: 52, borderRadius: 10, borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  scoreDisplayText: { fontFamily: 'Inter_700Bold', fontSize: 22 },
-
   divider: { height: 1, marginHorizontal: -16, justifyContent: 'center', alignItems: 'center' },
   vsText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, paddingHorizontal: 10 },
 
@@ -623,7 +648,6 @@ const styles = StyleSheet.create({
   lbPts: { fontFamily: 'Inter_700Bold', fontSize: 14 },
 
   actionBar: { position: 'absolute', left: 16, right: 16, gap: 8 },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   primaryBtn: {
     height: 58, borderRadius: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -632,9 +656,13 @@ const styles = StyleSheet.create({
   primaryBtnText: { fontFamily: 'Inter_700Bold', fontSize: 17 },
   waitingBar: { height: 58, borderRadius: 16, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   waitingText: { fontFamily: 'Inter_500Medium', fontSize: 14 },
-  endBtn: {
-    height: 58, width: 72, borderRadius: 16, borderWidth: 1.5,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+  endTournamentLink: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6,
   },
-  endBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  endTournamentText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#ef444488' },
+  resetBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    marginTop: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1,
+  },
+  resetBtnText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
 });

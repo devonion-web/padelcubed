@@ -315,6 +315,26 @@ router.put("/admin/events/:eventId/americano/end", requireAdmin, async (req, res
   res.json(await getFullState(session.id));
 });
 
+// ── DELETE /admin/events/:eventId/americano — reset session (wipe & restart) ──
+
+router.delete("/admin/events/:eventId/americano", requireAdmin, async (req, res) => {
+  const session = await getSession(req.params.eventId);
+  if (!session) { res.status(404).json({ error: "No session" }); return; }
+
+  // Delete in dependency order
+  const rounds = await db.select({ id: americanoRoundsTable.id })
+    .from(americanoRoundsTable)
+    .where(eq(americanoRoundsTable.sessionId, session.id));
+  for (const r of rounds) {
+    await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, r.id));
+  }
+  await db.delete(americanoRoundsTable).where(eq(americanoRoundsTable.sessionId, session.id));
+  await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.sessionId, session.id));
+  await db.delete(americanoSessionsTable).where(eq(americanoSessionsTable.id, session.id));
+
+  res.status(204).end();
+});
+
 // ── POST /admin/americano/courts/:courtId/score — one-team entry ──────────────
 
 const ScoreSchema = z.object({
