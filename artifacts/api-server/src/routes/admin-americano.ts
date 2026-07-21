@@ -126,7 +126,7 @@ router.post("/admin/events/:eventId/americano", requireAdmin, async (req, res) =
 
   // Gather checked-in bookings
   const bookings = await db
-    .select({ bookingId: bookingsTable.id, registrationId: bookingsTable.registrationId, fullName: bookingsTable.fullName, email: bookingsTable.email })
+    .select({ bookingId: bookingsTable.id, fullName: bookingsTable.fullName, email: bookingsTable.email })
     .from(bookingsTable)
     .where(and(eq(bookingsTable.eventId, eventId), isNotNull(bookingsTable.checkedInAt)));
 
