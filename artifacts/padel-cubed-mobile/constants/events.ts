@@ -15,6 +15,20 @@ export interface Event {
 
 export const EVENTS: Event[] = [
   {
+    id: 'test-live',
+    title: '⚡ TEST — Live Event',
+    date: 'Monday 21 July 2026',
+    dateShort: '21 Jul',
+    time: '10:00 am – 2:00 pm',
+    venue: 'Test Venue',
+    location: 'London',
+    format: 'Americano',
+    sponsor: 'Internal',
+    price: 'Free',
+    status: 'available',
+    description: 'Test event for verifying the live admin workflow.',
+  },
+  {
     id: '1',
     title: 'The City Kickoff',
     date: 'Thursday 6 August 2026',
