@@ -1,33 +1,30 @@
 ---
 name: Americano engine
-description: On-site event management — walk-ins, Americano draw, scores, leaderboard, CSV export.
+description: DB tables, API routes, mobile screens for on-site tournament management. Key design decisions and known pitfalls.
 ---
 
 ## Rule
-All Americano and walk-in routes sit behind `requireAdmin` middleware. Scores are entered per-court and immediately update player totals. The draw algorithm sorts by points (descending) each round except round 1 (random); groups of 4 → Team A = [1st, 4th], Team B = [2nd, 3rd].
+"Next Round" must never auto-complete the session for Americano / Mexicano / Round Robin formats. Only Knockout auto-completes when `active.length < 4`.
 
-**Why:** Partners the strongest with the weakest to balance courts, which is standard for competitive Americano.
+**Why:** The original code always auto-completed when active players < 4, which fired immediately after round 1 if the session had only 4 players (1 court). Fixed by checking `session.format === "knockout"` first.
 
-## DB tables added
-walkins, americano_sessions, americano_players, americano_rounds, americano_courts — all with cascade deletes from the session.
+## Score entry
+Both team scores are entered independently — there is NO fixed total (the old `32 - teamAScore` formula has been removed).
 
-## API routes (all under /api/admin/)
-- GET/POST events/:id/walkins, PATCH walkins/:id/paid, PATCH walkins/:id/checkin
-- GET/POST events/:id/americano, POST events/:id/americano/rounds
-- POST americano/courts/:id/score
-- GET events/:id/leaderboard, GET events/:id/export (CSV)
+**API** (`POST /admin/americano/courts/:courtId/score`):
+- Accepts `{ teamAScore: number, teamBScore: number }` — both required, min 0, no max.
 
-## Mobile screens
-- app/admin/walkin/[id] — add walk-in (name, email, paid toggle)
-- app/admin/americano/[id] — draw + score entry + 15-min countdown timer
-- app/admin/leaderboard/[id] — live standings with medals
-- event/[id] updated — 2-row toolbar: [Scan QR | Walk-in] [Americano | Standings | Export]
+**Mobile** (`CourtCard`): Two separate `TextInput` fields (Team A tinted primary, Team B tinted indigo). Tab/return advances from A to B input. Save button appears only when both fields are filled.
 
-## Export
-Fetch CSV with Authorization header, then React Native Share.share(). Web alternative: just open the URL — but auth header won't follow, so mobile fetch+share is correct.
+**api-client-react** (`useEnterScore`): mutation payload is `{ courtId, teamAScore, teamBScore, eventId }`.
 
-## Key constraints
-- Need ≥ 4 checked-in players to start a session
-- All court scores must be entered before next round can be generated
-- Player points updated immediately on score entry (not on round completion)
-- Timer is client-side only (15 min), not persisted
+## How to apply
+- Never revert to the single-score auto-calculate pattern.
+- If adding a fixed-total mode later, add a `pointsPerCourt` field on the session and validate on the API; do NOT hardcode 32.
+
+## Screens
+- `app/admin/format-setup/[id].tsx` — format/courts/duration picker; creates session via POST.
+- `app/admin/americano/[id].tsx` — main manager: draw, timer, score entry, leaderboard shortcut.
+- `app/admin/leaderboard/[id].tsx` — full standings.
+- `app/admin/scan/[id].tsx` — QR check-in.
+- `app/admin/walkin/[id].tsx` — walk-in add.

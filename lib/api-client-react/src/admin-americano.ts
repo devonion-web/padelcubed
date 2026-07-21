@@ -125,11 +125,11 @@ export function useNextRound(eventId: string, token: string) {
 
 export function useEnterScore(token: string) {
   const qc = useQueryClient();
-  return useMutation<AmericanoState, Error, { courtId: number; teamAScore: number; eventId: string }>({
-    mutationFn: ({ courtId, teamAScore }) =>
+  return useMutation<AmericanoState, Error, { courtId: number; teamAScore: number; teamBScore: number; eventId: string }>({
+    mutationFn: ({ courtId, teamAScore, teamBScore }) =>
       apiFetch<AmericanoState>(`/api/admin/americano/courts/${courtId}/score`, token, {
         method: 'POST',
-        body: JSON.stringify({ teamAScore }),
+        body: JSON.stringify({ teamAScore, teamBScore }),
       }),
     onSuccess: (data, { eventId }) => qc.setQueryData(getAmericanoQueryKey(eventId), data),
   });

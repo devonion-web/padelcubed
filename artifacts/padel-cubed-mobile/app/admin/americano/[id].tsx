@@ -32,9 +32,7 @@ import {
   getAmericanoQueryKey,
 } from '@workspace/api-client-react';
 import type { AmericanoPlayer, AmericanoCourt, AmericanoState, GameFormat } from '@workspace/api-client-react';
-import { EVENTS } from '@/constants/events';
-
-const POINTS_PER_COURT = 32;
+import { useAdminEvent } from '@workspace/api-client-react';
 
 const FORMAT_LABELS: Record<GameFormat, string> = {
   americano: 'Americano',
@@ -117,13 +115,11 @@ function CourtCard({
   players,
   eventId,
   token,
-  roundStarted,
 }: {
   court: AmericanoCourt;
   players: AmericanoPlayer[];
   eventId: string;
   token: string;
-  roundStarted: boolean;
 }) {
   const colors = useColors();
   const enterScore = useEnterScore(token);
@@ -132,26 +128,31 @@ function CourtCard({
   const [scoreA, setScoreA] = useState(
     court.teamAScore !== null ? String(court.teamAScore) : ''
   );
-  const bRef = useRef<TextInput>(null);
+  const [scoreB, setScoreB] = useState(
+    court.teamBScore !== null ? String(court.teamBScore) : ''
+  );
+  const bInputRef = useRef<TextInput>(null);
 
-  // Keep field in sync when parent refetches
+  // Keep fields in sync when parent refetches
   useEffect(() => {
     if (court.teamAScore !== null) setScoreA(String(court.teamAScore));
-  }, [court.teamAScore]);
+    if (court.teamBScore !== null) setScoreB(String(court.teamBScore));
+  }, [court.teamAScore, court.teamBScore]);
 
   const pName = (id: number) => players.find((p) => p.id === id)?.name ?? `P${id}`;
-  const isScored = court.teamAScore !== null;
-  const teamBScore = scoreA !== '' ? POINTS_PER_COURT - Number(scoreA) : null;
+  const isScored = court.teamAScore !== null && court.teamBScore !== null;
+  const bothFilled = scoreA !== '' && scoreB !== '';
 
   const handleSave = async () => {
     const a = Number(scoreA);
-    if (isNaN(a) || a < 0 || a > POINTS_PER_COURT) {
-      Alert.alert('Invalid score', `Enter a value between 0 and ${POINTS_PER_COURT}`);
+    const b = Number(scoreB);
+    if (!bothFilled || isNaN(a) || isNaN(b) || a < 0 || b < 0) {
+      Alert.alert('Invalid scores', 'Enter scores for both teams (0 or higher).');
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      await enterScore.mutateAsync({ courtId: court.id, teamAScore: a, eventId });
+      await enterScore.mutateAsync({ courtId: court.id, teamAScore: a, teamBScore: b, eventId });
       qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -187,33 +188,22 @@ function CourtCard({
             {pName(court.player2Id)}
           </Text>
         </View>
-        {/* Score input for Team A */}
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <TextInput
-            value={scoreA}
-            onChangeText={(v) => setScoreA(v.replace(/[^0-9]/g, ''))}
-            onSubmitEditing={handleSave}
-            keyboardType="number-pad"
-            maxLength={2}
-            placeholder="—"
-            placeholderTextColor={colors.mutedForeground}
-            style={[
-              styles.scoreInput,
-              {
-                color: colors.foreground,
-                borderColor: colors.border,
-                backgroundColor: colors.background,
-              },
-            ]}
-          />
-        </KeyboardAvoidingView>
+        <TextInput
+          value={scoreA}
+          onChangeText={(v) => setScoreA(v.replace(/[^0-9]/g, ''))}
+          onSubmitEditing={() => bInputRef.current?.focus()}
+          returnKeyType="next"
+          keyboardType="number-pad"
+          maxLength={2}
+          placeholder="—"
+          placeholderTextColor={colors.mutedForeground}
+          style={[styles.scoreInput, { color: colors.foreground, borderColor: colors.primary + '66', backgroundColor: colors.background }]}
+        />
       </View>
 
-      {/* Divider with auto-calc */}
+      {/* Divider */}
       <View style={[styles.divider, { backgroundColor: colors.border }]}>
-        <Text style={[styles.vsText, { color: colors.mutedForeground, backgroundColor: colors.card }]}>
-          {teamBScore !== null ? `= ${teamBScore}` : 'vs'}
-        </Text>
+        <Text style={[styles.vsText, { color: colors.mutedForeground, backgroundColor: colors.card }]}>vs</Text>
       </View>
 
       {/* Team B */}
@@ -228,16 +218,22 @@ function CourtCard({
             {pName(court.player4Id)}
           </Text>
         </View>
-        {/* Auto-calculated Team B score */}
-        <View style={[styles.scoreDisplay, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          <Text style={[styles.scoreDisplayText, { color: teamBScore !== null ? '#6366f1' : colors.mutedForeground }]}>
-            {teamBScore !== null ? teamBScore : '—'}
-          </Text>
-        </View>
+        <TextInput
+          ref={bInputRef}
+          value={scoreB}
+          onChangeText={(v) => setScoreB(v.replace(/[^0-9]/g, ''))}
+          onSubmitEditing={handleSave}
+          returnKeyType="done"
+          keyboardType="number-pad"
+          maxLength={2}
+          placeholder="—"
+          placeholderTextColor={colors.mutedForeground}
+          style={[styles.scoreInput, { color: '#6366f1', borderColor: '#6366f1' + '66', backgroundColor: colors.background }]}
+        />
       </View>
 
       {/* Save button */}
-      {scoreA !== '' && (
+      {bothFilled && (
         <TouchableOpacity
           onPress={handleSave}
           disabled={enterScore.isPending}
@@ -292,8 +288,8 @@ export default function FormatManagerScreen() {
   const isWeb = Platform.OS === 'web';
   const { token } = useAdmin();
   const qc = useQueryClient();
-  const event = EVENTS.find((e) => e.id === id);
 
+  const { data: adminEvent } = useAdminEvent(id ?? '', token);
   const { data: state, isLoading, error } = useAmericanoState(id ?? '', token);
   const startRound = useStartRound(token);
   const nextRound = useNextRound(id ?? '', token);
@@ -305,7 +301,7 @@ export default function FormatManagerScreen() {
   const players = state?.players ?? [];
 
   const roundStarted = Boolean(currentRound?.startedAt);
-  const allScored = courts.length > 0 && courts.every((c) => c.teamAScore !== null);
+  const allScored = courts.length > 0 && courts.every((c) => c.teamAScore !== null && c.teamBScore !== null);
   const roundEnded = Boolean(currentRound?.endedAt);
 
   const timer = useServerTimer(
@@ -431,7 +427,7 @@ export default function FormatManagerScreen() {
           {sessionComplete ? 'Final Results' : `Round ${session?.currentRound ?? 1}`}
         </Text>
         <Text style={[styles.eventSub, { color: colors.mutedForeground }]}>
-          {event?.title ?? `Event ${id}`} · {activePlayers.length} players
+          {adminEvent?.title ?? `Event ${id}`} · {activePlayers.length} players
         </Text>
 
         {/* Timer */}
@@ -464,7 +460,6 @@ export default function FormatManagerScreen() {
                 players={players}
                 eventId={id ?? ''}
                 token={token}
-                roundStarted={roundStarted}
               />
             ))}
 

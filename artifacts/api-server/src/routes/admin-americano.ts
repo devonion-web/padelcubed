@@ -262,8 +262,9 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
   const players = await db.select().from(americanoPlayersTable).where(eq(americanoPlayersTable.sessionId, session.id));
 
   const active = players.filter((p) => !p.eliminated);
-  if (active.length < 4) {
-    // End session — not enough active players
+  // Auto-complete only for knockout when there are too few players left for a court.
+  // Americano / Mexicano / Round Robin never auto-complete — the admin ends them explicitly.
+  if (session.format === "knockout" && active.length < 4) {
     await db.update(americanoSessionsTable).set({ status: "complete" }).where(eq(americanoSessionsTable.id, session.id));
     res.json(await getFullState(session.id));
     return;
@@ -316,15 +317,17 @@ router.put("/admin/events/:eventId/americano/end", requireAdmin, async (req, res
 
 // ── POST /admin/americano/courts/:courtId/score — one-team entry ──────────────
 
-const ScoreSchema = z.object({ teamAScore: z.number().int().min(0).max(32) });
+const ScoreSchema = z.object({
+  teamAScore: z.number().int().min(0),
+  teamBScore: z.number().int().min(0),
+});
 
 router.post("/admin/americano/courts/:courtId/score", requireAdmin, async (req, res) => {
   const courtId = Number(req.params.courtId);
   const parsed = ScoreSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
 
-  const { teamAScore } = parsed.data;
-  const teamBScore = 32 - teamAScore;
+  const { teamAScore, teamBScore } = parsed.data;
 
   const court = await db.select().from(americanoCourtsTable).where(eq(americanoCourtsTable.id, courtId)).then((r) => r[0]);
   if (!court) { res.status(404).json({ error: "Court not found" }); return; }
