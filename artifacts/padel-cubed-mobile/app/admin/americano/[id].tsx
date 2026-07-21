@@ -157,11 +157,7 @@ function CourtCard({
     }
   };
 
-  const borderColor = isScored
-    ? `${colors.primary}55`
-    : roundStarted
-    ? colors.border
-    : `${colors.border}66`;
+  const borderColor = isScored ? `${colors.primary}55` : colors.border;
 
   return (
     <View style={[styles.courtCard, { backgroundColor: colors.card, borderColor, borderRadius: colors.radius }]}>
@@ -200,14 +196,12 @@ function CourtCard({
             maxLength={2}
             placeholder="—"
             placeholderTextColor={colors.mutedForeground}
-            editable={roundStarted}
             style={[
               styles.scoreInput,
               {
                 color: colors.foreground,
                 borderColor: colors.border,
                 backgroundColor: colors.background,
-                opacity: roundStarted ? 1 : 0.5,
               },
             ]}
           />
@@ -242,7 +236,7 @@ function CourtCard({
       </View>
 
       {/* Save button */}
-      {roundStarted && scoreA !== '' && (
+      {scoreA !== '' && (
         <TouchableOpacity
           onPress={handleSave}
           disabled={enterScore.isPending}
