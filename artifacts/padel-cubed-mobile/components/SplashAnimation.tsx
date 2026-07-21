@@ -2,8 +2,8 @@
  * SplashAnimation — vertical slot-machine reel, slow → fast → P³ spring land.
  *
  * Four transparent padel silhouette PNGs cycle on the blue overlay, then the
- * official P³ logo image (card + tagline) springs in as the final frame.
- * No programmatic glyphs or separate tagline — spacing is baked into the asset.
+ * P³ mark (white P + teal 3) springs in as the final frame, followed by a
+ * "People · Padel · Places" tagline fade-in.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -13,11 +13,12 @@ import {
   Image,
   Platform,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// ─── Assets ───────────────────────────────────────────────────────────────────
+// ─── Padel silhouette assets ──────────────────────────────────────────────────
 
 const PADEL_IMAGES = [
   require('../assets/splash/icon1.png'),
@@ -26,14 +27,12 @@ const PADEL_IMAGES = [
   require('../assets/splash/icon4.png'),
 ] as const;
 
-// Official P³ logo with "People · Padel · Places" tagline — transparent PNG
-const LOGO_IMAGE = require('../assets/splash/logo_final.png');
+// ─── Icon sequence ────────────────────────────────────────────────────────────
 
-// ─── Sequence builder ─────────────────────────────────────────────────────────
+type ImageIcon = { kind: 'image'; src: (typeof PADEL_IMAGES)[number] };
+type LogoIcon  = { kind: 'logo' };
+type IconDef   = ImageIcon | LogoIcon;
 
-type AnyImage = (typeof PADEL_IMAGES)[number] | typeof LOGO_IMAGE;
-
-/** Fisher-Yates shuffle — returns a new array */
 function shuffle<T>(arr: readonly T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -43,39 +42,56 @@ function shuffle<T>(arr: readonly T[]): T[] {
   return a;
 }
 
-/** Shuffled padel icons → P³ logo last */
-function buildSequence(): AnyImage[] {
-  return [...shuffle(PADEL_IMAGES), LOGO_IMAGE];
+function buildIconSequence(): IconDef[] {
+  return [...shuffle(PADEL_IMAGES).map((src) => ({ kind: 'image' as const, src })), { kind: 'logo' }];
 }
 
 // ─── Timing ───────────────────────────────────────────────────────────────────
 
-const HOLD_MS  = [900, 520, 260, 110];  // per icon, slow → fast
-const SLIDE_MS = [280, 190, 120,  65];  // per slide, accelerating
+const HOLD_MS         = [900, 520, 260, 110];
+const SLIDE_MS        = [280, 190, 120,  65];
+const TAGLINE_DELAY   = 240;
+const TAGLINE_MS      = 400;
+const LINGER_MS       = 1000;
+const FADE_MS         =  460;
 
-const LINGER_MS = 1100;   // how long the P³ logo holds before fade
-const FADE_MS   =  460;   // overlay fade-out duration
-
-// ─── Slot dimensions ──────────────────────────────────────────────────────────
+// ─── Slot window size ─────────────────────────────────────────────────────────
 
 const SLOT_SIZE = 200;
 
-// The logo image (1736×1432) displayed with contain inside SLOT_SIZE fills
-// ~200×165 — fully visible within the 200px clip window.
-const LOGO_W = SLOT_SIZE;
-const LOGO_H = Math.round(SLOT_SIZE * (1432 / 1736));  // ≈ 165
+// ─── P³ logo (white P + teal 3, renders natively on the blue overlay) ─────────
 
-// ─── Reel slot ────────────────────────────────────────────────────────────────
-
-function ReelSlot({ src, isLogo }: { src: AnyImage; isLogo: boolean }) {
+function PadLogo() {
+  const pSize   = Math.round(SLOT_SIZE * 0.68);
+  const supSize = Math.round(pSize * 0.44);
   return (
-    <View style={styles.reelSlot}>
-      <Image
-        source={src}
-        style={isLogo ? styles.logoImage : styles.slotImage}
-        resizeMode="contain"
-        fadeDuration={0}
-      />
+    <View style={styles.glyphRow}>
+      <Text
+        style={[styles.glyphP, { fontSize: pSize, lineHeight: pSize * 1.05 }]}
+        allowFontScaling={false}
+      >
+        P
+      </Text>
+      <Text
+        style={[styles.glyphSup, { fontSize: supSize, lineHeight: supSize * 1.1 }]}
+        allowFontScaling={false}
+      >
+        3
+      </Text>
+    </View>
+  );
+}
+
+// ─── Single reel slot ─────────────────────────────────────────────────────────
+
+function ReelSlot({ icon }: { icon: IconDef }) {
+  return (
+    <View style={[styles.reelSlot, icon.kind === 'logo' && styles.reelSlotLogo]}>
+      {icon.kind === 'logo' ? (
+        <PadLogo />
+      ) : (
+        <Image source={icon.src} style={styles.slotImage} resizeMode="contain" fadeDuration={0} />
+      )}
     </View>
   );
 }
@@ -88,47 +104,39 @@ interface SplashAnimationProps {
 
 export function SplashAnimation({ onComplete }: SplashAnimationProps) {
   const insets = useSafeAreaInsets();
-
-  const sequence = useRef<AnyImage[]>(buildSequence()).current;
+  const icons  = useRef<IconDef[]>(buildIconSequence()).current;
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [nextIdx,    setNextIdx]    = useState(1);
 
   const slideY         = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
 
   const slideTo = useCallback(
     (fromIndex: number, toIndex: number): Promise<void> =>
       new Promise((resolve) => {
         setNextIdx(toIndex);
         requestAnimationFrame(() => {
-          const isFinal = toIndex === sequence.length - 1;
+          const isFinal = toIndex === icons.length - 1;
           if (isFinal) {
             Animated.spring(slideY, {
               toValue: -SLOT_SIZE,
               tension: 70,
               friction: 8,
               useNativeDriver: true,
-            }).start(() => {
-              setCurrentIdx(toIndex);
-              slideY.setValue(0);
-              resolve();
-            });
+            }).start(() => { setCurrentIdx(toIndex); slideY.setValue(0); resolve(); });
           } else {
             Animated.timing(slideY, {
               toValue: -SLOT_SIZE,
               duration: SLIDE_MS[fromIndex] ?? 65,
               easing: Easing.out(Easing.quad),
               useNativeDriver: true,
-            }).start(() => {
-              setCurrentIdx(toIndex);
-              slideY.setValue(0);
-              resolve();
-            });
+            }).start(() => { setCurrentIdx(toIndex); slideY.setValue(0); resolve(); });
           }
         });
       }),
-    [slideY, sequence.length],
+    [slideY, icons.length],
   );
 
   useEffect(() => {
@@ -138,23 +146,25 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
     const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
     async function run() {
-      for (let i = 1; i < sequence.length; i++) {
+      for (let i = 1; i < icons.length; i++) {
         if (cancelled) return;
         await delay(HOLD_MS[i - 1] ?? 65);
         if (cancelled) return;
         await slideTo(i - 1, i);
       }
 
-      // Logo has landed — linger then fade out
+      // Logo has landed — fade in tagline
+      if (cancelled) return;
+      await delay(TAGLINE_DELAY);
+      await new Promise<void>((r) =>
+        Animated.timing(taglineOpacity, { toValue: 1, duration: TAGLINE_MS, useNativeDriver: true }).start(() => r()),
+      );
+
       await delay(LINGER_MS);
       if (cancelled) return;
 
       await new Promise<void>((r) =>
-        Animated.timing(overlayOpacity, {
-          toValue: 0,
-          duration: FADE_MS,
-          useNativeDriver: true,
-        }).start(() => r()),
+        Animated.timing(overlayOpacity, { toValue: 0, duration: FADE_MS, useNativeDriver: true }).start(() => r()),
       );
 
       if (!cancelled) onComplete();
@@ -162,21 +172,31 @@ export function SplashAnimation({ onComplete }: SplashAnimationProps) {
 
     run();
     return () => { cancelled = true; };
-  }, [slideTo, overlayOpacity, onComplete, sequence.length]);
-
-  const finalIdx = sequence.length - 1;
+  }, [slideTo, taglineOpacity, overlayOpacity, onComplete]);
 
   return (
     <Animated.View
       style={[styles.overlay, { opacity: overlayOpacity, paddingBottom: insets.bottom }]}
       pointerEvents="none"
     >
-      <View style={styles.window}>
-        <Animated.View
-          style={[styles.reel, { transform: [{ translateY: slideY }] }]}
-        >
-          <ReelSlot src={sequence[currentIdx]!} isLogo={currentIdx === finalIdx} />
-          <ReelSlot src={sequence[nextIdx]!}    isLogo={nextIdx    === finalIdx} />
+      <View style={styles.group}>
+        {/* Slot window — one icon tall, clips the reel */}
+        <View style={styles.window}>
+          <Animated.View style={[styles.reel, { transform: [{ translateY: slideY }] }]}>
+            <ReelSlot icon={icons[currentIdx]!} />
+            <ReelSlot icon={icons[nextIdx]!} />
+          </Animated.View>
+        </View>
+
+        {/* Tagline fades in after P³ springs into place */}
+        <Animated.View style={[styles.taglineWrap, { opacity: taglineOpacity }]}>
+          <Text style={styles.tagline}>
+            <Text style={styles.taglineWord}>People</Text>
+            <Text style={styles.taglineDot}> · </Text>
+            <Text style={styles.taglineWord}>Padel</Text>
+            <Text style={styles.taglineDot}> · </Text>
+            <Text style={styles.taglineWord}>Places</Text>
+          </Text>
         </Animated.View>
       </View>
     </Animated.View>
@@ -194,17 +214,18 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 
-  // Clip window — one slot tall
+  group: {
+    alignItems: 'center',
+    gap: 8,
+  },
+
   window: {
     width: SLOT_SIZE,
     height: SLOT_SIZE,
     overflow: 'hidden',
   },
 
-  // Animated strip — two slots stacked vertically
-  reel: {
-    width: SLOT_SIZE,
-  },
+  reel: { width: SLOT_SIZE },
 
   reelSlot: {
     width: SLOT_SIZE,
@@ -213,15 +234,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Padel silhouettes — fill the slot
-  slotImage: {
-    width: SLOT_SIZE,
-    height: SLOT_SIZE,
+  // Logo frame sits at the bottom of the slot so the glyph sits tight above the tagline
+  reelSlotLogo: {
+    justifyContent: 'flex-end',
+    paddingBottom: 2,
   },
 
-  // P³ logo image — landscape asset, sized to show both card and tagline
-  logoImage: {
-    width: LOGO_W,
-    height: LOGO_H,
+  slotImage: { width: SLOT_SIZE, height: SLOT_SIZE },
+
+  // White P + teal 3 — directly on the royal-blue overlay
+  glyphRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingLeft: 4,
   },
+  glyphP: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -1,
+  },
+  glyphSup: {
+    color: '#19C3B0',
+    fontFamily: 'Inter_700Bold',
+    alignSelf: 'flex-start',
+    marginBottom: 2,
+  },
+
+  taglineWrap: { alignItems: 'center' },
+  tagline: { fontFamily: 'Inter_600SemiBold', fontSize: 16, letterSpacing: 0.5 },
+  taglineWord: { color: '#FFFFFF' },
+  taglineDot:  { color: 'rgba(255,255,255,0.5)' },
 });
