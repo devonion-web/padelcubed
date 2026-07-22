@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, eventsTable, bookingsTable } from "@workspace/db";
+import { sendBookingConfirmation } from "../email.js";
 
 const router: IRouter = Router();
 
@@ -205,53 +206,81 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
     return;
   }
 
-  const [event] = await db
-    .select({ id: eventsTable.id })
-    .from(eventsTable)
-    .where(eq(eventsTable.id, req.params.id));
+  try {
+    // Fetch event details (needed for 404 check and confirmation email)
+    const [event] = await db
+      .select()
+      .from(eventsTable)
+      .where(eq(eventsTable.id, req.params.id));
 
-  if (!event) {
-    res.status(404).json({ error: "Event not found" });
-    return;
-  }
-
-  const existing = await db
-    .select()
-    .from(bookingsTable)
-    .where(
-      and(
-        eq(bookingsTable.eventId, req.params.id),
-        eq(bookingsTable.email, parsed.data.email),
-      ),
-    );
-
-  if (existing.length > 0) {
-    if (existing[0].status === "confirmed") {
-      res.status(409).json({ error: "Already booked for this event" });
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
       return;
     }
-    // Re-activate cancelled booking
-    const [updated] = await db
-      .update(bookingsTable)
-      .set({ status: "confirmed", bookedAt: new Date() })
-      .where(eq(bookingsTable.id, existing[0].id))
+
+    const existing = await db
+      .select()
+      .from(bookingsTable)
+      .where(
+        and(
+          eq(bookingsTable.eventId, req.params.id),
+          eq(bookingsTable.email, parsed.data.email),
+        ),
+      );
+
+    if (existing.length > 0) {
+      if (existing[0].status === "confirmed") {
+        res.status(409).json({ error: "Already booked for this event" });
+        return;
+      }
+      // Re-activate cancelled booking and resend confirmation
+      const [updated] = await db
+        .update(bookingsTable)
+        .set({ status: "confirmed", bookedAt: new Date() })
+        .where(eq(bookingsTable.id, existing[0].id))
+        .returning();
+
+      sendBookingConfirmation({
+        to: parsed.data.email,
+        name: parsed.data.fullName,
+        eventTitle: event.title,
+        eventDate: event.date,
+        eventTime: event.time,
+        eventVenue: event.venue,
+        eventLocation: event.location,
+      }).catch((err) => console.error("[email] Booking re-confirmation failed:", err));
+
+      res.status(201).json(updated);
+      return;
+    }
+
+    const [booking] = await db
+      .insert(bookingsTable)
+      .values({
+        eventId: req.params.id,
+        email: parsed.data.email,
+        fullName: parsed.data.fullName,
+        company: parsed.data.company,
+        status: "confirmed",
+      })
       .returning();
-    res.status(201).json(updated);
-    return;
+
+    // Fire-and-forget confirmation email
+    sendBookingConfirmation({
+      to: parsed.data.email,
+      name: parsed.data.fullName,
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventTime: event.time,
+      eventVenue: event.venue,
+      eventLocation: event.location,
+    }).catch((err) => console.error("[email] Booking confirmation failed:", err));
+
+    res.status(201).json(booking);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create booking" });
   }
-
-  const [booking] = await db
-    .insert(bookingsTable)
-    .values({
-      eventId: req.params.id,
-      email: parsed.data.email,
-      fullName: parsed.data.fullName,
-      company: parsed.data.company,
-      status: "confirmed",
-    })
-    .returning();
-
-  res.status(201).json(booking);
 });
 
 // ─── DELETE /events/:id/bookings ──────────────────────────────────────────────

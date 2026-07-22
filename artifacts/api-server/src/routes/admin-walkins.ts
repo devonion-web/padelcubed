@@ -117,27 +117,42 @@ router.post("/admin/events/:eventId/walkins", requireAdmin, async (req, res) => 
   }
   const { name, email, paid, checkedIn } = parsed.data;
 
-  // Fetch event details for the confirmation email (parallel with nothing yet)
-  const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, eventId)).limit(1);
+  try {
+    // Fetch event details (needed for email) — also checks event exists
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, eventId)).limit(1);
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
 
-  const [row] = await db
-    .insert(walkinsTable)
-    .values({
-      eventId,
-      name,
-      email,
-      paid,
-      checkedInAt: checkedIn ? new Date() : null,
-    })
-    .returning();
+    // Prevent duplicate walk-in registrations for the same email + event
+    const [dup] = await db
+      .select({ id: walkinsTable.id })
+      .from(walkinsTable)
+      .where(and(eq(walkinsTable.eventId, eventId), eq(walkinsTable.email, email)))
+      .limit(1);
+    if (dup) {
+      res.status(409).json({ error: "A walk-in with that email is already registered for this event" });
+      return;
+    }
 
-  // Auto-add to active americano session if checked in, and send confirmation email
-  if (checkedIn) {
-    await addWalkinToActiveSession(row.id, name, email, eventId);
-  }
+    const [row] = await db
+      .insert(walkinsTable)
+      .values({
+        eventId,
+        name,
+        email,
+        paid,
+        checkedInAt: checkedIn ? new Date() : null,
+      })
+      .returning();
 
-  // Send confirmation email (fire-and-forget — don't block the response)
-  if (event) {
+    // Auto-add to active americano session if checked in
+    if (checkedIn) {
+      await addWalkinToActiveSession(row.id, name, email, eventId);
+    }
+
+    // Fire-and-forget confirmation email
     sendWalkinConfirmation({
       to: email,
       name,
@@ -146,47 +161,63 @@ router.post("/admin/events/:eventId/walkins", requireAdmin, async (req, res) => 
       eventTime: event.time,
       eventVenue: event.venue,
       eventLocation: event.location,
-    }).catch((err) => console.error("[email] Failed to send walk-in confirmation:", err));
-  }
+    }).catch((err) => console.error("[email] Walk-in confirmation failed:", err));
 
-  res.status(201).json(row);
+    res.status(201).json(row);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create walk-in" });
+  }
 });
 
 // ── Update paid status ──────────────────────────────────────────────────────
 router.patch("/admin/walkins/:id/paid", requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  const { paid } = z.object({ paid: z.boolean() }).parse(req.body);
-  const [row] = await db
-    .update(walkinsTable)
-    .set({ paid })
-    .where(eq(walkinsTable.id, id))
-    .returning();
-  if (!row) { res.status(404).json({ error: "Not found" }); return; }
-  res.json(row);
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  try {
+    const parsed = z.object({ paid: z.boolean() }).safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: "paid (boolean) required" }); return; }
+    const [row] = await db
+      .update(walkinsTable)
+      .set({ paid: parsed.data.paid })
+      .where(eq(walkinsTable.id, id))
+      .returning();
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.json(row);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update paid status" });
+  }
 });
 
 // ── Toggle check-in for a walk-in ──────────────────────────────────────────
 router.patch("/admin/walkins/:id/checkin", requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  const existing = await db
-    .select()
-    .from(walkinsTable)
-    .where(eq(walkinsTable.id, id))
-    .then((r) => r[0]);
-  if (!existing) { res.status(404).json({ error: "Not found" }); return; }
-  const nowCheckedIn = !existing.checkedInAt;
-  const [row] = await db
-    .update(walkinsTable)
-    .set({ checkedInAt: nowCheckedIn ? new Date() : null })
-    .where(eq(walkinsTable.id, id))
-    .returning();
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  try {
+    const existing = await db
+      .select()
+      .from(walkinsTable)
+      .where(eq(walkinsTable.id, id))
+      .then((r) => r[0]);
+    if (!existing) { res.status(404).json({ error: "Not found" }); return; }
 
-  // Auto-add to active americano session when checking in
-  if (nowCheckedIn) {
-    await addWalkinToActiveSession(id, existing.name, existing.email, existing.eventId);
+    const nowCheckedIn = !existing.checkedInAt;
+    const [row] = await db
+      .update(walkinsTable)
+      .set({ checkedInAt: nowCheckedIn ? new Date() : null })
+      .where(eq(walkinsTable.id, id))
+      .returning();
+
+    if (nowCheckedIn) {
+      await addWalkinToActiveSession(id, existing.name, existing.email, existing.eventId);
+    }
+
+    res.json(row);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to toggle check-in" });
   }
-
-  res.json(row);
 });
 
 export default router;

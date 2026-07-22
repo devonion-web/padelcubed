@@ -8,6 +8,7 @@
  * DELETE /admin/auth/users/:id  — remove admin user (superadmin only)
  */
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq, and, gt, isNull } from "drizzle-orm";
@@ -21,6 +22,15 @@ import {
 
 const router = Router();
 
+// ─── Rate limiter: max 10 login attempts per 15 min per IP ───────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts — please try again in 15 minutes" },
+});
+
 // ─── POST /admin/auth/login ──────────────────────────────────────────────────
 
 const LoginBody = z.object({
@@ -28,7 +38,7 @@ const LoginBody = z.object({
   password: z.string().min(1),
 });
 
-router.post("/admin/auth/login", async (req, res): Promise<void> => {
+router.post("/admin/auth/login", loginLimiter, async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Email and password required" });
