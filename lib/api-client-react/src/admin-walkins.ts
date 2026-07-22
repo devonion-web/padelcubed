@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { getAmericanoQueryKey } from './admin-americano';
 
 export interface Walkin {
@@ -33,11 +33,17 @@ async function apiFetch<T>(path: string, token: string, init?: RequestInit): Pro
 
 export const getWalkinsQueryKey = (eventId: string) => ['walkins', eventId] as const;
 
-export function useWalkins(eventId: string, token: string) {
-  return useQuery<Walkin[]>({
+export function useWalkins(
+  eventId: string,
+  token: string,
+  options?: { query?: Omit<UseQueryOptions<Walkin[], Error>, 'queryKey'> },
+) {
+  return useQuery<Walkin[], Error>({
     queryKey: getWalkinsQueryKey(eventId),
     queryFn: () => apiFetch<Walkin[]>(`/api/admin/events/${eventId}/walkins`, token),
     refetchInterval: 10_000,
+    enabled: Boolean(eventId) && Boolean(token),
+    ...options?.query,
   });
 }
 
@@ -49,6 +55,18 @@ export function useAddWalkin(eventId: string, token: string) {
         method: 'POST',
         body: JSON.stringify(body),
       }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getWalkinsQueryKey(eventId) });
+      qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });
+    },
+  });
+}
+
+export function useToggleWalkinCheckIn(eventId: string, token: string) {
+  const qc = useQueryClient();
+  return useMutation<Walkin, Error, { id: number }>({
+    mutationFn: ({ id }) =>
+      apiFetch<Walkin>(`/api/admin/walkins/${id}/checkin`, token, { method: 'PATCH' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: getWalkinsQueryKey(eventId) });
       qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });

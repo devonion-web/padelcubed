@@ -368,13 +368,21 @@ router.post("/admin/americano/courts/:courtId/score", requireAdmin, async (req, 
   const alreadyScored = court.teamAScore !== null;
   if (alreadyScored) {
     const prev = { a: court.teamAScore!, b: court.teamBScore! };
-    const reverseMap: [number, number][] = [
-      [court.player1Id, -prev.a], [court.player2Id, -prev.a],
-      [court.player3Id, -prev.b], [court.player4Id, -prev.b],
+    const prevAWin = prev.a > prev.b ? 1 : 0;
+    const prevBWin = prev.b > prev.a ? 1 : 0;
+    const reverseMap: [number, number, number][] = [
+      [court.player1Id, -prev.a, -prevAWin],
+      [court.player2Id, -prev.a, -prevAWin],
+      [court.player3Id, -prev.b, -prevBWin],
+      [court.player4Id, -prev.b, -prevBWin],
     ];
-    for (const [pid, delta] of reverseMap) {
-      const [cur] = await db.select({ tp: americanoPlayersTable.totalPoints }).from(americanoPlayersTable).where(eq(americanoPlayersTable.id, pid));
-      await db.update(americanoPlayersTable).set({ totalPoints: (cur?.tp ?? 0) + delta }).where(eq(americanoPlayersTable.id, pid));
+    for (const [pid, deltaPts, deltaWins] of reverseMap) {
+      const [cur] = await db.select({ tp: americanoPlayersTable.totalPoints, w: americanoPlayersTable.wins })
+        .from(americanoPlayersTable).where(eq(americanoPlayersTable.id, pid));
+      await db.update(americanoPlayersTable).set({
+        totalPoints: (cur?.tp ?? 0) + deltaPts,
+        wins: Math.max(0, (cur?.w ?? 0) + deltaWins),
+      }).where(eq(americanoPlayersTable.id, pid));
     }
   }
 

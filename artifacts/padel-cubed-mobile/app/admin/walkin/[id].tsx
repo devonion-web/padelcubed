@@ -23,8 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAdmin } from '@/context/AdminContext';
-import { useAddWalkin } from '@workspace/api-client-react';
-import { EVENTS } from '@/constants/events';
+import { useAddWalkin, useAdminEvent } from '@workspace/api-client-react';
 
 export default function WalkinScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,7 +40,7 @@ export default function WalkinScreen() {
 
   const emailRef = useRef<TextInput>(null);
   const addMutation = useAddWalkin(id ?? '', token);
-  const event = EVENTS.find((e) => e.id === id);
+  const { data: event } = useAdminEvent(id ?? '', token);
 
   const canSubmit = name.trim().length > 0 && email.includes('@');
 

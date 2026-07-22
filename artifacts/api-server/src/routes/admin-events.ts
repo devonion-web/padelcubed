@@ -122,14 +122,20 @@ router.get("/admin/events/:id", requireAdmin, async (req, res): Promise<void> =>
       return;
     }
 
-    const [booked] = await db
-      .select({ total: count() })
-      .from(bookingsTable)
-      .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.status, "confirmed")));
+    const [[booked], [checkedIn], [walkins]] = await Promise.all([
+      db.select({ total: count() }).from(bookingsTable)
+        .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.status, "confirmed"))),
+      db.select({ total: count() }).from(bookingsTable)
+        .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.status, "confirmed"), isNotNull(bookingsTable.checkedInAt))),
+      db.select({ total: count() }).from(walkinsTable)
+        .where(eq(walkinsTable.eventId, event.id)),
+    ]);
 
     res.json({
       ...event,
       bookedCount: Number(booked?.total ?? 0),
+      checkedInCount: Number(checkedIn?.total ?? 0),
+      walkinCount: Number(walkins?.total ?? 0),
       liveStatus: getLiveStatus(event.eventDate),
     });
   } catch (err) {

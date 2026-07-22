@@ -32,8 +32,12 @@ import {
   useUndoCheckIn,
   getAdminEventBookingsQueryKey,
   useAmericanoState,
+  useWalkins,
+  useToggleWalkinCheckIn,
+  useUpdateWalkinPaid,
+  getWalkinsQueryKey,
 } from '@workspace/api-client-react';
-import type { AdminBooking, LiveStatus } from '@workspace/api-client-react';
+import type { AdminBooking, LiveStatus, Walkin } from '@workspace/api-client-react';
 
 // ─── Booking row ──────────────────────────────────────────────────────────────
 
@@ -96,6 +100,77 @@ function BookingRow({
         </View>
       ) : null}
     </TouchableOpacity>
+  );
+}
+
+// ─── Walk-in row ──────────────────────────────────────────────────────────────
+
+function WalkinRow({
+  walkin,
+  onTogglePaid,
+  toggling,
+}: {
+  walkin: Walkin;
+  onTogglePaid: () => void;
+  toggling: boolean;
+}) {
+  const colors = useColors();
+  const isCheckedIn = Boolean(walkin.checkedInAt);
+
+  return (
+    <View
+      style={[
+        styles.row,
+        {
+          backgroundColor: colors.card,
+          borderColor: isCheckedIn ? `${colors.primary}55` : colors.border,
+          borderRadius: colors.radius,
+        },
+      ]}
+    >
+      {/* Always checked in indicator */}
+      <View
+        style={[
+          styles.checkCircle,
+          {
+            backgroundColor: isCheckedIn ? colors.primary : 'transparent',
+            borderColor: isCheckedIn ? colors.primary : colors.border,
+          },
+        ]}
+      >
+        {isCheckedIn ? <Feather name="check" size={14} color="#fff" /> : null}
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
+          {walkin.name}
+        </Text>
+        <Text style={[styles.company, { color: colors.mutedForeground }]} numberOfLines={1}>
+          Walk-in · {walkin.email}
+        </Text>
+      </View>
+
+      {/* Paid badge / toggle */}
+      <TouchableOpacity
+        onPress={onTogglePaid}
+        disabled={toggling}
+        activeOpacity={0.7}
+        style={[
+          styles.badge,
+          {
+            backgroundColor: walkin.paid ? '#22c55e22' : `${colors.border}55`,
+          },
+        ]}
+      >
+        {toggling ? (
+          <ActivityIndicator size="small" color={colors.mutedForeground} style={{ width: 28 }} />
+        ) : (
+          <Text style={[styles.badgeText, { color: walkin.paid ? '#22c55e' : colors.mutedForeground }]}>
+            {walkin.paid ? 'Paid' : 'Unpaid'}
+          </Text>
+        )}
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -181,7 +256,14 @@ export default function AdminEventDetailScreen() {
   const undoMutation    = useUndoCheckIn(id ?? '', token);
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
-  const checkedIn  = bookings.filter((b) => b.checkedInAt).length;
+  const { data: walkins = [] } = useWalkins(id ?? '', token, {
+    query: { refetchInterval: liveStatus === 'live' ? 10_000 : false },
+  });
+  const updatePaidMutation = useUpdateWalkinPaid(token);
+  const [togglingPaidId, setTogglingPaidId] = useState<number | null>(null);
+
+  const walkinCheckedIn = walkins.filter((w) => w.checkedInAt).length;
+  const checkedIn  = bookings.filter((b) => b.checkedInAt).length + walkinCheckedIn;
   const totalCount = bookings.length;
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -201,6 +283,19 @@ export default function AdminEventDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleTogglePaid = async (walkin: Walkin) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTogglingPaidId(walkin.id);
+    try {
+      await updatePaidMutation.mutateAsync({ id: walkin.id, paid: !walkin.paid, eventId: id ?? '' });
+      queryClient.invalidateQueries({ queryKey: getWalkinsQueryKey(id ?? '') });
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setTogglingPaidId(null);
     }
   };
 
@@ -305,6 +400,25 @@ export default function AdminEventDetailScreen() {
               toggling={togglingId === b.id}
             />
           ))}
+
+          {/* Walk-ins section */}
+          {walkins.length > 0 && (
+            <>
+              <View style={[styles.sectionDivider, { borderColor: colors.border }]}>
+                <Text style={[styles.sectionLabel, { color: colors.mutedForeground, backgroundColor: colors.background }]}>
+                  Walk-ins ({walkins.length})
+                </Text>
+              </View>
+              {walkins.map((w) => (
+                <WalkinRow
+                  key={w.id}
+                  walkin={w}
+                  onTogglePaid={() => handleTogglePaid(w)}
+                  toggling={togglingPaidId === w.id}
+                />
+              ))}
+            </>
+          )}
         </ScrollView>
       )}
 
@@ -428,6 +542,14 @@ const styles = StyleSheet.create({
   // List
   list: { padding: 16, gap: 8 },
   listHint: { fontFamily: 'Inter_400Regular', fontSize: 12, marginBottom: 4, textAlign: 'center' },
+
+  // Section divider
+  sectionDivider: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, marginBottom: 4, position: 'relative', alignItems: 'center' },
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8,
+    textTransform: 'uppercase', paddingHorizontal: 10,
+    position: 'absolute', top: -8,
+  },
 
   // Booking row
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1 },
