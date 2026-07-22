@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
-import { walkinsTable, americanoSessionsTable, americanoPlayersTable } from "@workspace/db/schema";
+import { walkinsTable, americanoSessionsTable, americanoPlayersTable, eventsTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
+import { sendWalkinConfirmation } from "../email.js";
 
 /** If there's an active americano session for this event, add the walk-in as a player (idempotent). */
 async function addWalkinToActiveSession(walkinId: number, name: string, email: string | null, eventId: string) {
@@ -64,6 +65,10 @@ router.post("/admin/events/:eventId/walkins", requireAdmin, async (req, res) => 
     return;
   }
   const { name, email, paid, checkedIn } = parsed.data;
+
+  // Fetch event details for the confirmation email (parallel with nothing yet)
+  const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, eventId)).limit(1);
+
   const [row] = await db
     .insert(walkinsTable)
     .values({
@@ -75,9 +80,22 @@ router.post("/admin/events/:eventId/walkins", requireAdmin, async (req, res) => 
     })
     .returning();
 
-  // Auto-add to active americano session if checked in
+  // Auto-add to active americano session if checked in, and send confirmation email
   if (checkedIn) {
     await addWalkinToActiveSession(row.id, name, email, eventId);
+  }
+
+  // Send confirmation email (fire-and-forget — don't block the response)
+  if (event) {
+    sendWalkinConfirmation({
+      to: email,
+      name,
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventTime: event.time,
+      eventVenue: event.venue,
+      eventLocation: event.location,
+    }).catch((err) => console.error("[email] Failed to send walk-in confirmation:", err));
   }
 
   res.status(201).json(row);
