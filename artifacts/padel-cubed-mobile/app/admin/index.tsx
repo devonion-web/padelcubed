@@ -222,12 +222,20 @@ function AdminEventsList() {
             <Feather name="x" size={22} color={colors.foreground} />
           </TouchableOpacity>
           <Text style={[styles.adminTitle, { color: colors.foreground }]}>Admin</Text>
-          <TouchableOpacity
-            onPress={async () => { await logout(); router.back(); }}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Feather name="log-out" size={20} color={colors.mutedForeground} />
-          </TouchableOpacity>
+          <View style={styles.adminHeaderActions}>
+            <TouchableOpacity
+              onPress={() => router.push('/admin/event-form/new' as never)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Feather name="plus" size={22} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => { await logout(); router.back(); }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Feather name="log-out" size={20} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={[styles.adminSubtitle, { color: colors.mutedForeground }]}>Event dashboard</Text>
       </LinearGradient>
@@ -279,6 +287,7 @@ const styles = StyleSheet.create({
 
   adminHeader: { paddingHorizontal: 20, paddingBottom: 20 },
   adminHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  adminHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   adminTitle: { fontFamily: 'Inter_700Bold', fontSize: 20, letterSpacing: -0.4 },
   adminSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 14 },
 

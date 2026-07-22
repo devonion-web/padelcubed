@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -117,6 +116,53 @@ function TimerRing({
   );
 }
 
+// ── Score stepper ─────────────────────────────────────────────────────────────
+
+function ScoreStepper({
+  value,
+  onChange,
+  color,
+}: {
+  value: number | null;
+  onChange: (v: number) => void;
+  color: string;
+}) {
+  const colors = useColors();
+  const cur = value ?? 0;
+
+  const step = (delta: number) => {
+    const next = Math.max(0, Math.min(99, cur + delta));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onChange(next);
+  };
+
+  return (
+    <View style={styles.stepper}>
+      <TouchableOpacity
+        onPress={() => step(-1)}
+        style={[styles.stepBtn, { borderColor: color + '55', backgroundColor: color + '12' }]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.7}
+      >
+        <Feather name="minus" size={18} color={color} />
+      </TouchableOpacity>
+      <View style={[styles.stepDisplay, { borderColor: color + '55', backgroundColor: colors.background }]}>
+        <Text style={[styles.stepScore, { color: value === null ? colors.mutedForeground : color }]}>
+          {value === null ? '—' : String(cur).padStart(2, '\u2007')}
+        </Text>
+      </View>
+      <TouchableOpacity
+        onPress={() => step(1)}
+        style={[styles.stepBtn, { borderColor: color + '55', backgroundColor: color + '12' }]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.7}
+      >
+        <Feather name="plus" size={18} color={color} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // ── Court card ────────────────────────────────────────────────────────────────
 
 function CourtCard({
@@ -134,39 +180,48 @@ function CourtCard({
   const enterScore = useEnterScore(token);
   const qc = useQueryClient();
 
-  const [scoreA, setScoreA] = useState(
-    court.teamAScore !== null ? String(court.teamAScore) : ''
-  );
-  const [scoreB, setScoreB] = useState(
-    court.teamBScore !== null ? String(court.teamBScore) : ''
-  );
-  const bInputRef = useRef<TextInput>(null);
+  const [scoreA, setScoreA] = useState<number | null>(court.teamAScore);
+  const [scoreB, setScoreB] = useState<number | null>(court.teamBScore);
+  const [saved, setSaved] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep fields in sync when parent refetches
+  // Keep in sync when parent refetches
   useEffect(() => {
-    if (court.teamAScore !== null) setScoreA(String(court.teamAScore));
-    if (court.teamBScore !== null) setScoreB(String(court.teamBScore));
+    setScoreA(court.teamAScore);
+    setScoreB(court.teamBScore);
   }, [court.teamAScore, court.teamBScore]);
 
   const pName = (id: number) => players.find((p) => p.id === id)?.name ?? `P${id}`;
   const isScored = court.teamAScore !== null && court.teamBScore !== null;
-  const bothFilled = scoreA !== '' && scoreB !== '';
+  const bothSet = scoreA !== null && scoreB !== null;
 
-  const handleSave = async () => {
-    const a = Number(scoreA);
-    const b = Number(scoreB);
-    if (!bothFilled || isNaN(a) || isNaN(b) || a < 0 || b < 0) {
-      Alert.alert('Invalid scores', 'Enter scores for both teams (0 or higher).');
-      return;
-    }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const doSave = useCallback(async (a: number, b: number) => {
     try {
       await enterScore.mutateAsync({ courtId: court.id, teamAScore: a, teamBScore: b, eventId });
       qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error saving score', err.message);
     }
+  }, [court.id, enterScore, eventId, qc]);
+
+  // Auto-save 0.8s after either score changes (when both are set)
+  const handleChangeA = (v: number) => {
+    setScoreA(v);
+    if (scoreB !== null) scheduleAutoSave(v, scoreB);
   };
+  const handleChangeB = (v: number) => {
+    setScoreB(v);
+    if (scoreA !== null) scheduleAutoSave(scoreA, v);
+  };
+
+  const scheduleAutoSave = (a: number, b: number) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => doSave(a, b), 800);
+  };
+
+  useEffect(() => () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); }, []);
 
   const borderColor = isScored ? `${colors.primary}55` : colors.border;
 
@@ -177,88 +232,66 @@ function CourtCard({
         <View style={[styles.courtBadge, { backgroundColor: `${colors.primary}22` }]}>
           <Text style={[styles.courtBadgeText, { color: colors.primary }]}>Court {court.courtNumber}</Text>
         </View>
-        {isScored && (
+        {enterScore.isPending ? (
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 4 }} />
+        ) : saved ? (
+          <View style={[styles.scoredBadge, { backgroundColor: '#22c55e22' }]}>
+            <Feather name="check" size={11} color="#22c55e" />
+            <Text style={[styles.scoredBadgeText, { color: '#22c55e' }]}>Saved</Text>
+          </View>
+        ) : isScored ? (
           <View style={[styles.scoredBadge, { backgroundColor: '#22c55e22' }]}>
             <Feather name="check" size={11} color="#22c55e" />
             <Text style={[styles.scoredBadgeText, { color: '#22c55e' }]}>Scored</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
-      {/* Team A */}
-      <View style={styles.teamRow}>
-        <View style={[styles.teamABar, { backgroundColor: colors.primary }]} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.teamLabel, { color: colors.mutedForeground }]}>Team A</Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+      {/* Scores row — steppers side by side */}
+      <View style={styles.scoresRow}>
+        {/* Team A */}
+        <View style={styles.teamCol}>
+          <View style={[styles.teamABar, { backgroundColor: colors.primary, width: '100%', height: 3, borderRadius: 2, marginBottom: 8 }]} />
+          <Text style={[styles.teamLabel, { color: colors.mutedForeground, textAlign: 'center', marginBottom: 4 }]}>Team A</Text>
+          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
             {pName(court.player1Id)}
           </Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
             {pName(court.player2Id)}
           </Text>
+          <ScoreStepper value={scoreA} onChange={handleChangeA} color={colors.primary} />
         </View>
-        <TextInput
-          value={scoreA}
-          onChangeText={(v) => setScoreA(v.replace(/[^0-9]/g, ''))}
-          onSubmitEditing={() => bInputRef.current?.focus()}
-          returnKeyType="next"
-          keyboardType="number-pad"
-          maxLength={2}
-          placeholder="—"
-          placeholderTextColor={colors.mutedForeground}
-          style={[styles.scoreInput, { color: colors.foreground, borderColor: colors.primary + '66', backgroundColor: colors.background }]}
-        />
-      </View>
 
-      {/* Divider */}
-      <View style={[styles.divider, { backgroundColor: colors.border }]}>
-        <Text style={[styles.vsText, { color: colors.mutedForeground, backgroundColor: colors.card }]}>vs</Text>
-      </View>
+        {/* VS divider */}
+        <View style={styles.vsCol}>
+          <Text style={[styles.vsText, { color: colors.mutedForeground }]}>vs</Text>
+        </View>
 
-      {/* Team B */}
-      <View style={styles.teamRow}>
-        <View style={[styles.teamBBar, { backgroundColor: '#6366f1' }]} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.teamLabel, { color: colors.mutedForeground }]}>Team B</Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+        {/* Team B */}
+        <View style={styles.teamCol}>
+          <View style={[styles.teamBBar, { backgroundColor: '#6366f1', width: '100%', height: 3, borderRadius: 2, marginBottom: 8 }]} />
+          <Text style={[styles.teamLabel, { color: colors.mutedForeground, textAlign: 'center', marginBottom: 4 }]}>Team B</Text>
+          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
             {pName(court.player3Id)}
           </Text>
-          <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
             {pName(court.player4Id)}
           </Text>
+          <ScoreStepper value={scoreB} onChange={handleChangeB} color="#6366f1" />
         </View>
-        <TextInput
-          ref={bInputRef}
-          value={scoreB}
-          onChangeText={(v) => setScoreB(v.replace(/[^0-9]/g, ''))}
-          onSubmitEditing={handleSave}
-          returnKeyType="done"
-          keyboardType="number-pad"
-          maxLength={2}
-          placeholder="—"
-          placeholderTextColor={colors.mutedForeground}
-          style={[styles.scoreInput, { color: '#6366f1', borderColor: '#6366f1' + '66', backgroundColor: colors.background }]}
-        />
       </View>
 
-      {/* Save button */}
-      {bothFilled && (
+      {/* Manual save for edge cases — shown only if scores changed from server but not yet auto-saved */}
+      {bothSet && !enterScore.isPending && (
         <TouchableOpacity
-          onPress={handleSave}
-          disabled={enterScore.isPending}
+          onPress={() => doSave(scoreA!, scoreB!)}
           activeOpacity={0.8}
-          style={[styles.saveBtn, { backgroundColor: `${colors.primary}22` }]}
+          style={[styles.saveBtn, { backgroundColor: `${colors.primary}15` }]}
         >
-          {enterScore.isPending ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <>
-              <Feather name={isScored ? 'edit-2' : 'check'} size={14} color={colors.primary} />
-              <Text style={[styles.saveBtnText, { color: colors.primary }]}>
-                {isScored ? 'Update Score' : 'Save Score'}
-              </Text>
-            </>
-          )}
+          <Feather name={isScored ? 'edit-2' : 'check'} size={13} color={colors.primary} />
+          <Text style={[styles.saveBtnText, { color: colors.primary }]}>
+            {isScored ? 'Update' : 'Save'}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -522,6 +555,28 @@ export default function FormatManagerScreen() {
               />
             ))}
 
+            {/* Sitting-out players (derived: active players not on any court) */}
+            {(() => {
+              const onCourt = new Set(courts.flatMap((c) => [c.player1Id, c.player2Id, c.player3Id, c.player4Id]));
+              const sittingOut = players.filter((p) => !p.eliminated && !onCourt.has(p.id));
+              if (sittingOut.length === 0) return null;
+              return (
+                <View style={[styles.sitoutBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}>
+                  <View style={styles.sitoutHeader}>
+                    <Feather name="coffee" size={13} color={colors.mutedForeground} />
+                    <Text style={[styles.sitoutTitle, { color: colors.mutedForeground }]}>Sitting out this round</Text>
+                  </View>
+                  <View style={styles.sitoutNames}>
+                    {sittingOut.map((p) => (
+                      <View key={p.id} style={[styles.sitoutChip, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                        <Text style={[styles.sitoutName, { color: colors.foreground }]}>{p.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              );
+            })()}
+
             {/* Knocked out players */}
             {session?.format === 'knockout' && players.some((p) => p.eliminated) && (
               <View style={[styles.eliminatedBox, { borderColor: colors.border }]}>
@@ -661,28 +716,40 @@ const styles = StyleSheet.create({
   notice: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14, borderRadius: 12, borderWidth: 1 },
   noticeText: { fontFamily: 'Inter_400Regular', fontSize: 13, flex: 1, lineHeight: 19 },
 
-  courtCard: { borderWidth: 1, padding: 16, gap: 10 },
-  courtHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  // Court card
+  courtCard: { borderWidth: 1, padding: 16, gap: 12 },
+  courtHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   courtBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   courtBadgeText: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 0.5 },
   scoredBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   scoredBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
 
-  teamRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  teamABar: { width: 4, height: 44, borderRadius: 2 },
-  teamBBar: { width: 4, height: 44, borderRadius: 2 },
-  teamLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, letterSpacing: 0.5, marginBottom: 2 },
-  playerName: { fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 19 },
+  // Two-column team layout
+  scoresRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  teamCol: { flex: 1, alignItems: 'center' },
+  vsCol: { width: 32, alignItems: 'center', justifyContent: 'center', paddingTop: 52 },
+  teamABar: {},
+  teamBBar: {},
+  teamLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, letterSpacing: 0.5 },
+  playerName: { fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 18 },
+  vsText: { fontFamily: 'Inter_700Bold', fontSize: 13 },
 
-  scoreInput: {
-    width: 56, height: 52, borderRadius: 10, borderWidth: 1.5,
-    textAlign: 'center', fontFamily: 'Inter_700Bold', fontSize: 22,
-  },
-  divider: { height: 1, marginHorizontal: -16, justifyContent: 'center', alignItems: 'center' },
-  vsText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, paddingHorizontal: 10 },
+  // Stepper
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  stepBtn: { width: 38, height: 38, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  stepDisplay: { width: 52, height: 44, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  stepScore: { fontFamily: 'Inter_700Bold', fontSize: 22, letterSpacing: -1 },
 
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 36, borderRadius: 10 },
-  saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 32, borderRadius: 8 },
+  saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+
+  // Sitout
+  sitoutBox: { borderWidth: 1, padding: 14, gap: 10 },
+  sitoutHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sitoutTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.3 },
+  sitoutNames: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  sitoutChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  sitoutName: { fontFamily: 'Inter_500Medium', fontSize: 13 },
 
   eliminatedBox: { borderWidth: 1, borderRadius: 12, padding: 14, gap: 4 },
   eliminatedTitle: { fontFamily: 'Inter_700Bold', fontSize: 11, letterSpacing: 1, marginBottom: 4 },

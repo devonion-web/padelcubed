@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import QRCode from "qrcode";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -12,6 +13,8 @@ const FROM = process.env.EMAIL_FROM ?? "P³ <onboarding@resend.dev>";
 export interface BookingConfirmationParams {
   to: string;
   name: string;
+  eventId: string;
+  bookingId: number;
   eventTitle: string;
   eventDate: string;
   eventTime: string;
@@ -20,8 +23,16 @@ export interface BookingConfirmationParams {
 }
 
 export async function sendBookingConfirmation(params: BookingConfirmationParams): Promise<void> {
-  const { to, name, eventTitle, eventDate, eventTime, eventVenue, eventLocation } = params;
+  const { to, name, eventId, bookingId, eventTitle, eventDate, eventTime, eventVenue, eventLocation } = params;
   const firstName = name.split(" ")[0];
+
+  // Build QR payload — same format the scanner app expects
+  const qrPayload = Buffer.from(JSON.stringify({ v: 1, eventId, bookingId, email: to })).toString("base64");
+  const qrDataUri = await QRCode.toDataURL(qrPayload, {
+    width: 200,
+    margin: 2,
+    color: { dark: "#0a2540", light: "#ffffff" },
+  });
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -104,6 +115,21 @@ export async function sendBookingConfirmation(params: BookingConfirmationParams)
                 <p style="margin:0;font-size:13px;color:#334155;line-height:1.6;">
                   Your racket, appropriate court shoes, and plenty of energy.
                   Water and refreshments will be available.
+                </p>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- QR ticket -->
+        <tr>
+          <td style="padding:0 40px 28px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+              <tr><td style="padding:20px 24px 16px;" align="center">
+                <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;">Your Entry Ticket</p>
+                <img src="${qrDataUri}" width="160" height="160" alt="QR check-in code" style="display:block;border-radius:8px;" />
+                <p style="margin:12px 0 0;font-size:12px;color:#64748b;line-height:1.5;">
+                  Show this QR code at the door for instant check-in.<br/>Screenshot it so it works offline.
                 </p>
               </td></tr>
             </table>

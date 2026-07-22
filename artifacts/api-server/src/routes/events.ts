@@ -243,6 +243,8 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
       sendBookingConfirmation({
         to: parsed.data.email,
         name: parsed.data.fullName,
+        eventId: req.params.id,
+        bookingId: existing[0].id,
         eventTitle: event.title,
         eventDate: event.date,
         eventTime: event.time,
@@ -269,6 +271,8 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
     sendBookingConfirmation({
       to: parsed.data.email,
       name: parsed.data.fullName,
+      eventId: req.params.id,
+      bookingId: booking.id,
       eventTitle: event.title,
       eventDate: event.date,
       eventTime: event.time,

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { db, corporateEnquiriesTable } from "@workspace/db";
+import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router: IRouter = Router();
 
@@ -48,20 +49,19 @@ router.post("/corporate-enquiries", async (req, res): Promise<void> => {
   });
 });
 
-// GET /admin/corporate-enquiries — admin only
-router.get("/admin/corporate-enquiries", async (req, res): Promise<void> => {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || req.query.adminPassword !== adminPassword) {
-    res.status(401).json({ error: "Unauthorised." });
-    return;
+// GET /admin/corporate-enquiries — JWT admin only
+router.get("/admin/corporate-enquiries", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const enquiries = await db
+      .select()
+      .from(corporateEnquiriesTable)
+      .orderBy(corporateEnquiriesTable.createdAt);
+
+    res.json(enquiries);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch enquiries" });
   }
-
-  const enquiries = await db
-    .select()
-    .from(corporateEnquiriesTable)
-    .orderBy(corporateEnquiriesTable.createdAt);
-
-  res.json(enquiries);
 });
 
 export default router;

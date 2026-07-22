@@ -3,11 +3,12 @@
  * Shows ranked players with points, wins, and rounds played.
  * Eliminated players (Knockout) shown at the bottom with a ✕ marker.
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   Platform,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -130,6 +131,22 @@ export default function LeaderboardScreen() {
 
   const ranked = [...active, ...eliminated];
 
+  const handleShare = useCallback(async () => {
+    if (!session || ranked.length === 0) return;
+    const medals = ['🥇', '🥈', '🥉'];
+    const lines = ranked.map((p, i) => {
+      const prefix = i < 3 && !p.eliminated ? medals[i] : `${i + 1}.`;
+      const suffix = p.eliminated ? ' (eliminated)' : ` — ${p.totalPoints} pts`;
+      return `${prefix} ${p.name}${suffix}`;
+    });
+    const format = formatLabel(session.format);
+    const status = session.status === 'complete' ? 'Final Results' : `Live Standings — Round ${session.currentRound}`;
+    const text = [`🎾 P³ ${format} — ${status}`, '', ...lines].join('\n');
+    try {
+      await Share.share({ message: text });
+    } catch { /* user dismissed */ }
+  }, [session, ranked]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -148,18 +165,28 @@ export default function LeaderboardScreen() {
             <Feather name="chevron-left" size={22} color={colors.foreground} />
           </TouchableOpacity>
           {!isLoading && session && (
-            <TouchableOpacity
-              onPress={() => refetch()}
-              disabled={isRefetching}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Feather
-                name="refresh-cw"
-                size={18}
-                color={colors.mutedForeground}
-                style={isRefetching ? { opacity: 0.4 } : undefined}
-              />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={() => refetch()}
+                disabled={isRefetching}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Feather
+                  name="refresh-cw"
+                  size={18}
+                  color={colors.mutedForeground}
+                  style={isRefetching ? { opacity: 0.4 } : undefined}
+                />
+              </TouchableOpacity>
+              {ranked.length > 0 && (
+                <TouchableOpacity
+                  onPress={handleShare}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Feather name="share" size={18} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
 
@@ -260,6 +287,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 20, gap: 6 },
   headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 22, letterSpacing: -0.5 },
   headerSub: { fontFamily: 'Inter_400Regular', fontSize: 13 },

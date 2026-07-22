@@ -4,10 +4,8 @@ import { db, registrationsTable } from "@workspace/db";
 import {
   SubmitRegistrationBody,
   SubmitRegistrationResponse,
-  ListRegistrationsQueryParams,
-  ListRegistrationsResponse,
-  ExportRegistrationsQueryParams,
 } from "@workspace/api-zod";
+import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router: IRouter = Router();
 
@@ -43,106 +41,87 @@ router.post("/registrations", async (req, res): Promise<void> => {
   res.status(201).json(SubmitRegistrationResponse.parse(registration));
 });
 
-// Admin auth middleware helper
-function checkAdminPassword(password: string | undefined): boolean {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) return false;
-  return password === adminPassword;
-}
+// GET /admin/registrations — list all registrations (JWT admin only)
+router.get("/admin/registrations", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const registrations = await db
+      .select()
+      .from(registrationsTable)
+      .orderBy(registrationsTable.createdAt);
 
-// GET /admin/registrations — list all registrations (admin only)
-router.get("/admin/registrations", async (req, res): Promise<void> => {
-  const params = ListRegistrationsQueryParams.safeParse(req.query);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
+    res.json(registrations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch registrations" });
   }
-
-  if (!checkAdminPassword(params.data.adminPassword)) {
-    res.status(401).json({ error: "Unauthorised — invalid admin password." });
-    return;
-  }
-
-  const registrations = await db
-    .select()
-    .from(registrationsTable)
-    .orderBy(registrationsTable.createdAt);
-
-  res.json(ListRegistrationsResponse.parse(registrations));
 });
 
-// GET /admin/registrations/export — export as CSV (admin only)
-router.get("/admin/registrations/export", async (req, res): Promise<void> => {
-  const params = ExportRegistrationsQueryParams.safeParse(req.query);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+// GET /admin/registrations/export — export as CSV (JWT admin only)
+router.get("/admin/registrations/export", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const registrations = await db
+      .select()
+      .from(registrationsTable)
+      .orderBy(registrationsTable.createdAt);
 
-  if (!checkAdminPassword(params.data.adminPassword)) {
-    res.status(401).json({ error: "Unauthorised — invalid admin password." });
-    return;
-  }
+    const headers = [
+      "id",
+      "fullName",
+      "email",
+      "company",
+      "jobTitle",
+      "industry",
+      "function",
+      "seniority",
+      "padelLevel",
+      "interests",
+      "linkedinUrl",
+      "gdprConsent",
+      "createdAt",
+    ];
 
-  const registrations = await db
-    .select()
-    .from(registrationsTable)
-    .orderBy(registrationsTable.createdAt);
-
-  const headers = [
-    "id",
-    "fullName",
-    "email",
-    "company",
-    "jobTitle",
-    "industry",
-    "function",
-    "seniority",
-    "padelLevel",
-    "interests",
-    "linkedinUrl",
-    "gdprConsent",
-    "createdAt",
-  ];
-
-  function escapeCsv(val: unknown): string {
-    if (val == null) return "";
-    if (Array.isArray(val)) return `"${val.join("; ")}"`;
-    const str = String(val);
-    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-      return `"${str.replace(/"/g, '""')}"`;
+    function escapeCsv(val: unknown): string {
+      if (val == null) return "";
+      if (Array.isArray(val)) return `"${val.join("; ")}"`;
+      const str = String(val);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
     }
-    return str;
+
+    const rows = registrations.map((r) =>
+      [
+        r.id,
+        r.fullName,
+        r.email,
+        r.company,
+        r.jobTitle,
+        r.industry,
+        r.function,
+        r.seniority,
+        r.padelLevel,
+        r.interests,
+        r.linkedinUrl,
+        r.gdprConsent,
+        r.createdAt?.toISOString(),
+      ]
+        .map(escapeCsv)
+        .join(","),
+    );
+
+    const csv = [headers.join(","), ...rows].join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=padel-exchange-registrations.csv",
+    );
+    res.send(csv);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to export registrations" });
   }
-
-  const rows = registrations.map((r) =>
-    [
-      r.id,
-      r.fullName,
-      r.email,
-      r.company,
-      r.jobTitle,
-      r.industry,
-      r.function,
-      r.seniority,
-      r.padelLevel,
-      r.interests,
-      r.linkedinUrl,
-      r.gdprConsent,
-      r.createdAt?.toISOString(),
-    ]
-      .map(escapeCsv)
-      .join(","),
-  );
-
-  const csv = [headers.join(","), ...rows].join("\n");
-
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=padel-exchange-registrations.csv",
-  );
-  res.send(csv);
 });
 
 export default router;
