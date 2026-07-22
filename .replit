@@ -25,4 +25,4 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-EMAIL_FROM = "P3 <info@padelcubed.co.uk>"
+EMAIL_FROM = "P³ Events <info@padelcubed.co.uk>"
