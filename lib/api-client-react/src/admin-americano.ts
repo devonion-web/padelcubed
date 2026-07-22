@@ -41,6 +41,7 @@ export interface AmericanoSession {
   format: GameFormat;
   courtsCount: number;
   roundDurationMinutes: number;
+  totalEventMinutes: number;
   status: string;
   currentRound: number;
 }
@@ -58,6 +59,7 @@ export interface StartSessionInput {
   format: GameFormat;
   courtsCount: number;
   roundDurationMinutes: number;
+  totalEventMinutes: number;
 }
 
 function authHeaders(token: string) {

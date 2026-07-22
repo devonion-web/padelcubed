@@ -81,13 +81,52 @@ async function getSession(eventId: string) {
   return rows[rows.length - 1] ?? null;
 }
 
-/** How many rounds a full Americano/Mexicano/Round Robin rotation takes for n players. */
-function calcPlannedRounds(format: string, numPlayers: number): number {
+const CHANGEOVER_MINUTES = 3; // fixed gap between rounds for changeover
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/**
+ * Calculate how many rounds to plan given format, player count, courts, round duration,
+ * and the total event time budget.
+ *
+ * - Knockout:      ceil(log2(players)) — elimination tree depth
+ * - Everything else:
+ *     maxByTime     = floor(totalEventMinutes / (roundDuration + CHANGEOVER))
+ *     maxByRotation = if everyone plays every round: N−1 (full partner rotation)
+ *                     if there are sitouts: cycle length × 2  (2 fair rotation cycles)
+ *     plannedRounds = min(maxByTime, maxByRotation)
+ */
+export function calcPlannedRounds(
+  format: string,
+  numPlayers: number,
+  courtsCount: number,
+  roundDurationMinutes: number,
+  totalEventMinutes: number,
+): number {
   if (format === "knockout") {
     return Math.max(1, Math.ceil(Math.log2(Math.max(numPlayers, 2))));
   }
-  // Americano / Mexicano / Round Robin: n-1 so every player partners with everyone else once
-  return Math.max(1, numPlayers - 1);
+
+  const seats = courtsCount * 4;
+
+  // Time budget: how many full rounds fit?
+  const maxByTime = Math.max(1, Math.floor(totalEventMinutes / (roundDurationMinutes + CHANGEOVER_MINUTES)));
+
+  // Rotation fairness cap
+  let maxByRotation: number;
+  if (numPlayers <= seats) {
+    // Everyone plays every round — N−1 gives each player one match against every partner combo
+    maxByRotation = Math.max(1, numPlayers - 1);
+  } else {
+    // Some players sit out each round; calculate fair cycle length
+    const g = gcd(numPlayers, seats);
+    const cycleLength = numPlayers / g; // rounds until each player has played equal times
+    maxByRotation = cycleLength * 2;    // 2 full fair cycles
+  }
+
+  return Math.max(1, Math.min(maxByTime, maxByRotation));
 }
 
 async function getFullState(sessionId: number) {
@@ -102,7 +141,13 @@ async function getFullState(sessionId: number) {
     ? await db.select().from(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, currentRound.id)).orderBy(americanoCourtsTable.courtNumber)
     : [];
 
-  const plannedRounds = calcPlannedRounds(session.format, players.length);
+  const plannedRounds = calcPlannedRounds(
+    session.format,
+    players.length,
+    session.courtsCount,
+    session.roundDurationMinutes,
+    session.totalEventMinutes,
+  );
 
   return {
     session,
@@ -128,13 +173,14 @@ const StartSchema = z.object({
   format: z.enum(["americano", "mexicano", "round_robin", "knockout"]).default("americano"),
   courtsCount: z.number().int().min(1).max(10).default(3),
   roundDurationMinutes: z.number().int().min(5).max(60).default(15),
+  totalEventMinutes: z.number().int().min(30).max(480).default(120),
 });
 
 router.post("/admin/events/:eventId/americano", requireAdmin, async (req, res) => {
   const { eventId } = req.params;
   const parsed = StartSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
-  const { format, courtsCount, roundDurationMinutes } = parsed.data;
+  const { format, courtsCount, roundDurationMinutes, totalEventMinutes } = parsed.data;
 
   // Gather checked-in bookings
   const bookings = await db
@@ -157,7 +203,7 @@ router.post("/admin/events/:eventId/americano", requireAdmin, async (req, res) =
   // Create session
   const [session] = await db
     .insert(americanoSessionsTable)
-    .values({ eventId, format, courtsCount, roundDurationMinutes, status: "active", currentRound: 0 })
+    .values({ eventId, format, courtsCount, roundDurationMinutes, totalEventMinutes, status: "active", currentRound: 0 })
     .returning();
 
   // Insert players

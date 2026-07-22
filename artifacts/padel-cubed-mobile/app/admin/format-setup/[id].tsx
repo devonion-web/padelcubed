@@ -118,8 +118,30 @@ export default function FormatSetupScreen() {
   const [selectedFormat, setSelectedFormat] = useState<GameFormat>('americano');
   const [courts, setCourts] = useState(3);
   const [duration, setDuration] = useState(15);
+  const [eventMinutes, setEventMinutes] = useState(120);
 
   const startSession = useStartSession(id ?? '', token);
+
+  // ── Live rounds preview ────────────────────────────────────────────────────
+  // Mirrors calcPlannedRounds on the server. Uses checked-in count if available,
+  // otherwise falls back to courts × 4 as a placeholder.
+  const checkedInCount = (adminEvent as any)?.checkedInCount ?? courts * 4;
+  const CHANGEOVER = 3;
+  const seats = courts * 4;
+  const maxByTime = Math.max(1, Math.floor(eventMinutes / (duration + CHANGEOVER)));
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const maxByRotation = checkedInCount <= seats
+    ? Math.max(1, checkedInCount - 1)
+    : (checkedInCount / gcd(checkedInCount, seats)) * 2;
+  const previewRounds = selectedFormat === 'knockout'
+    ? Math.max(1, Math.ceil(Math.log2(Math.max(checkedInCount, 2))))
+    : Math.max(1, Math.min(maxByTime, maxByRotation));
+  const previewTotalMin = previewRounds * (duration + CHANGEOVER);
+  const previewH = Math.floor(previewTotalMin / 60);
+  const previewM = previewTotalMin % 60;
+  const previewTime = previewH > 0
+    ? (previewM > 0 ? `${previewH}h ${previewM}m` : `${previewH}h`)
+    : `${previewM}m`;
 
   const handleGenerate = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -128,6 +150,7 @@ export default function FormatSetupScreen() {
         format: selectedFormat,
         courtsCount: courts,
         roundDurationMinutes: duration,
+        totalEventMinutes: eventMinutes,
       });
       // Navigate to format manager
       router.replace(`/admin/americano/${id}` as never);
@@ -215,12 +238,40 @@ export default function FormatSetupScreen() {
           suffix=" min"
           onChange={setDuration}
         />
+        <Stepper
+          label="Total event time"
+          value={eventMinutes}
+          min={60}
+          max={300}
+          step={15}
+          suffix=" min"
+          onChange={setEventMinutes}
+        />
 
-        {/* Player capacity note */}
-        <View style={[styles.infoBox, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
-          <Feather name="info" size={14} color={colors.primary} />
-          <Text style={[styles.infoText, { color: colors.mutedForeground }]}>
-            {courts * 4} players needed for {courts} full court{courts > 1 ? 's' : ''}. Players who don't fill a court sit out the round.
+        {/* Live rounds preview */}
+        <View style={[styles.previewBox, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
+          <View style={styles.previewRow}>
+            <View style={styles.previewStat}>
+              <Text style={[styles.previewNum, { color: colors.primary }]}>{previewRounds}</Text>
+              <Text style={[styles.previewLabel, { color: colors.mutedForeground }]}>rounds</Text>
+            </View>
+            <View style={[styles.previewDivider, { backgroundColor: `${colors.primary}30` }]} />
+            <View style={styles.previewStat}>
+              <Text style={[styles.previewNum, { color: colors.primary }]}>{previewTime}</Text>
+              <Text style={[styles.previewLabel, { color: colors.mutedForeground }]}>total play time</Text>
+            </View>
+            <View style={[styles.previewDivider, { backgroundColor: `${colors.primary}30` }]} />
+            <View style={styles.previewStat}>
+              <Text style={[styles.previewNum, { color: colors.primary }]}>{courts * 4}</Text>
+              <Text style={[styles.previewLabel, { color: colors.mutedForeground }]}>seats / round</Text>
+            </View>
+          </View>
+          <Text style={[styles.previewNote, { color: colors.mutedForeground }]}>
+            {checkedInCount > seats
+              ? `${checkedInCount - seats} player${checkedInCount - seats !== 1 ? 's' : ''} will rotate off each round`
+              : checkedInCount === seats
+                ? 'Everyone plays every round'
+                : `${seats - checkedInCount} more player${seats - checkedInCount !== 1 ? 's' : ''} needed to fill all courts`}
           </Text>
         </View>
       </ScrollView>
@@ -269,8 +320,13 @@ const styles = StyleSheet.create({
   stepBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   stepValue: { fontFamily: 'Inter_700Bold', fontSize: 18, minWidth: 48, textAlign: 'center' },
 
-  infoBox: { flexDirection: 'row', gap: 10, padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 8 },
-  infoText: { fontFamily: 'Inter_400Regular', fontSize: 13, flex: 1, lineHeight: 19 },
+  previewBox: { borderRadius: 14, borderWidth: 1, padding: 16, marginTop: 4, gap: 10 },
+  previewRow: { flexDirection: 'row', alignItems: 'center' },
+  previewStat: { flex: 1, alignItems: 'center', gap: 2 },
+  previewNum: { fontFamily: 'Inter_700Bold', fontSize: 22, letterSpacing: -0.5 },
+  previewLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, textAlign: 'center' },
+  previewDivider: { width: 1, height: 36, marginHorizontal: 4 },
+  previewNote: { fontFamily: 'Inter_400Regular', fontSize: 12, textAlign: 'center', lineHeight: 17 },
 
   ctaContainer: { position: 'absolute', left: 20, right: 20 },
   ctaBtn: {
