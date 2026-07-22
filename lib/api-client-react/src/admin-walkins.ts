@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAmericanoQueryKey } from './admin-americano.js';
+import { getAmericanoQueryKey } from './admin-americano';
 
 export interface Walkin {
   id: number;
