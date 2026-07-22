@@ -62,6 +62,18 @@ export function useAddWalkin(eventId: string, token: string) {
   });
 }
 
+export function useDeleteWalkin(token: string) {
+  const qc = useQueryClient();
+  return useMutation<{ ok: boolean }, Error, { walkinId: number; eventId: string }>({
+    mutationFn: ({ walkinId }) =>
+      apiFetch<{ ok: boolean }>(`/api/admin/walkins/${walkinId}`, token, { method: 'DELETE' }),
+    onSuccess: (_data, { eventId }) => {
+      qc.invalidateQueries({ queryKey: getWalkinsQueryKey(eventId) });
+      qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });
+    },
+  });
+}
+
 export function useToggleWalkinCheckIn(eventId: string, token: string) {
   const qc = useQueryClient();
   return useMutation<Walkin, Error, { id: number }>({

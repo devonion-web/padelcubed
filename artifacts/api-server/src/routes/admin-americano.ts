@@ -14,7 +14,7 @@ import {
   walkinsTable,
   registrationsTable,
 } from "@workspace/db/schema";
-import { eq, and, isNull, isNotNull, ne } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, ne, or } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router = Router();
@@ -371,6 +371,60 @@ router.put("/admin/events/:eventId/americano/end", requireAdmin, async (req, res
     .where(eq(americanoSessionsTable.id, session.id));
 
   res.json(await getFullState(session.id));
+});
+
+// ── DELETE /admin/americano/players/:playerId — remove one player from session ─
+
+router.delete("/admin/americano/players/:playerId", requireAdmin, async (req, res) => {
+  const playerId = parseInt(req.params.playerId, 10);
+  if (isNaN(playerId)) { res.status(400).json({ error: "Invalid playerId" }); return; }
+
+  try {
+    const [player] = await db
+      .select()
+      .from(americanoPlayersTable)
+      .where(eq(americanoPlayersTable.id, playerId))
+      .limit(1);
+    if (!player) { res.status(404).json({ error: "Player not found" }); return; }
+
+    // For any round in this session, delete courts that contain this player
+    // and haven't been scored yet (scored courts keep their historical record)
+    const rounds = await db
+      .select({ id: americanoRoundsTable.id })
+      .from(americanoRoundsTable)
+      .where(eq(americanoRoundsTable.sessionId, player.sessionId));
+
+    for (const round of rounds) {
+      const affectedCourts = await db
+        .select()
+        .from(americanoCourtsTable)
+        .where(
+          and(
+            eq(americanoCourtsTable.roundId, round.id),
+            or(
+              eq(americanoCourtsTable.player1Id, playerId),
+              eq(americanoCourtsTable.player2Id, playerId),
+              eq(americanoCourtsTable.player3Id, playerId),
+              eq(americanoCourtsTable.player4Id, playerId),
+            ),
+          ),
+        );
+
+      for (const court of affectedCourts) {
+        // Only wipe unscored courts — scored courts are historical, leave them
+        if (court.teamAScore === null || court.teamBScore === null) {
+          await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.id, court.id));
+        }
+      }
+    }
+
+    await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.id, playerId));
+
+    res.json(await getFullState(player.sessionId));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to remove player" });
+  }
 });
 
 // ── DELETE /admin/events/:eventId/americano — reset session (wipe & restart) ──

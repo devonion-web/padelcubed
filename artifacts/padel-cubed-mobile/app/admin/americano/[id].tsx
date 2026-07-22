@@ -28,6 +28,7 @@ import {
   useEnterScore,
   useEndSession,
   useResetSession,
+  useRemoveAmericanoPlayer,
   useAdminEvent,
   getAmericanoQueryKey,
 } from '@workspace/api-client-react';
@@ -170,11 +171,13 @@ function CourtCard({
   players,
   eventId,
   token,
+  onRemovePlayer,
 }: {
   court: AmericanoCourt;
   players: AmericanoPlayer[];
   eventId: string;
   token: string;
+  onRemovePlayer: (p: AmericanoPlayer) => void;
 }) {
   const colors = useColors();
   const enterScore = useEnterScore(token);
@@ -191,7 +194,8 @@ function CourtCard({
     setScoreB(court.teamBScore);
   }, [court.teamAScore, court.teamBScore]);
 
-  const pName = (id: number) => players.find((p) => p.id === id)?.name ?? `P${id}`;
+  const pName = (pid: number) => players.find((p) => p.id === pid)?.name ?? `P${pid}`;
+  const pObj = (pid: number) => players.find((p) => p.id === pid);
   const isScored = court.teamAScore !== null && court.teamBScore !== null;
   const bothSet = scoreA !== null && scoreB !== null;
 
@@ -253,12 +257,16 @@ function CourtCard({
         <View style={styles.teamCol}>
           <View style={[styles.teamABar, { backgroundColor: colors.primary, width: '100%', height: 3, borderRadius: 2, marginBottom: 8 }]} />
           <Text style={[styles.teamLabel, { color: colors.mutedForeground, textAlign: 'center', marginBottom: 4 }]}>Team A</Text>
-          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
-            {pName(court.player1Id)}
-          </Text>
-          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
-            {pName(court.player2Id)}
-          </Text>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player1Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
+              {pName(court.player1Id)}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player2Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
+              {pName(court.player2Id)}
+            </Text>
+          </TouchableOpacity>
           <ScoreStepper value={scoreA} onChange={handleChangeA} color={colors.primary} />
         </View>
 
@@ -271,12 +279,16 @@ function CourtCard({
         <View style={styles.teamCol}>
           <View style={[styles.teamBBar, { backgroundColor: '#6366f1', width: '100%', height: 3, borderRadius: 2, marginBottom: 8 }]} />
           <Text style={[styles.teamLabel, { color: colors.mutedForeground, textAlign: 'center', marginBottom: 4 }]}>Team B</Text>
-          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
-            {pName(court.player3Id)}
-          </Text>
-          <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
-            {pName(court.player4Id)}
-          </Text>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player3Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
+              {pName(court.player3Id)}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player4Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
+              {pName(court.player4Id)}
+            </Text>
+          </TouchableOpacity>
           <ScoreStepper value={scoreB} onChange={handleChangeB} color="#6366f1" />
         </View>
       </View>
@@ -337,6 +349,7 @@ export default function FormatManagerScreen() {
   const nextRound = useNextRound(id ?? '', token);
   const endSession = useEndSession(id ?? '', token);
   const resetSession = useResetSession(id ?? '', token);
+  const removePlayer = useRemoveAmericanoPlayer(token);
 
   const session = state?.session;
   const currentRound = state?.currentRound ?? null;
@@ -389,6 +402,28 @@ export default function FormatManagerScreen() {
               await endSession.mutateAsync();
             } catch (err: any) {
               Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRemovePlayer = (player: AmericanoPlayer) => {
+    Alert.alert(
+      player.name,
+      'Remove this player from the session? Their past scores will be kept.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove from session',
+          style: 'destructive',
+          onPress: async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            try {
+              await removePlayer.mutateAsync({ playerId: player.id, eventId: id ?? '' });
+            } catch (err: any) {
+              Alert.alert('Error', err.message ?? 'Could not remove player');
             }
           },
         },
@@ -552,6 +587,7 @@ export default function FormatManagerScreen() {
                 players={players}
                 eventId={id ?? ''}
                 token={token}
+                onRemovePlayer={handleRemovePlayer}
               />
             ))}
 
@@ -568,9 +604,14 @@ export default function FormatManagerScreen() {
                   </View>
                   <View style={styles.sitoutNames}>
                     {sittingOut.map((p) => (
-                      <View key={p.id} style={[styles.sitoutChip, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                      <TouchableOpacity
+                        key={p.id}
+                        onPress={() => handleRemovePlayer(p)}
+                        activeOpacity={0.65}
+                        style={[styles.sitoutChip, { backgroundColor: colors.background, borderColor: colors.border }]}
+                      >
                         <Text style={[styles.sitoutName, { color: colors.foreground }]}>{p.name}</Text>
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 </View>

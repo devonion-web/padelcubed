@@ -220,4 +220,21 @@ router.patch("/admin/walkins/:id/checkin", requireAdmin, async (req, res) => {
   }
 });
 
+// ── Delete a walk-in (and remove from any active session) ──────────────────
+router.delete("/admin/walkins/:id", requireAdmin, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  try {
+    // Remove from any americano session first (FK safety)
+    await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.walkinId, id));
+    // Delete the walk-in record
+    const [deleted] = await db.delete(walkinsTable).where(eq(walkinsTable.id, id)).returning();
+    if (!deleted) { res.status(404).json({ error: "Walk-in not found" }); return; }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete walk-in" });
+  }
+});
+
 export default router;

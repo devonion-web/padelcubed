@@ -156,6 +156,15 @@ export function useResetSession(eventId: string, token: string) {
   });
 }
 
+export function useRemoveAmericanoPlayer(token: string) {
+  const qc = useQueryClient();
+  return useMutation<AmericanoState, Error, { playerId: number; eventId: string }>({
+    mutationFn: ({ playerId }) =>
+      apiFetch<AmericanoState>(`/api/admin/americano/players/${playerId}`, token, { method: 'DELETE' }),
+    onSuccess: (data, { eventId }) => qc.setQueryData(getAmericanoQueryKey(eventId), data),
+  });
+}
+
 export function useLeaderboard(eventId: string, token: string) {
   return useQuery<{ session: AmericanoSession; players: AmericanoPlayer[] }>({
     queryKey: ['leaderboard', eventId],

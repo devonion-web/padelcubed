@@ -35,6 +35,7 @@ import {
   useWalkins,
   useToggleWalkinCheckIn,
   useUpdateWalkinPaid,
+  useDeleteWalkin,
   getWalkinsQueryKey,
 } from '@workspace/api-client-react';
 import type { AdminBooking, LiveStatus, Walkin } from '@workspace/api-client-react';
@@ -109,26 +110,48 @@ function WalkinRow({
   walkin,
   onTogglePaid,
   toggling,
+  onDelete,
+  deleting,
 }: {
   walkin: Walkin;
   onTogglePaid: () => void;
   toggling: boolean;
+  onDelete: () => void;
+  deleting: boolean;
 }) {
   const colors = useColors();
   const isCheckedIn = Boolean(walkin.checkedInAt);
 
+  const handlePress = () => {
+    Alert.alert(
+      walkin.name,
+      'Walk-in options',
+      [
+        {
+          text: 'Remove walk-in',
+          style: 'destructive',
+          onPress: onDelete,
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
+
   return (
-    <View
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.75}
       style={[
         styles.row,
         {
           backgroundColor: colors.card,
           borderColor: isCheckedIn ? `${colors.primary}55` : colors.border,
           borderRadius: colors.radius,
+          opacity: deleting ? 0.4 : 1,
         },
       ]}
     >
-      {/* Always checked in indicator */}
+      {/* Check-in indicator */}
       <View
         style={[
           styles.checkCircle,
@@ -150,9 +173,9 @@ function WalkinRow({
         </Text>
       </View>
 
-      {/* Paid badge / toggle */}
+      {/* Paid badge / toggle — stop propagation so tapping paid doesn't open the options sheet */}
       <TouchableOpacity
-        onPress={onTogglePaid}
+        onPress={(e) => { e.stopPropagation?.(); onTogglePaid(); }}
         disabled={toggling}
         activeOpacity={0.7}
         style={[
@@ -170,7 +193,7 @@ function WalkinRow({
           </Text>
         )}
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -260,7 +283,9 @@ export default function AdminEventDetailScreen() {
     query: { refetchInterval: liveStatus === 'live' ? 10_000 : false },
   });
   const updatePaidMutation = useUpdateWalkinPaid(token);
+  const deleteWalkinMutation = useDeleteWalkin(token);
   const [togglingPaidId, setTogglingPaidId] = useState<number | null>(null);
+  const [deletingWalkinId, setDeletingWalkinId] = useState<number | null>(null);
 
   const walkinCheckedIn = walkins.filter((w) => w.checkedInAt).length;
   const checkedIn  = bookings.filter((b) => b.checkedInAt).length + walkinCheckedIn;
@@ -296,6 +321,20 @@ export default function AdminEventDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setTogglingPaidId(null);
+    }
+  };
+
+  const handleDeleteWalkin = async (walkin: Walkin) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setDeletingWalkinId(walkin.id);
+    try {
+      await deleteWalkinMutation.mutateAsync({ walkinId: walkin.id, eventId: id ?? '' });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', 'Could not remove walk-in. Please try again.');
+    } finally {
+      setDeletingWalkinId(null);
     }
   };
 
@@ -390,7 +429,7 @@ export default function AdminEventDetailScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text style={[styles.listHint, { color: colors.mutedForeground }]}>
-            Tap a row to toggle check-in
+            Tap a booking row to toggle check-in · tap a walk-in to remove
           </Text>
           {bookings.map((b) => (
             <BookingRow
@@ -415,6 +454,8 @@ export default function AdminEventDetailScreen() {
                   walkin={w}
                   onTogglePaid={() => handleTogglePaid(w)}
                   toggling={togglingPaidId === w.id}
+                  onDelete={() => handleDeleteWalkin(w)}
+                  deleting={deletingWalkinId === w.id}
                 />
               ))}
             </>
