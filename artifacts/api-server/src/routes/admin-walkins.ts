@@ -1,12 +1,24 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
-import { walkinsTable, americanoSessionsTable, americanoPlayersTable, eventsTable } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { walkinsTable, americanoSessionsTable, americanoPlayersTable, americanoRoundsTable, americanoCourtsTable, eventsTable } from "@workspace/db/schema";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { sendWalkinConfirmation } from "../email.js";
 
-/** If there's an active americano session for this event, add the walk-in as a player (idempotent). */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * If there's an active americano session for this event, add the walk-in as a player (idempotent).
+ * If the current round hasn't started yet, also regenerates the court draw so the new player is included.
+ */
 async function addWalkinToActiveSession(walkinId: number, name: string, email: string | null, eventId: string) {
   const [session] = await db
     .select()
@@ -34,6 +46,45 @@ async function addWalkinToActiveSession(walkinId: number, name: string, email: s
     wins: 0,
     eliminated: false,
   });
+
+  // If the current round hasn't started yet, regenerate its court draw with all players now included
+  const [pendingRound] = await db
+    .select()
+    .from(americanoRoundsTable)
+    .where(and(eq(americanoRoundsTable.sessionId, session.id), isNull(americanoRoundsTable.startedAt)))
+    .orderBy(desc(americanoRoundsTable.roundNumber))
+    .limit(1);
+
+  if (!pendingRound) return; // Round already started — new player sits out this round
+
+  const allPlayers = await db
+    .select({ id: americanoPlayersTable.id, totalPoints: americanoPlayersTable.totalPoints, eliminated: americanoPlayersTable.eliminated })
+    .from(americanoPlayersTable)
+    .where(eq(americanoPlayersTable.sessionId, session.id));
+
+  const active = allPlayers.filter((p) => !p.eliminated);
+  const ordered = shuffle(active);
+
+  const courts: Array<{ p1: number; p2: number; p3: number; p4: number }> = [];
+  for (let i = 0; i + 3 < ordered.length; i += 4) {
+    const [a, b, c, d] = ordered.slice(i, i + 4);
+    courts.push({ p1: a.id, p2: d.id, p3: b.id, p4: c.id });
+  }
+
+  if (courts.length === 0) return;
+
+  // Delete the old draw and replace with the updated one
+  await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, pendingRound.id));
+  await db.insert(americanoCourtsTable).values(
+    courts.map((c, i) => ({
+      roundId: pendingRound.id,
+      courtNumber: i + 1,
+      player1Id: c.p1,
+      player2Id: c.p2,
+      player3Id: c.p3,
+      player4Id: c.p4,
+    })),
+  );
 }
 
 const router = Router();
