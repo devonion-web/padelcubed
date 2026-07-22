@@ -1,9 +1,39 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
-import { walkinsTable } from "@workspace/db/schema";
+import { walkinsTable, americanoSessionsTable, americanoPlayersTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
+
+/** If there's an active americano session for this event, add the walk-in as a player (idempotent). */
+async function addWalkinToActiveSession(walkinId: number, name: string, email: string | null, eventId: string) {
+  const [session] = await db
+    .select()
+    .from(americanoSessionsTable)
+    .where(and(eq(americanoSessionsTable.eventId, eventId), eq(americanoSessionsTable.status, "active")))
+    .limit(1);
+  if (!session) return;
+
+  // Check if already a player (idempotent)
+  const existing = await db
+    .select({ id: americanoPlayersTable.id })
+    .from(americanoPlayersTable)
+    .where(and(eq(americanoPlayersTable.sessionId, session.id), eq(americanoPlayersTable.walkinId, walkinId)))
+    .limit(1);
+  if (existing.length > 0) return;
+
+  await db.insert(americanoPlayersTable).values({
+    sessionId: session.id,
+    name,
+    email,
+    bookingId: null,
+    walkinId,
+    totalPoints: 0,
+    roundsPlayed: 0,
+    wins: 0,
+    eliminated: false,
+  });
+}
 
 const router = Router();
 
@@ -44,6 +74,12 @@ router.post("/admin/events/:eventId/walkins", requireAdmin, async (req, res) => 
       checkedInAt: checkedIn ? new Date() : null,
     })
     .returning();
+
+  // Auto-add to active americano session if checked in
+  if (checkedIn) {
+    await addWalkinToActiveSession(row.id, name, email, eventId);
+  }
+
   res.status(201).json(row);
 });
 
@@ -69,11 +105,18 @@ router.patch("/admin/walkins/:id/checkin", requireAdmin, async (req, res) => {
     .where(eq(walkinsTable.id, id))
     .then((r) => r[0]);
   if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+  const nowCheckedIn = !existing.checkedInAt;
   const [row] = await db
     .update(walkinsTable)
-    .set({ checkedInAt: existing.checkedInAt ? null : new Date() })
+    .set({ checkedInAt: nowCheckedIn ? new Date() : null })
     .where(eq(walkinsTable.id, id))
     .returning();
+
+  // Auto-add to active americano session when checking in
+  if (nowCheckedIn) {
+    await addWalkinToActiveSession(id, existing.name, existing.email, existing.eventId);
+  }
+
   res.json(row);
 });
 
