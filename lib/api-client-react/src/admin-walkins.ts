@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getAmericanoQueryKey } from './admin-americano.js';
 
 export interface Walkin {
   id: number;
@@ -48,7 +49,10 @@ export function useAddWalkin(eventId: string, token: string) {
         method: 'POST',
         body: JSON.stringify(body),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: getWalkinsQueryKey(eventId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getWalkinsQueryKey(eventId) });
+      qc.invalidateQueries({ queryKey: getAmericanoQueryKey(eventId) });
+    },
   });
 }
 
