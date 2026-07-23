@@ -5,6 +5,7 @@ import { walkinsTable, americanoSessionsTable, americanoPlayersTable, americanoR
 import { eq, and, or, isNull, desc } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { sendWalkinConfirmation } from "../email.js";
+import { buildDraw } from "./admin-americano.js";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -232,38 +233,62 @@ router.delete("/admin/walkins/:id", requireAdmin, async (req, res) => {
       .where(eq(americanoPlayersTable.walkinId, id));
 
     for (const player of players) {
-      // Find all rounds in this session
-      const rounds = await db
-        .select({ id: americanoRoundsTable.id })
-        .from(americanoRoundsTable)
-        .where(eq(americanoRoundsTable.sessionId, player.sessionId));
+      const [session, rounds] = await Promise.all([
+        db.select().from(americanoSessionsTable).where(eq(americanoSessionsTable.id, player.sessionId)).then((r) => r[0]!),
+        db.select().from(americanoRoundsTable).where(eq(americanoRoundsTable.sessionId, player.sessionId)).orderBy(americanoRoundsTable.roundNumber),
+      ]);
+      const currentRound = rounds[rounds.length - 1] ?? null;
 
       for (const round of rounds) {
-        // Delete any unscored courts that reference this player (FK safety)
-        const affectedCourts = await db
-          .select()
-          .from(americanoCourtsTable)
-          .where(
-            and(
-              eq(americanoCourtsTable.roundId, round.id),
-              or(
-                eq(americanoCourtsTable.player1Id, player.id),
-                eq(americanoCourtsTable.player2Id, player.id),
-                eq(americanoCourtsTable.player3Id, player.id),
-                eq(americanoCourtsTable.player4Id, player.id),
+        const isCurrentUnstarted = currentRound?.id === round.id && !currentRound?.startedAt;
+        if (isCurrentUnstarted) {
+          await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, round.id));
+        } else {
+          const affectedCourts = await db
+            .select()
+            .from(americanoCourtsTable)
+            .where(
+              and(
+                eq(americanoCourtsTable.roundId, round.id),
+                or(
+                  eq(americanoCourtsTable.player1Id, player.id),
+                  eq(americanoCourtsTable.player2Id, player.id),
+                  eq(americanoCourtsTable.player3Id, player.id),
+                  eq(americanoCourtsTable.player4Id, player.id),
+                ),
               ),
-            ),
-          );
-
-        for (const court of affectedCourts) {
-          if (court.teamAScore === null || court.teamBScore === null) {
-            await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.id, court.id));
+            );
+          for (const court of affectedCourts) {
+            if (court.teamAScore === null || court.teamBScore === null) {
+              await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.id, court.id));
+            }
           }
         }
       }
 
-      // Now safe to remove the player row
+      // Remove the player row
       await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.id, player.id));
+
+      // Regenerate draw if current round hasn't started
+      if (currentRound && !currentRound.startedAt) {
+        const remainingPlayers = await db
+          .select()
+          .from(americanoPlayersTable)
+          .where(eq(americanoPlayersTable.sessionId, player.sessionId));
+        const draw = buildDraw(remainingPlayers, currentRound.roundNumber, session.format);
+        if (draw.length > 0) {
+          await db.insert(americanoCourtsTable).values(
+            draw.map((c, i) => ({
+              roundId: currentRound.id,
+              courtNumber: i + 1,
+              player1Id: c.p1,
+              player2Id: c.p2,
+              player3Id: c.p3,
+              player4Id: c.p4,
+            })),
+          );
+        }
+      }
     }
 
     // Delete the walk-in record

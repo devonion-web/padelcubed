@@ -37,7 +37,7 @@ type PlayerRow = { id: number; totalPoints: number; eliminated: boolean };
  * All formats pair 4 players per court: Team A = [1st, 4th] vs Team B = [2nd, 3rd]
  * (balances strength across courts).
  */
-function buildDraw(
+export function buildDraw(
   players: PlayerRow[],
   roundNumber: number,
   format: string,
@@ -387,38 +387,67 @@ router.delete("/admin/americano/players/:playerId", requireAdmin, async (req, re
       .limit(1);
     if (!player) { res.status(404).json({ error: "Player not found" }); return; }
 
-    // For any round in this session, delete courts that contain this player
-    // and haven't been scored yet (scored courts keep their historical record)
-    const rounds = await db
-      .select({ id: americanoRoundsTable.id })
-      .from(americanoRoundsTable)
-      .where(eq(americanoRoundsTable.sessionId, player.sessionId));
+    const [session, rounds] = await Promise.all([
+      db.select().from(americanoSessionsTable).where(eq(americanoSessionsTable.id, player.sessionId)).then((r) => r[0]!),
+      db.select().from(americanoRoundsTable).where(eq(americanoRoundsTable.sessionId, player.sessionId)).orderBy(americanoRoundsTable.roundNumber),
+    ]);
+
+    const currentRound = rounds[rounds.length - 1] ?? null;
 
     for (const round of rounds) {
-      const affectedCourts = await db
-        .select()
-        .from(americanoCourtsTable)
-        .where(
-          and(
-            eq(americanoCourtsTable.roundId, round.id),
-            or(
-              eq(americanoCourtsTable.player1Id, playerId),
-              eq(americanoCourtsTable.player2Id, playerId),
-              eq(americanoCourtsTable.player3Id, playerId),
-              eq(americanoCourtsTable.player4Id, playerId),
-            ),
-          ),
-        );
+      const isCurrentUnstarted = currentRound?.id === round.id && !currentRound?.startedAt;
 
-      for (const court of affectedCourts) {
-        // Only wipe unscored courts — scored courts are historical, leave them
-        if (court.teamAScore === null || court.teamBScore === null) {
-          await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.id, court.id));
+      if (isCurrentUnstarted) {
+        // Round hasn't begun — wipe ALL courts and we'll regenerate below
+        await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, round.id));
+      } else {
+        // Round in progress or finished — only remove unscored courts containing this player
+        const affectedCourts = await db
+          .select()
+          .from(americanoCourtsTable)
+          .where(
+            and(
+              eq(americanoCourtsTable.roundId, round.id),
+              or(
+                eq(americanoCourtsTable.player1Id, playerId),
+                eq(americanoCourtsTable.player2Id, playerId),
+                eq(americanoCourtsTable.player3Id, playerId),
+                eq(americanoCourtsTable.player4Id, playerId),
+              ),
+            ),
+          );
+        for (const court of affectedCourts) {
+          if (court.teamAScore === null || court.teamBScore === null) {
+            await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.id, court.id));
+          }
         }
       }
     }
 
+    // Remove the player
     await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.id, playerId));
+
+    // If the current round hasn't started, regenerate its draw with the remaining players
+    if (currentRound && !currentRound.startedAt) {
+      const remainingPlayers = await db
+        .select()
+        .from(americanoPlayersTable)
+        .where(eq(americanoPlayersTable.sessionId, player.sessionId));
+
+      const draw = buildDraw(remainingPlayers, currentRound.roundNumber, session.format);
+      if (draw.length > 0) {
+        await db.insert(americanoCourtsTable).values(
+          draw.map((c, i) => ({
+            roundId: currentRound.id,
+            courtNumber: i + 1,
+            player1Id: c.p1,
+            player2Id: c.p2,
+            player3Id: c.p3,
+            player4Id: c.p4,
+          })),
+        );
+      }
+    }
 
     res.json(await getFullState(player.sessionId));
   } catch (err) {
