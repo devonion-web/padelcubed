@@ -422,6 +422,7 @@ export default function FormatManagerScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             try {
               await removePlayer.mutateAsync({ playerId: player.id, eventId: id ?? '' });
+              qc.invalidateQueries({ queryKey: getAmericanoQueryKey(id ?? '') });
             } catch (err: any) {
               Alert.alert('Error', err.message ?? 'Could not remove player');
             }

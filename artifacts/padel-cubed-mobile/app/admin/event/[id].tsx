@@ -329,6 +329,7 @@ export default function AdminEventDetailScreen() {
     setDeletingWalkinId(walkin.id);
     try {
       await deleteWalkinMutation.mutateAsync({ walkinId: walkin.id, eventId: id ?? '' });
+      queryClient.invalidateQueries({ queryKey: getWalkinsQueryKey(id ?? '') });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
