@@ -537,6 +537,30 @@ export default function EventDetailScreen() {
                 </TouchableOpacity>
               ) : null}
             </View>
+            {/* Leaderboard shortcut */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push(`/leaderboard/${id}` as never);
+              }}
+              activeOpacity={0.8}
+              style={[
+                styles.ctaButton,
+                {
+                  backgroundColor: colors.card,
+                  borderRadius: colors.radius,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  marginTop: 4,
+                },
+              ]}
+            >
+              <Feather name="bar-chart-2" size={16} color={colors.foreground} />
+              <Text style={[styles.ctaText, { color: colors.foreground, fontSize: 14 }]}>
+                Leaderboard
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={handleCancel}
               disabled={isCancelling}

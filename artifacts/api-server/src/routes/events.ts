@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, eventsTable, bookingsTable } from "@workspace/db";
+import { db, eventsTable, bookingsTable, americanoSessionsTable, americanoPlayersTable } from "@workspace/db";
 import { sendBookingConfirmation } from "../email.js";
+import { calcPlannedRounds } from "./admin-americano.js";
 
 const router: IRouter = Router();
 
@@ -316,6 +317,75 @@ router.delete("/events/:id/bookings", async (req, res): Promise<void> => {
   }
 
   res.json({ success: true });
+});
+
+// ── GET /events/:eventId/leaderboard — public, no auth ────────────────────────
+
+router.get("/:eventId/leaderboard", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const myEmail = typeof req.query.email === "string" ? req.query.email.toLowerCase() : null;
+
+    const sessions = await db
+      .select()
+      .from(americanoSessionsTable)
+      .where(eq(americanoSessionsTable.eventId, eventId))
+      .orderBy(americanoSessionsTable.createdAt);
+
+    const session = sessions[sessions.length - 1] ?? null;
+
+    if (!session) {
+      res.json({ session: null, players: [], plannedRounds: 0 });
+      return;
+    }
+
+    const rows = await db
+      .select({
+        id:           americanoPlayersTable.id,
+        name:         americanoPlayersTable.name,
+        email:        americanoPlayersTable.email,
+        totalPoints:  americanoPlayersTable.totalPoints,
+        roundsPlayed: americanoPlayersTable.roundsPlayed,
+        wins:         americanoPlayersTable.wins,
+        eliminated:   americanoPlayersTable.eliminated,
+      })
+      .from(americanoPlayersTable)
+      .where(eq(americanoPlayersTable.sessionId, session.id))
+      .orderBy(desc(americanoPlayersTable.totalPoints));
+
+    const plannedRounds = calcPlannedRounds(
+      session.format,
+      rows.length,
+      session.courtsCount,
+      session.roundDurationMinutes,
+      session.totalEventMinutes,
+    );
+
+    // Strip emails from response; only mark the requesting player with isMe
+    const players = rows.map((r) => ({
+      id:           r.id,
+      name:         r.name,
+      totalPoints:  r.totalPoints,
+      roundsPlayed: r.roundsPlayed,
+      wins:         r.wins,
+      eliminated:   r.eliminated,
+      isMe:         myEmail ? r.email?.toLowerCase() === myEmail : false,
+    }));
+
+    res.json({
+      session: {
+        id:           session.id,
+        status:       session.status,
+        currentRound: session.currentRound,
+        format:       session.format,
+      },
+      plannedRounds,
+      players,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch leaderboard" });
+  }
 });
 
 export default router;

@@ -123,6 +123,61 @@ export function useEventAttendees<TData = Attendee[], TError = ErrorType<unknown
   });
 }
 
+// ─── GET /events/:id/leaderboard ─────────────────────────────────────────────
+
+export interface LeaderboardPlayer {
+  id:           number;
+  name:         string;
+  totalPoints:  number;
+  roundsPlayed: number;
+  wins:         number;
+  eliminated:   boolean;
+  isMe:         boolean;
+}
+
+export interface LeaderboardSession {
+  id:           number;
+  status:       "setup" | "active" | "complete";
+  currentRound: number;
+  format:       string;
+}
+
+export interface LeaderboardData {
+  session:       LeaderboardSession | null;
+  plannedRounds: number;
+  players:       LeaderboardPlayer[];
+}
+
+export const getLeaderboardUrl = (id: string, email?: string) =>
+  email
+    ? `/api/events/${id}/leaderboard?email=${encodeURIComponent(email)}`
+    : `/api/events/${id}/leaderboard`;
+
+export const getLeaderboardQueryKey = (id: string, email?: string) =>
+  [getLeaderboardUrl(id, email)] as const;
+
+export function usePublicLeaderboard<TData = LeaderboardData, TError = ErrorType<unknown>>(
+  eventId: string,
+  myEmail?: string,
+  options?: {
+    query?: Omit<UseQueryOptions<LeaderboardData, TError, TData>, "queryKey">;
+  },
+): UseQueryResult<TData, TError> {
+  const { query: queryOptions } = options ?? {};
+  return useQuery({
+    queryKey: getLeaderboardQueryKey(eventId, myEmail),
+    queryFn: ({ signal }) =>
+      customFetch<LeaderboardData>(getLeaderboardUrl(eventId, myEmail), { signal }),
+    enabled: Boolean(eventId),
+    // Poll every 10 s while session is active; stop when complete
+    refetchInterval: (query) => {
+      const data = query.state.data as LeaderboardData | undefined;
+      return data?.session?.status === "active" ? 10_000 : false;
+    },
+    ...queryOptions,
+  });
+}
+
 // ─── POST /events/:id/bookings ────────────────────────────────────────────────
 
 const bookEventFn =
