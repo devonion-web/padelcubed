@@ -23,6 +23,9 @@ export interface AdminEvent extends ApiEvent {
   checkedInCount: number;
   walkinCount: number;
   liveStatus: LiveStatus;
+  courtsCount?: number | null;
+  roundDurationMinutes?: number | null;
+  totalEventMinutes?: number | null;
 }
 
 export interface AdminBooking extends ApiBooking {
@@ -40,6 +43,12 @@ export interface AdminUserInfo {
   role: "superadmin" | "admin";
 }
 
+export interface TournamentConfig {
+  courtsCount: number;
+  roundDurationMinutes: number;
+  totalEventMinutes: number;
+}
+
 export interface EventInput {
   title: string;
   date: string;
@@ -53,6 +62,9 @@ export interface EventInput {
   status?: "available" | "limited" | "soon";
   description?: string | null;
   maxSpots?: number;
+  courtsCount?: number;
+  roundDurationMinutes?: number;
+  totalEventMinutes?: number;
   eventDate?: string | null;
   published?: boolean;
 }

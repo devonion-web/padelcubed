@@ -119,6 +119,21 @@ export default function FormatSetupScreen() {
   const [courts, setCourts] = useState(3);
   const [duration, setDuration] = useState(15);
   const [eventMinutes, setEventMinutes] = useState(120);
+  const [prePopulated, setPrePopulated] = useState(false);
+
+  // Pre-populate from event's saved tournament config when it loads
+  React.useEffect(() => {
+    if (adminEvent && !prePopulated) {
+      const ev = adminEvent as any;
+      const knownFormats: GameFormat[] = ['americano', 'mexicano', 'round_robin', 'knockout'];
+      const rawFmt = ev.format?.toLowerCase() as GameFormat;
+      if (knownFormats.includes(rawFmt)) setSelectedFormat(rawFmt);
+      if (ev.courtsCount) setCourts(ev.courtsCount);
+      if (ev.roundDurationMinutes) setDuration(ev.roundDurationMinutes);
+      if (ev.totalEventMinutes) setEventMinutes(ev.totalEventMinutes);
+      setPrePopulated(true);
+    }
+  }, [adminEvent, prePopulated]);
 
   const startSession = useStartSession(id ?? '', token);
 

@@ -32,6 +32,37 @@ import {
   getEventsQueryKey,
 } from '@workspace/api-client-react';
 import type { EventInput, CreateEventInput } from '@workspace/api-client-react';
+import type { TournamentConfig } from '@workspace/api-client-react';
+
+// ─── Tournament format options ────────────────────────────────────────────────
+
+const FORMAT_OPTIONS = [
+  { value: 'americano',   label: 'Americano',   sub: 'Random partners every round' },
+  { value: 'mexicano',    label: 'Mexicano',    sub: 'Points-based partners' },
+  { value: 'round_robin', label: 'Round Robin', sub: 'Everyone plays everyone' },
+  { value: 'knockout',    label: 'Knockout',    sub: 'Losers eliminated' },
+] as const;
+
+type TournamentFormat = typeof FORMAT_OPTIONS[number]['value'];
+
+// Client-side mirror of server's calcPlannedRounds
+function calcRounds(
+  format: TournamentFormat,
+  numPlayers: number,
+  courtsCount: number,
+  roundDurationMinutes: number,
+  totalEventMinutes: number,
+): number {
+  const CHANGEOVER = 3;
+  if (format === 'knockout') return Math.max(1, Math.ceil(Math.log2(Math.max(numPlayers, 2))));
+  const seats = courtsCount * 4;
+  const maxByTime = Math.max(1, Math.floor(totalEventMinutes / (roundDurationMinutes + CHANGEOVER)));
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const maxByRotation = numPlayers <= seats
+    ? Math.max(1, numPlayers - 1)
+    : (numPlayers / gcd(numPlayers, seats)) * 2;
+  return Math.max(1, Math.min(maxByTime, maxByRotation));
+}
 
 // ─── Form state ───────────────────────────────────────────────────────────────
 
@@ -43,7 +74,10 @@ interface FormState {
   time: string;
   venue: string;
   location: string;
-  format: string;
+  format: TournamentFormat;
+  courtsCount: number;
+  roundDurationMinutes: number;
+  totalEventMinutes: number;
   sponsor: string;
   price: string;
   status: 'available' | 'limited' | 'soon';
@@ -61,7 +95,10 @@ const EMPTY_FORM: FormState = {
   time: '6:30 pm – 9:30 pm',
   venue: '',
   location: 'London',
-  format: 'Americano',
+  format: 'americano',
+  courtsCount: 3,
+  roundDurationMinutes: 15,
+  totalEventMinutes: 120,
   sponsor: '',
   price: 'Free',
   status: 'available',
@@ -174,6 +211,11 @@ export default function EventFormScreen() {
 
   useEffect(() => {
     if (existing && !isDirty) {
+      const rawFormat = existing.format?.toLowerCase() ?? 'americano';
+      const knownFormats: TournamentFormat[] = ['americano', 'mexicano', 'round_robin', 'knockout'];
+      const safeFormat: TournamentFormat = knownFormats.includes(rawFormat as TournamentFormat)
+        ? (rawFormat as TournamentFormat)
+        : 'americano';
       setForm({
         id: existing.id,
         title: existing.title,
@@ -182,7 +224,10 @@ export default function EventFormScreen() {
         time: existing.time,
         venue: existing.venue,
         location: existing.location,
-        format: existing.format,
+        format: safeFormat,
+        courtsCount: existing.courtsCount ?? 3,
+        roundDurationMinutes: existing.roundDurationMinutes ?? 15,
+        totalEventMinutes: existing.totalEventMinutes ?? 120,
         sponsor: existing.sponsor ?? '',
         price: existing.price,
         status: (existing.status as FormState['status']) ?? 'available',
@@ -231,7 +276,10 @@ export default function EventFormScreen() {
       time: form.time.trim(),
       venue: form.venue.trim(),
       location: form.location.trim(),
-      format: form.format.trim() || 'Americano',
+      format: form.format,
+      courtsCount: form.courtsCount,
+      roundDurationMinutes: form.roundDurationMinutes,
+      totalEventMinutes: form.totalEventMinutes,
       sponsor: form.sponsor.trim() || null,
       price: form.price.trim() || 'Free',
       status: form.status,
@@ -323,7 +371,115 @@ export default function EventFormScreen() {
         <Field label="Time" value={form.time} onChange={(v) => set('time', v)} placeholder="6:30 pm – 9:30 pm" colors={colors} required />
         <Field label="Venue" value={form.venue} onChange={(v) => set('venue', v)} placeholder="Racketeer" colors={colors} required />
         <Field label="Location" value={form.location} onChange={(v) => set('location', v)} placeholder="Acton, London" colors={colors} required />
-        <Field label="Format" value={form.format} onChange={(v) => set('format', v)} placeholder="Americano" colors={colors} />
+        {/* ── Tournament format ── */}
+        <View style={fieldStyles.container}>
+          <Text style={[fieldStyles.label, { color: colors.mutedForeground }]}>Tournament Format</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 }}>
+            {FORMAT_OPTIONS.map((opt) => {
+              const sel = form.format === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, format: opt.value })); }}
+                  style={{
+                    paddingHorizontal: 14, paddingVertical: 9, borderRadius: colors.radius / 2,
+                    borderWidth: 1.5,
+                    backgroundColor: sel ? colors.primary : colors.card,
+                    borderColor: sel ? colors.primary : colors.border,
+                  }}
+                >
+                  <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: sel ? colors.primaryForeground : colors.foreground }}>
+                    {opt.label}
+                  </Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: sel ? `${colors.primaryForeground}bb` : colors.mutedForeground, marginTop: 1 }}>
+                    {opt.sub}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* ── Tournament configuration ── */}
+        <View style={fieldStyles.container}>
+          <Text style={[fieldStyles.label, { color: colors.mutedForeground }]}>Tournament Configuration</Text>
+          <View style={{ gap: 8, marginTop: 4 }}>
+            {/* Courts */}
+            <View style={[configRow.row, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius / 2 }]}>
+              <View>
+                <Text style={[configRow.label, { color: colors.foreground }]}>Courts</Text>
+                <Text style={[configRow.sub, { color: colors.mutedForeground }]}>{form.courtsCount * 4} players on court</Text>
+              </View>
+              <View style={configRow.controls}>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, courtsCount: Math.max(1, p.courtsCount - 1) })); }} disabled={form.courtsCount <= 1} style={[configRow.btn, { backgroundColor: `${colors.primary}22`, opacity: form.courtsCount <= 1 ? 0.4 : 1 }]}>
+                  <Feather name="minus" size={16} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={[configRow.val, { color: colors.foreground }]}>{form.courtsCount}</Text>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, courtsCount: Math.min(20, p.courtsCount + 1) })); }} disabled={form.courtsCount >= 20} style={[configRow.btn, { backgroundColor: `${colors.primary}22`, opacity: form.courtsCount >= 20 ? 0.4 : 1 }]}>
+                  <Feather name="plus" size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {/* Round duration */}
+            <View style={[configRow.row, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius / 2 }]}>
+              <View>
+                <Text style={[configRow.label, { color: colors.foreground }]}>Round duration</Text>
+                <Text style={[configRow.sub, { color: colors.mutedForeground }]}>minutes per round</Text>
+              </View>
+              <View style={configRow.controls}>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, roundDurationMinutes: Math.max(5, p.roundDurationMinutes - 5) })); }} disabled={form.roundDurationMinutes <= 5} style={[configRow.btn, { backgroundColor: `${colors.primary}22`, opacity: form.roundDurationMinutes <= 5 ? 0.4 : 1 }]}>
+                  <Feather name="minus" size={16} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={[configRow.val, { color: colors.foreground }]}>{form.roundDurationMinutes}m</Text>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, roundDurationMinutes: Math.min(60, p.roundDurationMinutes + 5) })); }} disabled={form.roundDurationMinutes >= 60} style={[configRow.btn, { backgroundColor: `${colors.primary}22`, opacity: form.roundDurationMinutes >= 60 ? 0.4 : 1 }]}>
+                  <Feather name="plus" size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {/* Total event time */}
+            <View style={[configRow.row, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius / 2 }]}>
+              <View>
+                <Text style={[configRow.label, { color: colors.foreground }]}>Total playing time</Text>
+                <Text style={[configRow.sub, { color: colors.mutedForeground }]}>available for rounds</Text>
+              </View>
+              <View style={configRow.controls}>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, totalEventMinutes: Math.max(30, p.totalEventMinutes - 15) })); }} disabled={form.totalEventMinutes <= 30} style={[configRow.btn, { backgroundColor: `${colors.primary}22`, opacity: form.totalEventMinutes <= 30 ? 0.4 : 1 }]}>
+                  <Feather name="minus" size={16} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={[configRow.val, { color: colors.foreground }]}>{form.totalEventMinutes >= 60 ? `${Math.floor(form.totalEventMinutes / 60)}h${form.totalEventMinutes % 60 > 0 ? `${form.totalEventMinutes % 60}m` : ''}` : `${form.totalEventMinutes}m`}</Text>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsDirty(true); setForm((p) => ({ ...p, totalEventMinutes: Math.min(480, p.totalEventMinutes + 15) })); }} disabled={form.totalEventMinutes >= 480} style={[configRow.btn, { backgroundColor: `${colors.primary}22`, opacity: form.totalEventMinutes >= 480 ? 0.4 : 1 }]}>
+                  <Feather name="plus" size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Live calculation preview */}
+          {(() => {
+            const maxSpots = parseInt(form.maxSpots, 10) || 16;
+            const rounds = calcRounds(form.format, maxSpots, form.courtsCount, form.roundDurationMinutes, form.totalEventMinutes);
+            const totalMin = rounds * (form.roundDurationMinutes + 3);
+            const h = Math.floor(totalMin / 60);
+            const m = totalMin % 60;
+            const timeStr = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+            const onCourt = Math.min(maxSpots, form.courtsCount * 4);
+            const sitout = Math.max(0, maxSpots - onCourt);
+            return (
+              <View style={[previewBox.box, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}33`, borderRadius: colors.radius / 2, marginTop: 10 }]}>
+                <Feather name="bar-chart-2" size={14} color={colors.primary} />
+                <View style={{ gap: 2, flex: 1 }}>
+                  <Text style={[previewBox.title, { color: colors.primary }]}>
+                    ~{rounds} round{rounds !== 1 ? 's' : ''} · {timeStr} playing time
+                  </Text>
+                  <Text style={[previewBox.sub, { color: colors.mutedForeground }]}>
+                    {onCourt} players on court per round{sitout > 0 ? ` · ${sitout} sitting out` : ''}
+                  </Text>
+                </View>
+              </View>
+            );
+          })()}
+        </View>
+
         <Field label="Sponsor" value={form.sponsor} onChange={(v) => set('sponsor', v)} placeholder="Corlytics (optional)" colors={colors} />
         <Field label="Price" value={form.price} onChange={(v) => set('price', v)} placeholder="Free" colors={colors} />
         <Field label="Max Spots" value={form.maxSpots} onChange={(v) => set('maxSpots', v)} keyboardType="numeric" placeholder="16" colors={colors} />
@@ -452,4 +608,19 @@ const styles = StyleSheet.create({
 
   submitBtn: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 },
   submitText: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
+});
+
+const configRow = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderWidth: 1 },
+  label: { fontFamily: 'Inter_500Medium', fontSize: 14 },
+  sub: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
+  controls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  btn: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  val: { fontFamily: 'Inter_600SemiBold', fontSize: 15, minWidth: 42, textAlign: 'center' },
+});
+
+const previewBox = StyleSheet.create({
+  box: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12, borderWidth: 1, marginTop: 4 },
+  title: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  sub: { fontFamily: 'Inter_400Regular', fontSize: 12 },
 });

@@ -44,6 +44,9 @@ const EventBody = z.object({
   status: z.enum(["available", "limited", "soon"]).default("available"),
   description: z.string().optional().nullable(),
   maxSpots: z.number().int().min(1).default(16),
+  courtsCount: z.number().int().min(1).max(20).default(3),
+  roundDurationMinutes: z.number().int().min(5).max(60).default(15),
+  totalEventMinutes: z.number().int().min(30).max(480).default(120),
   eventDate: z.string().datetime({ offset: true }).optional().nullable(),
   published: z.boolean().default(true),
 });
