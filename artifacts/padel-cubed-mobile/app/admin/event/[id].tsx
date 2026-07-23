@@ -95,11 +95,16 @@ function BookingRow({
         ) : null}
       </View>
 
-      {isCheckedIn ? (
-        <View style={[styles.badge, { backgroundColor: `${colors.primary}22` }]}>
-          <Text style={[styles.badgeText, { color: colors.primary }]}>In</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={[styles.badge, { backgroundColor: '#22c55e22' }]}>
+          <Text style={[styles.badgeText, { color: '#22c55e' }]}>Paid</Text>
         </View>
-      ) : null}
+        {isCheckedIn ? (
+          <View style={[styles.badge, { backgroundColor: `${colors.primary}22` }]}>
+            <Text style={[styles.badgeText, { color: colors.primary }]}>In</Text>
+          </View>
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -137,6 +142,8 @@ function WalkinRow({
     );
   };
 
+  const unpaidAccent = '#f59e0b';
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -145,9 +152,11 @@ function WalkinRow({
         styles.row,
         {
           backgroundColor: colors.card,
-          borderColor: isCheckedIn ? `${colors.primary}55` : colors.border,
+          borderColor: isCheckedIn ? `${colors.primary}55` : walkin.paid ? colors.border : `${unpaidAccent}88`,
           borderRadius: colors.radius,
           opacity: deleting ? 0.4 : 1,
+          borderLeftWidth: walkin.paid ? 1 : 3,
+          borderLeftColor: walkin.paid ? colors.border : unpaidAccent,
         },
       ]}
     >
@@ -181,14 +190,16 @@ function WalkinRow({
         style={[
           styles.badge,
           {
-            backgroundColor: walkin.paid ? '#22c55e22' : `${colors.border}55`,
+            backgroundColor: walkin.paid ? '#22c55e22' : `${unpaidAccent}22`,
+            borderWidth: 1,
+            borderColor: walkin.paid ? '#22c55e44' : `${unpaidAccent}66`,
           },
         ]}
       >
         {toggling ? (
           <ActivityIndicator size="small" color={colors.mutedForeground} style={{ width: 28 }} />
         ) : (
-          <Text style={[styles.badgeText, { color: walkin.paid ? '#22c55e' : colors.mutedForeground }]}>
+          <Text style={[styles.badgeText, { color: walkin.paid ? '#22c55e' : unpaidAccent, fontWeight: walkin.paid ? '500' : '600' }]}>
             {walkin.paid ? 'Paid' : 'Unpaid'}
           </Text>
         )}
@@ -290,6 +301,7 @@ export default function AdminEventDetailScreen() {
   const walkinCheckedIn = walkins.filter((w) => w.checkedInAt).length;
   const checkedIn  = bookings.filter((b) => b.checkedInAt).length + walkinCheckedIn;
   const totalCount = bookings.length;
+  const unpaidCount = walkins.filter((w) => !w.paid).length;
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -404,6 +416,12 @@ export default function AdminEventDetailScreen() {
             <Feather name="users" size={13} color={colors.mutedForeground} />
             <Text style={[styles.statChipText, { color: colors.mutedForeground }]}>{totalCount} booked</Text>
           </View>
+          {unpaidCount > 0 && (
+            <View style={[styles.statChip, { backgroundColor: '#f59e0b22' }]}>
+              <Feather name="alert-circle" size={13} color="#f59e0b" />
+              <Text style={[styles.statChipText, { color: '#f59e0b' }]}>{unpaidCount} unpaid</Text>
+            </View>
+          )}
           {hasSession && (
             <View style={[styles.statChip, { backgroundColor: '#19C3B0' + '22' }]}>
               <Feather name="activity" size={13} color="#19C3B0" />
@@ -430,7 +448,7 @@ export default function AdminEventDetailScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text style={[styles.listHint, { color: colors.mutedForeground }]}>
-            Tap a booking row to toggle check-in · tap a walk-in to remove
+            Tap a booking to toggle check-in · tap Unpaid/Paid badge to mark payment · tap a walk-in name to remove
           </Text>
           {bookings.map((b) => (
             <BookingRow
