@@ -3,6 +3,7 @@
  * Shows court draw, server-synced countdown timer, one-team score entry, leaderboard.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Audio } from 'expo-av';
 import {
   ActivityIndicator,
   Alert,
@@ -366,6 +367,35 @@ export default function FormatManagerScreen() {
     currentRound?.startedAt ?? null,
     session?.roundDurationMinutes ?? 15
   );
+
+  // ── Round-end alarm ────────────────────────────────────────────────────────
+  const prevExpired = useRef(false);
+  useEffect(() => {
+    if (timer.expired && !prevExpired.current) {
+      prevExpired.current = true;
+      // Heavy haptic burst
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      // Play alarm sound (non-blocking)
+      (async () => {
+        try {
+          await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+          const { sound } = await Audio.Sound.createAsync(
+            require('../../assets/sounds/round-end.wav'),
+          );
+          await sound.playAsync();
+          // Unload once playback finishes to free memory
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if ('didJustFinish' in status && status.didJustFinish) {
+              sound.unloadAsync();
+            }
+          });
+        } catch {
+          // Silently ignore — alarm is a nice-to-have, not critical
+        }
+      })();
+    }
+    if (!timer.expired) prevExpired.current = false;
+  }, [timer.expired]);
 
   const handleStartRound = async () => {
     if (!currentRound) return;
