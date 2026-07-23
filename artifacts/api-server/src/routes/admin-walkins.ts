@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
 import { walkinsTable, americanoSessionsTable, americanoPlayersTable, americanoRoundsTable, americanoCourtsTable, eventsTable } from "@workspace/db/schema";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, or, isNull, desc } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { sendWalkinConfirmation } from "../email.js";
 
@@ -225,8 +225,47 @@ router.delete("/admin/walkins/:id", requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   try {
-    // Remove from any americano session first (FK safety)
-    await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.walkinId, id));
+    // Find the player row(s) for this walk-in so we can clean up court references first
+    const players = await db
+      .select()
+      .from(americanoPlayersTable)
+      .where(eq(americanoPlayersTable.walkinId, id));
+
+    for (const player of players) {
+      // Find all rounds in this session
+      const rounds = await db
+        .select({ id: americanoRoundsTable.id })
+        .from(americanoRoundsTable)
+        .where(eq(americanoRoundsTable.sessionId, player.sessionId));
+
+      for (const round of rounds) {
+        // Delete any unscored courts that reference this player (FK safety)
+        const affectedCourts = await db
+          .select()
+          .from(americanoCourtsTable)
+          .where(
+            and(
+              eq(americanoCourtsTable.roundId, round.id),
+              or(
+                eq(americanoCourtsTable.player1Id, player.id),
+                eq(americanoCourtsTable.player2Id, player.id),
+                eq(americanoCourtsTable.player3Id, player.id),
+                eq(americanoCourtsTable.player4Id, player.id),
+              ),
+            ),
+          );
+
+        for (const court of affectedCourts) {
+          if (court.teamAScore === null || court.teamBScore === null) {
+            await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.id, court.id));
+          }
+        }
+      }
+
+      // Now safe to remove the player row
+      await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.id, player.id));
+    }
+
     // Delete the walk-in record
     const [deleted] = await db.delete(walkinsTable).where(eq(walkinsTable.id, id)).returning();
     if (!deleted) { res.status(404).json({ error: "Walk-in not found" }); return; }
