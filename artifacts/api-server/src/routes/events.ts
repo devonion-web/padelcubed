@@ -250,6 +250,7 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
         eventTime: event.time,
         eventVenue: event.venue,
         eventLocation: event.location,
+        eventFormat: event.format,
       }).catch((err) => console.error("[email] Booking re-confirmation failed:", err));
 
       res.status(201).json(updated);
@@ -278,6 +279,7 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
       eventTime: event.time,
       eventVenue: event.venue,
       eventLocation: event.location,
+      eventFormat: event.format,
     }).catch((err) => console.error("[email] Booking confirmation failed:", err));
 
     res.status(201).json(booking);
