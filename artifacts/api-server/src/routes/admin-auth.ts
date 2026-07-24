@@ -127,7 +127,7 @@ router.post("/admin/auth/users", async (req, res): Promise<void> => {
   }
 
   try {
-    const hash = await bcrypt.hash(password, 12);
+    const hash = await bcrypt.hash(password, 10);
     const [user] = await db
       .insert(adminUsersTable)
       .values({ email: email.toLowerCase().trim(), passwordHash: hash, name, role })
@@ -302,7 +302,7 @@ router.post("/admin/auth/reset-password", async (req, res): Promise<void> => {
   }
 
   // Mark code as used and update password
-  const newHash = await bcrypt.hash(newPassword, 12);
+  const newHash = await bcrypt.hash(newPassword, 10);
   await Promise.all([
     db
       .update(passwordResetsTable)
