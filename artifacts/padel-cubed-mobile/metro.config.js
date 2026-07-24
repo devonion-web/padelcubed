@@ -17,6 +17,9 @@ config.resolver = {
   blockList: [
     ...blockList,
     /zxing-wasm_tmp_/,
+    // Exclude ephemeral canvas/design temp dirs under .local/skills that may
+    // be deleted mid-run, causing Metro's FallbackWatcher to crash with ENOENT.
+    /[/\\]\.local[/\\]/,
   ],
 };
 
