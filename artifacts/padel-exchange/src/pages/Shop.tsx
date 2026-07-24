@@ -39,23 +39,16 @@ function formatPrice(unitAmount: number, currency: string) {
 
 const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
 
-// Map product names to placeholder colours used in the SVG fallback
-const PRODUCT_ACCENT: Record<string, string> = {
-  "P³ Hoodie": "#1e2d5a",
-  "P³ Padel Shirt": "#00e5cc",
-  "P³ Cap": "#1e2d5a",
-  "P³ Shorts": "#00b8a9",
-};
+// Local fallback image for all P³ products until individual shots are added to Stripe
+const P3_APPAREL_IMG = `${import.meta.env.BASE_URL}apparel/p3-apparel.png`;
 
-function ProductPlaceholder({ name }: { name: string }) {
-  const accent = PRODUCT_ACCENT[name] ?? "#1e2d5a";
+function ProductPlaceholder() {
   return (
-    <div
-      className="w-full h-full flex items-center justify-center"
-      style={{ background: `${accent}18` }}
-    >
-      <ShoppingBag className="w-16 h-16 opacity-20" style={{ color: accent }} />
-    </div>
+    <img
+      src={P3_APPAREL_IMG}
+      alt="P³ apparel"
+      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+    />
   );
 }
 
@@ -79,7 +72,7 @@ function ProductCard({ product, onBuy }: { product: ShopProduct; onBuy: (p: Shop
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <ProductPlaceholder name={product.name} />
+          <ProductPlaceholder />
         )}
         {/* Size badge */}
         {!isSingleSize && sizes.length > 0 && (
