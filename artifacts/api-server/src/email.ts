@@ -508,6 +508,69 @@ export async function sendBookingConfirmation(params: BookingConfirmationParams)
   else       console.log(`[email] Sent booking confirmation to ${to}`);
 }
 
+// ─── Admin password reset ─────────────────────────────────────────────────────
+
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  code: string;
+}): Promise<void> {
+  const { to, name, code } = params;
+  const firstName = name.split(" ")[0];
+
+  const digits = code.split("").map(d =>
+    `<span style="display:inline-block;width:42px;height:54px;line-height:54px;
+                  text-align:center;font-size:28px;font-weight:900;color:${B.darkText};
+                  background:${B.offWhite};border:2px solid ${B.border};
+                  border-radius:10px;margin:0 4px;">${d}</span>`
+  ).join("");
+
+  const html = baseEmail({
+    subject:    "P³ Admin — password reset code",
+    preheader:  `Your 6-digit reset code is ${code}. It expires in 30 minutes.`,
+    badgeEmoji: "🔑",
+    badgeText:  "Password Reset",
+    headline:   "Reset your password",
+    subline:    `Hi ${firstName}, enter the code below in the app to set a new password. It expires in <strong>30 minutes</strong>.`,
+    body: `
+  <tr><td style="padding:0 36px 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:${B.offWhite};border:1px solid ${B.border};border-radius:16px;">
+      <tr><td style="padding:32px 24px;" align="center">
+        <p style="margin:0 0 20px;font-size:11px;font-weight:700;color:${B.mutedFg};
+                   text-transform:uppercase;letter-spacing:1px;">Your reset code</p>
+        <div style="display:inline-block;">${digits}</div>
+        <p style="margin:20px 0 0;font-size:12px;color:${B.mutedFg};">
+          Valid for 30 minutes &middot; Single use only
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:0 36px 24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:${B.amberPale};border-left:3px solid ${B.amber};
+                  border-radius:0 10px 10px 0;">
+      <tr><td style="padding:14px 18px;">
+        <p style="margin:0;font-size:13px;color:${B.darkText};line-height:1.65;">
+          If you didn&#39;t request this, you can safely ignore this email.
+          Your password will not change.
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>`,
+  });
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "P³ Admin — password reset code",
+    html,
+  });
+
+  if (error) console.error("[email] Resend error (password reset):", error);
+  else       console.log(`[email] Sent password reset code to ${to}`);
+}
+
 // ─── Walk-in confirmation ─────────────────────────────────────────────────────
 
 export interface WalkinEmailParams {

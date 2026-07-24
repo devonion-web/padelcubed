@@ -13,6 +13,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import { db, adminUsersTable, passwordResetsTable } from "@workspace/db";
+import { sendPasswordResetEmail } from "../email.js";
 import {
   requireAdmin,
   signAdminToken,
@@ -238,9 +239,14 @@ router.post("/admin/auth/forgot-password", async (req, res): Promise<void> => {
       expiresAt,
     });
 
-    // Log clearly so the superadmin can retrieve it
+    // Log as backup so a superadmin can retrieve it from server logs
     console.log(
       `\n🔑  PASSWORD RESET CODE for ${email}: ${code}  (expires in 30 min)\n`
+    );
+
+    // Send the code by email
+    sendPasswordResetEmail({ to: email, name: user.name, code }).catch(
+      (err) => console.error("[email] Password reset email failed:", err)
     );
   }
 
