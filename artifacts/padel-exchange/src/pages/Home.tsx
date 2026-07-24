@@ -335,10 +335,12 @@ export default function Home() {
                 {(() => {
                   const ev = events[0];
                   if (!ev) return null;
+                  const canBook = ev.status !== "soon";
                   return (
-                    <a
-                      href="#events"
-                      className="md:col-span-3 group relative flex flex-col justify-end rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => canBook && setBookingEvent(ev)}
+                      className={`md:col-span-3 group relative flex flex-col justify-end rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] text-left ${canBook ? "cursor-pointer" : "cursor-default"}`}
                     >
                       {/* Photo background */}
                       <div
@@ -381,26 +383,33 @@ export default function Home() {
                           </span>
                         </div>
 
-                        {/* Bottom row: price + format + sponsor */}
+                        {/* Bottom row: price + CTA */}
                         <div className="flex items-center justify-between pt-4 border-t border-white/20">
                           <div className="flex items-center gap-3">
                             <span className="text-2xl font-bold text-white">{ev.price}</span>
                             <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full">{ev.format}</span>
                           </div>
-                          <span className="text-xs text-white/50">Sponsored by {ev.sponsor}</span>
+                          {canBook && (
+                            <span className="text-xs font-semibold text-white bg-primary/80 hover:bg-primary px-3 py-1.5 rounded-full transition-colors">
+                              Reserve spot →
+                            </span>
+                          )}
                         </div>
                       </div>
-                    </a>
+                    </button>
                   );
                 })()}
 
                 {/* ── Next two events stacked ── */}
                 <div className="md:col-span-2 flex flex-col gap-4">
-                  {events.slice(1, 3).map((ev, i) => (
-                    <a
+                  {events.slice(1, 3).map((ev, i) => {
+                    const canBook = ev.status !== "soon";
+                    return (
+                    <button
                       key={i}
-                      href="#events"
-                      className="group flex flex-col gap-4 p-6 rounded-3xl border border-border bg-card/40 hover:bg-card hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex-1"
+                      type="button"
+                      onClick={() => canBook && setBookingEvent(ev)}
+                      className={`group flex flex-col gap-4 p-6 rounded-3xl border border-border bg-card/40 hover:bg-card hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 text-left flex-1 ${canBook ? "cursor-pointer" : "cursor-default"}`}
                     >
                       {/* Status + price */}
                       <div className="flex items-center justify-between gap-2">
@@ -427,13 +436,21 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Sponsor */}
-                      <div className="pt-3 border-t border-border/50 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <BadgePercent className="h-3.5 w-3.5 text-primary/50 flex-shrink-0" />
-                        Sponsored by {ev.sponsor}
+                      {/* Sponsor + CTA */}
+                      <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+                          <BadgePercent className="h-3.5 w-3.5 text-primary/50 flex-shrink-0" />
+                          <span className="truncate">Sponsored by {ev.sponsor}</span>
+                        </div>
+                        {canBook && (
+                          <span className="text-xs font-semibold text-primary flex-shrink-0">
+                            Reserve →
+                          </span>
+                        )}
                       </div>
-                    </a>
-                  ))}
+                    </button>
+                    );
+                  })}
                 </div>
 
               </div>
