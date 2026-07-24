@@ -7,6 +7,7 @@ import Home from '@/pages/Home';
 import Admin from '@/pages/Admin';
 import Privacy from '@/pages/Privacy';
 import HostAnEvent from '@/pages/HostAnEvent';
+import Shop from '@/pages/Shop';
 import { CookieBanner } from '@/components/CookieBanner';
 
 const queryClient = new QueryClient({
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/host-an-event" component={HostAnEvent} />
+      <Route path="/shop" component={Shop} />
       <Route component={NotFound} />
     </Switch>
   );
