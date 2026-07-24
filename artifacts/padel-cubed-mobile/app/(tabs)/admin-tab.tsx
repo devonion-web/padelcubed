@@ -27,7 +27,7 @@ import { HeaderLogo } from '@/components/HeaderLogo';
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
-type LoginView = 'login' | 'forgot-request' | 'forgot-confirm';
+type LoginView = 'login' | 'forgot-request' | 'forgot-confirm' | 'reset-success';
 
 function LoginScreen() {
   const colors = useColors();
@@ -112,11 +112,10 @@ function LoginScreen() {
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok) throw new Error(data.error ?? 'Reset failed');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Pre-fill email on login screen and go back
       setEmail(resetEmail);
       setPassword('');
-      setView('login');
       setError('');
+      setView('reset-success');
     } catch (err: unknown) {
       setResetError((err as Error).message ?? 'Reset failed');
     } finally {
@@ -272,6 +271,42 @@ function LoginScreen() {
               ? <ActivityIndicator size="small" color="#fff" />
               : <Text style={[styles.loginBtnText, { color: canConfirm ? colors.primaryForeground : colors.mutedForeground }]}>Set New Password</Text>
             }
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Reset success view ────────────────────────────────────────────────────
+  if (view === 'reset-success') {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <LinearGradient
+          colors={[colors.navy, colors.background]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 0.5 }}
+          style={[styles.loginHero, { paddingTop: topInset + 12 }]}
+        >
+          <Text style={[styles.loginTitle, { color: colors.foreground }]}>Password Updated</Text>
+          <Text style={[styles.loginSub, { color: colors.mutedForeground }]}>
+            Your new password is ready. Sign in below.
+          </Text>
+        </LinearGradient>
+
+        <View style={[styles.loginForm, { paddingBottom: insets.bottom + 24 }]}>
+          <View style={[styles.infoBanner, { backgroundColor: '#22c55e14', borderRadius: colors.radius }]}>
+            <Feather name="check-circle" size={14} color="#22c55e" />
+            <Text style={[styles.infoText, { color: '#22c55e' }]}>
+              Password reset successfully for {resetEmail}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => setView('login')}
+            activeOpacity={0.8}
+            style={[styles.loginBtn, { backgroundColor: colors.primary, borderRadius: colors.radius }]}
+          >
+            <Text style={[styles.loginBtnText, { color: colors.primaryForeground }]}>Sign in now</Text>
           </TouchableOpacity>
         </View>
       </View>
