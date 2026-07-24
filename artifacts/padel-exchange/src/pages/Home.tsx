@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { IntentModal } from "@/components/IntentModal";
+import { BookingModal } from "@/components/BookingModal";
 import { PartnersSection, VenuesSection } from "@/components/PartnersVenues";
 import { AdSlot } from "@/components/AdSlot";
 import {
@@ -42,6 +43,7 @@ interface ApiEvent {
   format: string;
   sponsor: string | null;
   price: string;
+  pricePence?: number;
   status: string;
   description: string | null;
   maxSpots: number | null;
@@ -190,8 +192,20 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
 
 export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [bookingEvent, setBookingEvent] = useState<ApiEvent | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const openModal = () => setModalOpen(true);
+
+  // Detect ?booking=success return from Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("booking") === "success") {
+      setBookingSuccess(true);
+      // Clean the URL without reloading
+      window.history.replaceState({}, "", window.location.pathname + "#events");
+    }
+  }, []);
 
   // ─── Events from API ─────────────────────────────────────────────────────
   const { data: events = [] } = useQuery<ApiEvent[]>({
@@ -780,7 +794,7 @@ export default function Home() {
                           </div>
                           <Button
                             size="sm"
-                            onClick={openModal}
+                            onClick={() => setBookingEvent(ev)}
                             disabled={ev.status === "soon"}
                             className="rounded-full px-5 text-sm font-semibold flex-shrink-0 disabled:opacity-40"
                           >
@@ -961,6 +975,36 @@ export default function Home() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
       />
+
+      <BookingModal
+        event={bookingEvent}
+        onClose={() => setBookingEvent(null)}
+      />
+
+      {/* Stripe return success toast */}
+      {bookingSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 24 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 bg-card border border-primary/30 shadow-xl rounded-2xl px-5 py-3.5 max-w-sm w-full mx-4"
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
+            <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">You're in — see you on court.</p>
+            <p className="text-xs text-muted-foreground">Confirmation is on its way to your inbox.</p>
+          </div>
+          <button
+            onClick={() => setBookingSuccess(false)}
+            className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            aria-label="Dismiss"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }

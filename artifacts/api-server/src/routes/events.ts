@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, eventsTable, bookingsTable, americanoSessionsTable, americanoPlayersTable } from "@workspace/db";
 import { sendBookingConfirmation } from "../email.js";
 import { calcPlannedRounds } from "./admin-americano.js";
+import { getUncachableStripeClient } from "../stripeClient.js";
 
 const router: IRouter = Router();
 
@@ -317,6 +318,165 @@ router.delete("/events/:id/bookings", async (req, res): Promise<void> => {
   }
 
   res.json({ success: true });
+});
+
+// ─── POST /events/:id/checkout ────────────────────────────────────────────────
+// Creates a Stripe Checkout session for paid events, or books directly if free.
+const CheckoutBody = z.object({
+  email: z.string().email(),
+  fullName: z.string().min(1),
+  company: z.string().optional(),
+});
+
+router.post("/events/:id/checkout", async (req, res): Promise<void> => {
+  const parsed = CheckoutBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { email, fullName, company } = parsed.data;
+
+  try {
+    const [event] = await db
+      .select()
+      .from(eventsTable)
+      .where(eq(eventsTable.id, req.params.id));
+
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    // Check for existing confirmed booking
+    const [existing] = await db
+      .select()
+      .from(bookingsTable)
+      .where(
+        and(
+          eq(bookingsTable.eventId, req.params.id),
+          eq(bookingsTable.email, email),
+        ),
+      );
+
+    if (existing?.status === "confirmed" && existing.paymentStatus !== "pending") {
+      res.status(409).json({ error: "Already booked for this event" });
+      return;
+    }
+
+    // ── Free event — book directly ────────────────────────────────────────────
+    if (!event.pricePence || event.pricePence === 0) {
+      if (existing) {
+        // Re-activate cancelled booking
+        await db
+          .update(bookingsTable)
+          .set({ status: "confirmed", paymentStatus: "free", bookedAt: new Date() })
+          .where(eq(bookingsTable.id, existing.id));
+      } else {
+        await db.insert(bookingsTable).values({
+          eventId: event.id,
+          email,
+          fullName,
+          company,
+          status: "confirmed",
+          paymentStatus: "free",
+        });
+
+        const [newBooking] = await db
+          .select()
+          .from(bookingsTable)
+          .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.email, email)));
+
+        sendBookingConfirmation({
+          to: email,
+          name: fullName,
+          eventId: event.id,
+          bookingId: newBooking?.id ?? 0,
+          eventTitle: event.title,
+          eventDate: event.date,
+          eventTime: event.time,
+          eventVenue: event.venue,
+          eventLocation: event.location,
+          eventFormat: event.format,
+        }).catch((err) => console.error("[email] Booking confirmation failed:", err));
+      }
+
+      res.status(201).json({ booked: true });
+      return;
+    }
+
+    // ── Paid event — Stripe Checkout ──────────────────────────────────────────
+    // Ensure we have a Stripe price ID for this event (create once, cache forever)
+    let stripePriceId = event.stripePriceId;
+
+    if (!stripePriceId) {
+      const stripe = await getUncachableStripeClient();
+
+      const product = await stripe.products.create({
+        name: event.title,
+        description: event.description ?? undefined,
+        metadata: { eventId: event.id, venue: event.venue },
+      });
+
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: event.pricePence,
+        currency: "gbp",
+      });
+
+      stripePriceId = price.id;
+
+      await db
+        .update(eventsTable)
+        .set({ stripePriceId })
+        .where(eq(eventsTable.id, event.id));
+    }
+
+    // Create (or replace) the pending booking row before creating the session,
+    // so we always have a row to update when the webhook fires.
+    const stripe = await getUncachableStripeClient();
+
+    const origin =
+      req.headers.origin ??
+      `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [{ price: stripePriceId, quantity: 1 }],
+      mode: "payment",
+      success_url: `${origin}/?booking=success`,
+      cancel_url: `${origin}/#events`,
+      customer_email: email,
+      metadata: { eventId: event.id, email, fullName, company: company ?? "" },
+    });
+
+    if (existing) {
+      await db
+        .update(bookingsTable)
+        .set({
+          status: "confirmed",
+          paymentStatus: "pending",
+          stripeSessionId: session.id,
+          bookedAt: new Date(),
+        })
+        .where(eq(bookingsTable.id, existing.id));
+    } else {
+      await db.insert(bookingsTable).values({
+        eventId: event.id,
+        email,
+        fullName,
+        company,
+        status: "confirmed",
+        paymentStatus: "pending",
+        stripeSessionId: session.id,
+      });
+    }
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("[checkout] Error:", err);
+    res.status(500).json({ error: "Failed to create checkout" });
+  }
 });
 
 // ── GET /events/:eventId/leaderboard — public, no auth ────────────────────────

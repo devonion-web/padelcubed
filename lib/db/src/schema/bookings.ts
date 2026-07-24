@@ -18,6 +18,9 @@ export const bookingsTable = pgTable(
     fullName: text("full_name").notNull(),
     company: text("company"),
     status: text("status").notNull().default("confirmed"),
+    // Payment fields
+    paymentStatus: text("payment_status").notNull().default("free"), // 'free' | 'pending' | 'paid'
+    stripeSessionId: text("stripe_session_id"),
     bookedAt: timestamp("booked_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
