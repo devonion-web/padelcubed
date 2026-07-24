@@ -93,7 +93,14 @@ function LoginScreen() {
   };
 
   const handleResetConfirm = async () => {
-    if (resetCode.length !== 6 || newPassword.length < 8) return;
+    if (resetCode.length !== 6) {
+      setResetError('Enter the 6-digit code from your email');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setResetError('Password must be at least 8 characters');
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setResetError('Passwords do not match');
       return;
@@ -263,7 +270,7 @@ function LoginScreen() {
 
           <TouchableOpacity
             onPress={handleResetConfirm}
-            disabled={resetLoading || !canConfirm}
+            disabled={resetLoading}
             activeOpacity={0.8}
             style={[styles.loginBtn, { backgroundColor: canConfirm ? colors.primary : colors.card, borderRadius: colors.radius, opacity: resetLoading ? 0.7 : 1 }]}
           >
