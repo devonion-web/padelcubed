@@ -153,6 +153,7 @@ export const getLeaderboardUrl = (id: string, email?: string) =>
     ? `/api/events/${id}/leaderboard?email=${encodeURIComponent(email)}`
     : `/api/events/${id}/leaderboard`;
 
+
 export const getLeaderboardQueryKey = (id: string, email?: string) =>
   [getLeaderboardUrl(id, email)] as const;
 

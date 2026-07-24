@@ -321,7 +321,7 @@ router.delete("/events/:id/bookings", async (req, res): Promise<void> => {
 
 // ── GET /events/:eventId/leaderboard — public, no auth ────────────────────────
 
-router.get("/:eventId/leaderboard", async (req, res) => {
+router.get("/events/:eventId/leaderboard", async (req, res) => {
   try {
     const { eventId } = req.params;
     const myEmail = typeof req.query.email === "string" ? req.query.email.toLowerCase() : null;
