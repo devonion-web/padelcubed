@@ -107,6 +107,8 @@ function LinkedInButton() {
   return (
     <a
       href="/api/auth/linkedin"
+      target="_top"
+      rel="noopener noreferrer"
       className="flex items-center justify-center gap-2.5 w-full rounded-xl h-11
                  bg-[#0A66C2] hover:bg-[#0958a8] text-white text-sm font-semibold
                  transition-colors no-underline"
