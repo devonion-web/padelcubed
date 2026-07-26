@@ -162,10 +162,10 @@
   display: inline-flex; flex-direction: column;
   font-family: 'Inter', sans-serif; font-weight: 800;
   font-size: 15px; line-height: 1.06; letter-spacing: -.01em;
-  color: #F4F7FB;
+  color: #FFFFFF;
 }
-.pc-word .pc-line b { color: #19C3B0; font-weight: 800; }
-.pc-word .pc-line i { color: #19C3B0; font-style: normal; }
+.pc-word .pc-line b { color: #13D4DB; font-weight: 800; }
+.pc-word .pc-line i { color: #13D4DB; font-style: normal; }
 .pc-on-light .pc-word { color: #0E1B2C; }
 @media (max-width: 480px) { .pc-word { display: none; } }
 
