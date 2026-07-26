@@ -488,7 +488,7 @@ export default function EventDetailScreen() {
             <Text
               style={[styles.ctaNote, { color: colors.mutedForeground }]}
             >
-              Free · No commitment
+              Registration is free · No commitment
             </Text>
           </>
         ) : booked ? (
@@ -622,7 +622,7 @@ export default function EventDetailScreen() {
               <Text
                 style={[styles.ctaNote, { color: colors.mutedForeground }]}
               >
-                Free · Instant confirmation
+                {event.price ? `${event.price} · Instant confirmation` : 'Instant confirmation'}
               </Text>
             )}
           </>

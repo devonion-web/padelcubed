@@ -172,7 +172,7 @@ function BookingForm({ event, onSuccess }: { event: BookableEvent; onSuccess: ()
         ) : isPaid ? (
           <><CreditCard className="h-4 w-4" />Pay {event.price} &amp; reserve spot <ArrowRight className="h-3.5 w-3.5" /></>
         ) : (
-          "Reserve my free spot"
+          <><ArrowRight className="h-3.5 w-3.5" />Reserve my spot</>
         )}
       </button>
 
@@ -271,7 +271,7 @@ export function BookingModal({ event, onClose }: BookingModalProps) {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {(event.pricePence ?? 0) > 0
                       ? `${event.price} per person · secure payment via Stripe`
-                      : "Free to attend · confirm your place below"}
+                      : "Complimentary · Confirm your place below"}
                   </p>
                 </div>
                 <button
