@@ -9,6 +9,7 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "test:api":    "pnpm --filter @workspace/tests run test:api",
     "test:mobile": "pnpm --filter @workspace/tests run test:mobile",
+    "test:web":    "pnpm --filter @workspace/tests run test:web",
     "test:all":    "pnpm --filter @workspace/tests run test"
   },
   "private": true,

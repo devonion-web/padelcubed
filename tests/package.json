@@ -6,9 +6,11 @@
   "scripts": {
     "test:api":    "vitest run --config vitest.config.ts",
     "test:mobile": "vitest run --config vitest.mobile.config.ts",
-    "test":        "pnpm run test:api && pnpm run test:mobile"
+    "test:web":    "LD_LIBRARY_PATH=/nix/store/2vaiy8gb6y6mic8dn6pbnf446b3k9358-mesa-22.3.7/lib:/nix/store/447fq1l8zagjhc15j07fgwwhs433bwqd-eudev-3.2.11/lib:/nix/store/26hcp8h792wl0h52c5r94qakhvk6q717-glib-2.82.1/lib playwright test --config playwright.config.ts",
+    "test":        "pnpm run test:api && pnpm run test:mobile && pnpm run test:web"
   },
   "devDependencies": {
+    "@playwright/test":    "^1.52.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node":         "catalog:",
     "@types/supertest":    "^6.0.2",

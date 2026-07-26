@@ -72,6 +72,14 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Forward /api/* to the API server so Playwright (hitting port 24308
+    // directly) can exercise the full stack without needing the Replit proxy.
+    proxy: {
+      '/api': {
+        target: `http://localhost:${process.env.API_PORT ?? '8080'}`,
+        changeOrigin: false,
+      },
+    },
   },
   preview: {
     port,

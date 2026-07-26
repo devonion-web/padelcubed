@@ -11,7 +11,7 @@
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
 import { createHmac, timingSafeEqual } from "crypto";
-import { eq, and, sql, gt, lt } from "drizzle-orm";
+import { eq, and, sql, gt, lt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, membersTable, registrationsTable, bookingsTable, webhookLogTable, claimCodesTable } from "@workspace/db";
 import {
@@ -290,7 +290,7 @@ router.post(
       .where(
         and(
           eq(registrationsTable.email, entry.registrationEmail),
-          eq(registrationsTable.memberId, null as any),
+          isNull(registrationsTable.memberId),
         ),
       );
 

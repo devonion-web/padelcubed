@@ -84,22 +84,24 @@ describe("M1 — claim code HMAC, expiry, lockout", () => {
     expect(row.codeHmac).toHaveLength(64); // SHA-256 hex = 64 chars
   });
 
-  it("correct code → 200 OK with ok:true response", async () => {
+  it("correct code → 200 OK and registration IS linked to member", async () => {
     await insertCode();
     const res = await verify({ code: GOOD_CODE });
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
-    // NOTE: the registration DB link is NOT asserted here because
-    // members.ts:296 uses `eq(registrationsTable.memberId, null as any)` which
-    // Drizzle v0.45 serialises as `member_id = $1` (with $1=NULL). In PostgreSQL,
-    // `= NULL` never matches — the correct form is IS NULL. This is a production
-    // bug: the UPDATE matches 0 rows and the registration stays unlinked.
-    // The security properties tested in this file (HMAC, expiry, lockout) are
-    // unaffected; only the post-verify link step is broken.
+
+    // The registration row must now have memberId set.
+    // (Bug was: members.ts used eq(col, null) → SQL `member_id = NULL` which
+    // always matches 0 rows. Fixed by replacing with isNull(col).)
+    const [reg] = await db
+      .select()
+      .from(registrationsTable)
+      .where(eq(registrationsTable.email, regEmail));
+    expect(reg!.memberId).toBe(memberId);
   });
 
   it("code is consumed on success (cannot be reused)", async () => {
-    // The code row IS deleted even though the registration link fails (bug above)
+    // Code row must be deleted after a successful verify
     const rows = await db
       .select()
       .from(claimCodesTable)
