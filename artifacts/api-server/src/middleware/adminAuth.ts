@@ -15,11 +15,14 @@ function getSecret(): string {
 }
 
 export function signAdminToken(payload: AdminJwtPayload): string {
-  return jwt.sign(payload, getSecret(), { expiresIn: "30d" });
+  // Stamp iss so verifyAdminToken can reject member JWTs signed with the same secret.
+  return jwt.sign({ iss: "p3-admin", ...payload }, getSecret(), { expiresIn: "30d" });
 }
 
 export function verifyAdminToken(token: string): AdminJwtPayload {
-  return jwt.verify(token, getSecret()) as AdminJwtPayload;
+  const p = jwt.verify(token, getSecret()) as unknown as AdminJwtPayload & { iss?: string };
+  if (p.iss !== "p3-admin") throw new Error("Wrong token issuer");
+  return p;
 }
 
 /** Attaches req.adminUser if a valid Bearer token is present; else 401. */

@@ -5,6 +5,8 @@ import { db, eventsTable, bookingsTable, americanoSessionsTable, americanoPlayer
 import { sendBookingConfirmation } from "../email.js";
 import { calcPlannedRounds } from "./admin-americano.js";
 import { getUncachableStripeClient } from "../stripeClient.js";
+import { requireAdmin } from "../middleware/adminAuth.js";
+import { optionalMember, type MemberJwtPayload } from "../middleware/memberAuth.js";
 
 const router: IRouter = Router();
 
@@ -201,7 +203,7 @@ const BookingBody = z.object({
   company: z.string().optional(),
 });
 
-router.post("/events/:id/bookings", async (req, res): Promise<void> => {
+router.post("/events/:id/bookings", requireAdmin, async (req, res): Promise<void> => {
   const parsed = BookingBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -217,6 +219,12 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
 
     if (!event) {
       res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
+    // Paid events must go through /checkout — this endpoint is for free events only
+    if (event.pricePence && event.pricePence > 0) {
+      res.status(400).json({ error: "Paid event — use /checkout to initiate payment" });
       return;
     }
 
@@ -294,7 +302,7 @@ router.post("/events/:id/bookings", async (req, res): Promise<void> => {
 // ─── DELETE /events/:id/bookings ──────────────────────────────────────────────
 const CancelBody = z.object({ email: z.string().email() });
 
-router.delete("/events/:id/bookings", async (req, res): Promise<void> => {
+router.delete("/events/:id/bookings", requireAdmin, async (req, res): Promise<void> => {
   const parsed = CancelBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -328,7 +336,7 @@ const CheckoutBody = z.object({
   company: z.string().optional(),
 });
 
-router.post("/events/:id/checkout", async (req, res): Promise<void> => {
+router.post("/events/:id/checkout", optionalMember, async (req, res): Promise<void> => {
   const parsed = CheckoutBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -336,6 +344,7 @@ router.post("/events/:id/checkout", async (req, res): Promise<void> => {
   }
 
   const { email, fullName, company } = parsed.data;
+  const memberId = ((req as any).member as MemberJwtPayload | undefined)?.sub ?? null;
 
   try {
     const [event] = await db
@@ -378,6 +387,7 @@ router.post("/events/:id/checkout", async (req, res): Promise<void> => {
           email,
           fullName,
           company,
+          memberId: memberId ?? undefined,
           status: "confirmed",
           paymentStatus: "free",
         });
@@ -447,7 +457,7 @@ router.post("/events/:id/checkout", async (req, res): Promise<void> => {
       success_url: `${origin}/?booking=success`,
       cancel_url: `${origin}/#events`,
       customer_email: email,
-      metadata: { eventId: event.id, email, fullName, company: company ?? "" },
+      metadata: { eventId: event.id, email, fullName, company: company ?? "", memberId: memberId ? String(memberId) : "" },
     });
 
     if (existing) {
@@ -466,6 +476,7 @@ router.post("/events/:id/checkout", async (req, res): Promise<void> => {
         email,
         fullName,
         company,
+        memberId: memberId ?? undefined,
         status: "confirmed",
         paymentStatus: "pending",
         stripeSessionId: session.id,

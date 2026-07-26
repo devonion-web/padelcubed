@@ -86,10 +86,11 @@ router.post("/registrations", registrationLimiter, async (req, res): Promise<voi
 
   // Fire emails after responding — non-blocking
   sendRegistrationWelcome({
-    to:         registration.email,
-    fullName:   registration.fullName,
-    padelLevel: registration.padelLevel,
-    interests:  registration.interests,
+    to:              registration.email,
+    fullName:        registration.fullName,
+    padelLevel:      registration.padelLevel,
+    interests:       registration.interests,
+    suppressionData: { optedOutAt: null }, // new registrations are never opted out
   }).catch(err => console.error("[email] Welcome email failed:", err));
 
   sendNewMemberNotification({

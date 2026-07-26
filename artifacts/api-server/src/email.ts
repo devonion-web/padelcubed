@@ -31,6 +31,31 @@ const B = {
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${B.logoMid}"/><stop offset="100%" stop-color="${B.logoDark}"/></linearGradient></defs><rect x="4" y="4" width="92" height="92" rx="20" ry="20" fill="url(#bg)"/><text x="22" y="79" font-family="Helvetica Neue,Arial,sans-serif" font-weight="900" font-size="60" letter-spacing="-3" fill="${B.textLight}">P</text><text x="65" y="44" font-family="Helvetica Neue,Arial,sans-serif" font-weight="800" font-size="28" fill="${B.teal}">3</text></svg>`;
 const LOGO_URI = `data:image/svg+xml;base64,${Buffer.from(LOGO_SVG).toString("base64")}`;
 
+// ─── Consent suppression ──────────────────────────────────────────────────────
+// Pass suppressionData to any send function; if omitted the send fires unconditionally.
+// All types: block if opted out. "marketing": also requires consent. "sponsor": same.
+
+export interface SuppressionData {
+  optedOutAt?:         Date | null;
+  consentMarketingAt?: Date | null;
+  consentSponsorAt?:   Date | null;
+}
+
+export type EmailSendType = "transactional" | "marketing" | "sponsor";
+
+/**
+ * Returns true if the email should be suppressed.
+ * - All types: true if optedOutAt IS NOT NULL.
+ * - "marketing": also true if consentMarketingAt IS NULL (no consent given).
+ * - "sponsor":   also true if consentSponsorAt IS NULL.
+ */
+export function isEmailSuppressed(data: SuppressionData, type: EmailSendType): boolean {
+  if (data.optedOutAt != null) return true;
+  if (type === "marketing" && data.consentMarketingAt == null) return true;
+  if (type === "sponsor"   && data.consentSponsorAt   == null) return true;
+  return false;
+}
+
 // ─── Base template ────────────────────────────────────────────────────────────
 
 function baseEmail(opts: {
@@ -505,19 +530,24 @@ function qrTicketBlock(qrDataUri: string, bookingId: number): string {
 // ─── Booking confirmation ─────────────────────────────────────────────────────
 
 export interface BookingConfirmationParams {
-  to:            string;
-  name:          string;
-  eventId:       string;
-  bookingId:     number;
-  eventTitle:    string;
-  eventDate:     string;
-  eventTime:     string;
-  eventVenue:    string;
-  eventLocation: string;
-  eventFormat?:  string;
+  to:              string;
+  name:            string;
+  eventId:         string;
+  bookingId:       number;
+  eventTitle:      string;
+  eventDate:       string;
+  eventTime:       string;
+  eventVenue:      string;
+  eventLocation:   string;
+  eventFormat?:    string;
+  suppressionData?: SuppressionData;
 }
 
 export async function sendBookingConfirmation(params: BookingConfirmationParams): Promise<void> {
+  if (params.suppressionData && isEmailSuppressed(params.suppressionData, "transactional")) {
+    console.log(`[email] Suppressed (opted out) booking confirmation to ${params.to}`);
+    return;
+  }
   const { to, name, eventId, bookingId, eventTitle,
           eventDate, eventTime, eventVenue, eventLocation, eventFormat } = params;
   const firstName = name.split(" ")[0];
@@ -622,13 +652,18 @@ export async function sendPasswordResetEmail(params: {
 // ─── Registration welcome (member) ───────────────────────────────────────────
 
 export interface RegistrationWelcomeParams {
-  to:         string;
-  fullName:   string;
-  padelLevel?: string | null;
-  interests?:  string[] | null;
+  to:              string;
+  fullName:        string;
+  padelLevel?:     string | null;
+  interests?:      string[] | null;
+  suppressionData?: SuppressionData;
 }
 
 export async function sendRegistrationWelcome(params: RegistrationWelcomeParams): Promise<void> {
+  if (params.suppressionData && isEmailSuppressed(params.suppressionData, "transactional")) {
+    console.log(`[email] Suppressed (opted out) registration welcome to ${params.to}`);
+    return;
+  }
   const { to, fullName, padelLevel, interests } = params;
   const firstName = fullName.split(" ")[0];
 
@@ -817,17 +852,22 @@ export async function sendNewMemberNotification(params: NewMemberNotificationPar
 // ─── Walk-in confirmation ─────────────────────────────────────────────────────
 
 export interface WalkinEmailParams {
-  to:            string;
-  name:          string;
-  eventTitle:    string;
-  eventDate:     string;
-  eventTime:     string;
-  eventVenue:    string;
-  eventLocation: string;
-  eventFormat?:  string;
+  to:              string;
+  name:            string;
+  eventTitle:      string;
+  eventDate:       string;
+  eventTime:       string;
+  eventVenue:      string;
+  eventLocation:   string;
+  eventFormat?:    string;
+  suppressionData?: SuppressionData;
 }
 
 export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise<void> {
+  if (params.suppressionData && isEmailSuppressed(params.suppressionData, "transactional")) {
+    console.log(`[email] Suppressed (opted out) walk-in confirmation to ${params.to}`);
+    return;
+  }
   const { to, name, eventTitle, eventDate, eventTime,
           eventVenue, eventLocation, eventFormat } = params;
   const firstName = name.split(" ")[0];
@@ -875,7 +915,11 @@ export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise
 }
 
 // ─── Claim-registration verification code ────────────────────────────────────
-export async function sendClaimCode({ to, code }: { to: string; code: string }): Promise<void> {
+export async function sendClaimCode({ to, code, suppressionData }: { to: string; code: string; suppressionData?: SuppressionData }): Promise<void> {
+  if (suppressionData && isEmailSuppressed(suppressionData, "transactional")) {
+    console.log(`[email] Suppressed (opted out) claim code to ${to}`);
+    return;
+  }
   const html = baseEmail({
     subject:    "Link your P³ registration — verification code",
     preheader:  `Your code is ${code} — valid for 10 minutes.`,

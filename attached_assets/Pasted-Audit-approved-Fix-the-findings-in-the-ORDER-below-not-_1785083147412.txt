@@ -1,0 +1,94 @@
+Audit approved. Fix the findings in the ORDER below — not the severity-label
+order. After each fix, re-run its verification test and paste the output. Do NOT
+introduce new behaviour beyond the fix. Keep the "don't regress" note on each.
+When all are done, run the RE-AUDIT block at the end and report PASS/FAIL with
+output. British English.
+
+━━ ORDER OF FIXES ━━
+
+1. [B1] Member JWT accepted on all admin routes — adminAuth.ts
+   Add the same issuer/role check memberAuth already has: verifyAdminToken must
+   reject any token whose iss is not the admin issuer, not just verify the
+   signature on SESSION_SECRET.
+   Don't regress: the masterPassword bootstrap escape hatch must still work; real
+   admin JWTs must still pass.
+   Verify: sign a member JWT (iss:'p3-member') and call GET /api/admin/registrations
+   and GET /api/admin/insights — both must now return 401/403.
+
+2. [B2] Legacy POST /events/:id/bookings grants free confirmed bookings — events.ts
+   Require auth on the endpoint AND guard on price: for pricePence > 0 return 400
+   directing to /checkout; only pricePence === 0 may create a confirmed booking.
+   Apply auth to the DELETE on the same route too (currently unauthenticated =
+   booking-cancellation DoS).
+   Don't regress: free events (pricePence === 0) must still book and confirm
+   immediately; the Stripe /checkout path is unaffected.
+   Verify: POST to a paid event with no payment → 400, no booking row created.
+   POST to a free event → still 201 confirmed. DELETE without auth → 401.
+
+3. [B3] webhook_log.payload_json PII survives DELETE /api/members/me — members.ts
+   Extend the deletion cascade to webhook_log: scrub PII from payload_json (or
+   delete the member's rows) for the deleted member.
+   Don't regress: keep the consent audit record and the delivery status/attempt
+   history; only the personal data in the payload is removed.
+   Verify: full cycle — create member + registration + booking + a fired webhook,
+   DELETE /members/me, then
+   SELECT payload_json FROM webhook_log WHERE payload_json::text ILIKE '%<email>%'
+   → no rows. Re-run the members/registrations/bookings sweep too.
+
+4. [H1] memberId missing from Stripe checkout metadata — events.ts:~450
+   Include memberId in the Checkout session metadata when optionalMember resolves
+   a logged-in buyer; the webhook handler must read it and set booking.memberId.
+   Don't regress: guest (unauthenticated) checkout must still work with memberId
+   null.
+   Verify: authenticated buyer completes checkout → their booking has memberId set
+   and appears in GET /api/my-bookings.
+
+5. [H3] No consent suppression on any email send — email.ts
+   Add one suppression helper used by EVERY send: block if opted_out_at IS NOT
+   NULL; for a marketing send also require consent_marketing_at IS NOT NULL; for
+   sponsor cohort export/matching require consent_sponsor_at IS NOT NULL. Wire it
+   into all existing sends now, even though today's are transactional.
+   Don't regress: the events-consent welcome email still fires for members who
+   gave events consent and are not opted out.
+   Verify: opted-out/deleted member → welcome/notification suppressed. A legacy
+   row with consent_marketing_at NULL is excluded from a marketing send. Show the
+   query the send uses.
+
+6. [H2] Failed webhooks never retried — webhookService.ts:101
+   Give failed deliveries a recovery path: either re-include 'failed' rows in the
+   drain (with a max-attempt cap and back-off) or add an admin "retry" action on
+   failed rows. A short outage must not lose delivery permanently.
+   Don't regress: a genuinely dead endpoint must still stop after the cap and be
+   flagged, not loop forever.
+   Verify: point WEBHOOK_URL at a dead endpoint, register, watch it fail; bring
+   the endpoint back and confirm the row can be redelivered (auto or via admin).
+
+7. [M3] Source/dist divergence in requireCsrf Bearer bypass — memberAuth.ts
+   Make the TypeScript source authoritative: add the Bearer-bypass line (Bearer
+   requests are CSRF-safe) to the source so a rebuild doesn't silently change
+   runtime behaviour and break mobile (which authenticates by Bearer).
+   Don't regress: cookie-based mutations still require the CSRF token; Bearer
+   (mobile) still bypasses CSRF.
+   Verify: grep source and dist for the bypass — they now match. Cookie DELETE
+   without CSRF token → rejected; Bearer DELETE → allowed.
+
+8. [M2] Orphaned RegistrationForm.tsx with stale single-consent UI
+   Delete the file.
+   Verify: file gone; grep confirms nothing imported it.
+
+9. [B4 dropped / M1 hardened] One booking-ownership mechanism, hardened
+   Do NOT build the separate HMAC verify link (B4). Instead harden the claim
+   flow to cover it: persist the claim code to the DB (not an in-memory Map so it
+   survives restart), HMAC-sign it, set a sensible expiry, and lock out after N
+   failed attempts (tighten the brute-force window on the 6-digit space).
+   Don't regress: legitimate claim → link registration to account still works.
+   Verify: code survives an API restart; expired/tampered code rejected; lockout
+   triggers after N wrong attempts.
+
+━━ RE-AUDIT (run after ALL fixes) ━━
+Re-run and paste output for the three that must be proven, not claimed:
+- Member JWT (iss:'p3-member') on GET /api/admin/registrations → 401/403.
+- POST /api/events/<paid-event>/bookings with no payment → 400, no row created.
+- Full deletion cycle, then PII sweep across members, registrations, bookings
+  AND webhook_log.payload_json → zero personal data.
+Report every fix PASS/FAIL · file:line · one-line repro. Then STOP.

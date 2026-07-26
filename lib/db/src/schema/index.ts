@@ -1,4 +1,5 @@
 export * from "./members";
+export * from "./claim-codes";
 export * from "./webhook-log";
 export * from "./registrations";
 export * from "./corporate-enquiries";

@@ -55,7 +55,8 @@ export class WebhookHandlers {
     }
 
     // ── Standard web booking checkout ──────────────────────────────────────────
-    const { eventId, email, fullName, company } = meta;
+    const { eventId, email, fullName, company, memberId: memberIdStr } = meta;
+    const memberId = memberIdStr ? parseInt(memberIdStr, 10) : null;
     if (!eventId || !email) return;
 
     const [booking] = await db
@@ -75,7 +76,11 @@ export class WebhookHandlers {
 
     await db
       .update(bookingsTable)
-      .set({ paymentStatus: 'paid', status: 'confirmed' })
+      .set({
+        paymentStatus: 'paid',
+        status: 'confirmed',
+        ...(memberId && !isNaN(memberId) ? { memberId } : {}),
+      })
       .where(eq(bookingsTable.id, booking.id));
 
     const [event] = await db

@@ -38,7 +38,8 @@ function sign(body: string): string {
   return "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
 }
 
-const MAX_ATTEMPTS = 3;
+/** Permanent cap — entries with attempts ≥ HARD_CAP are never retried again. */
+const HARD_CAP = 10;
 
 /** Process a single pending webhook_log entry. Called by the background worker. */
 export async function processWebhookEntry(entry: { id: number; payloadJson: string; attempts: number }): Promise<void> {
@@ -66,30 +67,31 @@ export async function processWebhookEntry(entry: { id: number; payloadJson: stri
         .set({ status: "delivered", attempts, deliveredAt: new Date(), lastAttemptAt: new Date() })
         .where(eq(webhookLogTable.id, entry.id));
     } else {
-      const newStatus = attempts >= MAX_ATTEMPTS ? "failed" : "pending";
+      const newStatus = attempts >= HARD_CAP ? "failed" : "pending";
       await db
         .update(webhookLogTable)
         .set({ status: newStatus, attempts, lastAttemptAt: new Date() })
         .where(eq(webhookLogTable.id, entry.id));
-      console.warn(`[webhook] Delivery failed (${res.status}) for entry ${entry.id}, attempt ${attempts}/${MAX_ATTEMPTS}`);
+      console.warn(`[webhook] Delivery failed (${res.status}) for entry ${entry.id}, attempt ${attempts}/${HARD_CAP}`);
     }
   } catch (err) {
-    const newStatus = attempts >= MAX_ATTEMPTS ? "failed" : "pending";
+    const newStatus = attempts >= HARD_CAP ? "failed" : "pending";
     await db
       .update(webhookLogTable)
       .set({ status: newStatus, attempts, lastAttemptAt: new Date() })
       .where(eq(webhookLogTable.id, entry.id));
-    console.warn(`[webhook] Network error for entry ${entry.id}, attempt ${attempts}/${MAX_ATTEMPTS}:`, err);
+    console.warn(`[webhook] Network error for entry ${entry.id}, attempt ${attempts}/${HARD_CAP}:`, err);
   }
 }
 
-/** Drain all pending entries from the queue. Called by the background worker. */
+/** Drain all pending AND failed-but-retryable entries. Called by the background worker. */
 export async function drainWebhookQueue(): Promise<void> {
   if (!process.env.WEBHOOK_URL) return;
 
   try {
-    // Exponential back-off: only retry entries whose last attempt was >delay ago
-    // Attempt 1: immediate, Attempt 2: 60s, Attempt 3: 300s
+    // Back-off: only pick entries whose last attempt was >60 s ago.
+    // Picks both 'pending' (normal flow) and 'failed' (short outage recovery)
+    // up to HARD_CAP total attempts.
     const retryDelaySeconds = 60;
     const cutoff = new Date(Date.now() - retryDelaySeconds * 1000);
 
@@ -98,7 +100,8 @@ export async function drainWebhookQueue(): Promise<void> {
       .from(webhookLogTable)
       .where(
         and(
-          eq(webhookLogTable.status, "pending"),
+          sql`${webhookLogTable.status} IN ('pending', 'failed')`,
+          lt(webhookLogTable.attempts, HARD_CAP),
           sql`(${webhookLogTable.lastAttemptAt} IS NULL OR ${webhookLogTable.lastAttemptAt} < ${cutoff})`,
         ),
       )

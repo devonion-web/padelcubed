@@ -10,9 +10,10 @@
  */
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
-import { eq, and } from "drizzle-orm";
+import { createHmac, timingSafeEqual } from "crypto";
+import { eq, and, sql, gt, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, membersTable, registrationsTable, bookingsTable } from "@workspace/db";
+import { db, membersTable, registrationsTable, bookingsTable, webhookLogTable, claimCodesTable } from "@workspace/db";
 import {
   requireMember,
   requireCsrf,
@@ -29,14 +30,13 @@ const claimLimiter = rateLimit({
   message: { error: "Too many claim attempts — please try again in 15 minutes" },
 });
 
-// ── In-memory claim code store (short-lived, rarely used) ─────────────────────
-interface ClaimEntry { memberId: number; registrationEmail: string; expiry: number }
-const claimCodes = new Map<string, ClaimEntry>();
-const CLAIM_TTL  = 10 * 60 * 1000; // 10 minutes
+// ── Claim code helpers (DB-persisted, HMAC-signed, survives restarts) ──────────
+const CLAIM_TTL_MS        = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_VERIFY_ATTEMPTS = 5;                    // lockout after N wrong guesses
 
-function cleanClaimCodes() {
-  const now = Date.now();
-  for (const [k, v] of claimCodes) if (v.expiry < now) claimCodes.delete(k);
+function hmacClaimCode(code: string): string {
+  const secret = process.env.SESSION_SECRET ?? "";
+  return createHmac("sha256", secret).update(code).digest("hex");
 }
 
 // ── GET /api/members/me ────────────────────────────────────────────────────────
@@ -109,10 +109,30 @@ router.post("/members/me/logout", (req, res): void => {
 // ── DELETE /api/members/me — GDPR self-serve deletion ─────────────────────────
 // Anonymises PII across ALL tables. Retains row IDs + consent audit trail.
 router.delete("/members/me", requireMember, requireCsrf, async (req, res): Promise<void> => {
-  const { sub: memberId } = (req as any).member as MemberJwtPayload;
+  const { sub: memberId, email: memberEmail } = (req as any).member as MemberJwtPayload;
   const now = new Date();
 
   try {
+    // 0. Scrub webhook_log — payload_json stores PII and must be cleared before anonymising
+    const emailPattern = `%${memberEmail}%`;
+    await db
+      .update(webhookLogTable)
+      .set({ payloadJson: '{"redacted":"gdpr-erasure","reason":"member-deletion"}' })
+      .where(sql`${webhookLogTable.payloadJson}::text ILIKE ${emailPattern}`);
+
+    // Also cover registration email if it differs from the member email in the JWT
+    const [regRow] = await db
+      .select({ email: registrationsTable.email })
+      .from(registrationsTable)
+      .where(eq(registrationsTable.memberId, memberId));
+    if (regRow?.email && regRow.email !== memberEmail) {
+      const regPattern = `%${regRow.email}%`;
+      await db
+        .update(webhookLogTable)
+        .set({ payloadJson: '{"redacted":"gdpr-erasure","reason":"member-deletion"}' })
+        .where(sql`${webhookLogTable.payloadJson}::text ILIKE ${regPattern}`);
+    }
+
     // 1. Anonymise members row
     await db
       .update(membersTable)
@@ -163,7 +183,7 @@ router.delete("/members/me", requireMember, requireCsrf, async (req, res): Promi
 });
 
 // ── POST /api/members/claim-registration — link by email verification ──────────
-// Used when LinkedIn email ≠ registration email. Sends a 6-digit code.
+// Sends a 6-digit code; code is HMAC-signed and persisted to DB (survives restarts).
 router.post(
   "/members/claim-registration",
   requireMember,
@@ -183,13 +203,21 @@ router.post(
 
     // Always respond the same way (prevent enumeration)
     if (reg && !reg.memberId) {
-      cleanClaimCodes();
-      const code = String(Math.floor(100_000 + Math.random() * 900_000));
-      claimCodes.set(code, { memberId, registrationEmail: targetEmail, expiry: Date.now() + CLAIM_TTL });
+      // Purge expired codes; insert a fresh HMAC-signed entry
+      await db.delete(claimCodesTable).where(lt(claimCodesTable.expiresAt, new Date())).catch(() => {});
 
-      // Import lazily to avoid circular deps
+      const rawCode  = String(Math.floor(100_000 + Math.random() * 900_000));
+      const codeHmac = hmacClaimCode(rawCode);
+
+      await db.insert(claimCodesTable).values({
+        codeHmac,
+        memberId,
+        registrationEmail: targetEmail,
+        expiresAt: new Date(Date.now() + CLAIM_TTL_MS),
+      }).catch(err => console.error("[members/claim] Code insert failed:", err));
+
       const { sendClaimCode } = await import("../email.js");
-      sendClaimCode({ to: targetEmail, code }).catch(
+      sendClaimCode({ to: targetEmail, code: rawCode }).catch(
         err => console.error("[members/claim] Email failed:", err),
       );
     }
@@ -209,16 +237,53 @@ router.post(
     if (!parsed.success) { res.status(400).json({ error: "6-digit code required" }); return; }
 
     const { sub: memberId } = (req as any).member as MemberJwtPayload;
-    const entry = claimCodes.get(parsed.data.code);
+    const submittedHmac = hmacClaimCode(parsed.data.code);
+    const now = new Date();
 
-    if (!entry || entry.expiry < Date.now() || entry.memberId !== memberId) {
+    // Find an active, unexpired code for this member that hasn't hit the lockout cap
+    const [entry] = await db
+      .select()
+      .from(claimCodesTable)
+      .where(
+        and(
+          eq(claimCodesTable.memberId, memberId),
+          gt(claimCodesTable.expiresAt, now),
+          lt(claimCodesTable.attempts, MAX_VERIFY_ATTEMPTS),
+        ),
+      )
+      .limit(1);
+
+    if (!entry) {
       res.status(400).json({ error: "Invalid or expired code" });
       return;
     }
 
-    claimCodes.delete(parsed.data.code);
+    // Increment attempts BEFORE comparing — stops brute-force even on timing attacks
+    await db
+      .update(claimCodesTable)
+      .set({ attempts: entry.attempts + 1 })
+      .where(eq(claimCodesTable.id, entry.id));
 
-    // Link the registration to this member
+    // Constant-time HMAC comparison
+    const storedBuf    = Buffer.from(entry.codeHmac, "hex");
+    const submittedBuf = Buffer.from(submittedHmac, "hex");
+    const valid =
+      storedBuf.length === submittedBuf.length &&
+      timingSafeEqual(storedBuf, submittedBuf);
+
+    if (!valid) {
+      const remaining = MAX_VERIFY_ATTEMPTS - (entry.attempts + 1);
+      if (remaining <= 0) {
+        res.status(400).json({ error: "Too many attempts — code locked. Request a new code." });
+      } else {
+        res.status(400).json({ error: `Invalid code — ${remaining} attempt${remaining === 1 ? "" : "s"} remaining` });
+      }
+      return;
+    }
+
+    // Valid — consume code and link registration
+    await db.delete(claimCodesTable).where(eq(claimCodesTable.id, entry.id));
+
     await db
       .update(registrationsTable)
       .set({ memberId })
