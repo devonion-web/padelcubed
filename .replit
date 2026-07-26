@@ -26,3 +26,6 @@ channel = "stable-25_05"
 
 [userenv.shared]
 EMAIL_FROM = "P³ Events <info@padelcubed.co.uk>"
+
+[userenv.production]
+LINKEDIN_REDIRECT_URI = "78vvpl4ab1onx9"
