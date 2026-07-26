@@ -837,6 +837,7 @@ export default function Home() {
               <a href="#ambassadors" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
               <Link href="/host-an-event" className="text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
+              <a href="https://www.instagram.com/padelcubed" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">Instagram</a>
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
             </div>

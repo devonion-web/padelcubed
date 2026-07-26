@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -218,6 +219,17 @@ export default function ProfileScreen() {
             <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
 
+          {/* Follow on Instagram */}
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://www.instagram.com/padelcubed')}
+            activeOpacity={0.75}
+            style={[styles.instagramBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+          >
+            <Feather name="instagram" size={16} color="#E1306C" />
+            <Text style={[styles.instagramText, { color: colors.foreground }]}>Follow us on Instagram</Text>
+            <Text style={[styles.instagramHandle, { color: colors.mutedForeground }]}>@padelcubed</Text>
+          </TouchableOpacity>
+
           {/* Clear registration (dev/testing convenience) */}
           <TouchableOpacity onPress={handleClear} activeOpacity={0.7} style={styles.clearButton}>
             <Text style={[styles.clearText, { color: colors.destructive }]}>Remove my registration</Text>
@@ -375,6 +387,25 @@ const styles = StyleSheet.create({
   interestChipText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
+  },
+  instagramBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  instagramText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    flex: 1,
+  },
+  instagramHandle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
   },
   clearButton: {
     alignItems: 'center',
