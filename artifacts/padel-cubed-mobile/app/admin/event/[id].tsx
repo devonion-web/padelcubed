@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { useAdmin } from '@/context/AdminContext';
+import ChargeModal from '@/app/admin/charge-modal';
 import {
   useAdminEventBookings,
   useAdminEvent,
@@ -52,6 +53,7 @@ function BookingRow({
   togglingPayment,
   onDelete,
   deleting,
+  onCharge,
 }: {
   booking: AdminBooking;
   onToggleCheckin: () => void;
@@ -60,6 +62,7 @@ function BookingRow({
   togglingPayment: boolean;
   onDelete: () => void;
   deleting: boolean;
+  onCharge: () => void;
 }) {
   const colors = useColors();
   const isCheckedIn = Boolean(booking.checkedInAt);
@@ -68,18 +71,13 @@ function BookingRow({
   const unpaidAccent = '#f59e0b';
 
   const handlePress = () => {
-    Alert.alert(
-      booking.fullName,
-      'Booking options',
-      [
-        {
-          text: 'Remove booking',
-          style: 'destructive',
-          onPress: onDelete,
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-    );
+    const buttons: any[] = [];
+    if (!isPaid && !isFree) {
+      buttons.push({ text: '💳 Take Payment', onPress: onCharge });
+    }
+    buttons.push({ text: 'Remove booking', style: 'destructive', onPress: onDelete });
+    buttons.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert(booking.fullName, 'Booking options', buttons);
   };
 
   return (
@@ -173,29 +171,26 @@ function WalkinRow({
   toggling,
   onDelete,
   deleting,
+  onCharge,
 }: {
   walkin: Walkin;
   onTogglePaid: () => void;
   toggling: boolean;
   onDelete: () => void;
   deleting: boolean;
+  onCharge: () => void;
 }) {
   const colors = useColors();
   const isCheckedIn = Boolean(walkin.checkedInAt);
 
   const handlePress = () => {
-    Alert.alert(
-      walkin.name,
-      'Walk-in options',
-      [
-        {
-          text: 'Remove walk-in',
-          style: 'destructive',
-          onPress: onDelete,
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-    );
+    const buttons: any[] = [];
+    if (!walkin.paid) {
+      buttons.push({ text: '💳 Take Payment', onPress: onCharge });
+    }
+    buttons.push({ text: 'Remove walk-in', style: 'destructive', onPress: onDelete });
+    buttons.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert(walkin.name, 'Walk-in options', buttons);
   };
 
   const unpaidAccent = '#f59e0b';
@@ -357,6 +352,18 @@ export default function AdminEventDetailScreen() {
   const deleteWalkinMutation = useDeleteWalkin(token);
   const [togglingPaidId, setTogglingPaidId] = useState<number | null>(null);
   const [deletingWalkinId, setDeletingWalkinId] = useState<number | null>(null);
+
+  // ── Charge modal state ─────────────────────────────────────────────────────
+  const [chargeModal, setChargeModal] = useState<{
+    visible: boolean;
+    walkinId?: number;
+    bookingId?: number;
+    playerName: string;
+  }>({ visible: false, playerName: '' });
+
+  const openCharge = (opts: { walkinId?: number; bookingId?: number; playerName: string }) =>
+    setChargeModal({ visible: true, ...opts });
+  const closeCharge = () => setChargeModal((s) => ({ ...s, visible: false }));
 
   const walkinCheckedIn = walkins.filter((w) => w.checkedInAt).length;
   const checkedIn  = bookings.filter((b) => b.checkedInAt).length + walkinCheckedIn;
@@ -562,6 +569,7 @@ export default function AdminEventDetailScreen() {
                   togglingPayment={togglingBookingPaymentId === b.id}
                   onDelete={() => handleDeleteBooking(b)}
                   deleting={deletingBookingId === b.id}
+                  onCharge={() => openCharge({ bookingId: b.id, playerName: b.fullName })}
                 />
               ))}
             </>
@@ -583,6 +591,7 @@ export default function AdminEventDetailScreen() {
                   toggling={togglingPaidId === w.id}
                   onDelete={() => handleDeleteWalkin(w)}
                   deleting={deletingWalkinId === w.id}
+                  onCharge={() => openCharge({ walkinId: w.id, playerName: w.name })}
                 />
               ))}
             </>
@@ -665,6 +674,30 @@ export default function AdminEventDetailScreen() {
           <Text style={[styles.btnGhostText, { color: colors.mutedForeground }]}>Edit Event Details</Text>
         </TouchableOpacity>
       </View>
+
+      {/* ── Charge modal ── */}
+      <ChargeModal
+        visible={chargeModal.visible}
+        onClose={closeCharge}
+        onPaid={() => {
+          queryClient.invalidateQueries({ queryKey: getWalkinsQueryKey(id ?? '') });
+          queryClient.invalidateQueries({ queryKey: getAdminEventBookingsQueryKey(id ?? '', token) });
+        }}
+        onCash={() => {
+          if (chargeModal.walkinId) {
+            const w = walkins.find((x) => x.id === chargeModal.walkinId);
+            if (w) handleTogglePaid({ ...w, paid: false });
+          } else if (chargeModal.bookingId) {
+            const b = bookings.find((x) => x.id === chargeModal.bookingId);
+            if (b && b.paymentStatus !== 'paid') handleToggleBookingPayment(b);
+          }
+        }}
+        eventId={id ?? ''}
+        walkinId={chargeModal.walkinId}
+        bookingId={chargeModal.bookingId}
+        playerName={chargeModal.playerName}
+        token={token}
+      />
     </View>
   );
 }

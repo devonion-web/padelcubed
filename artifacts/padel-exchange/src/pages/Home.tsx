@@ -227,9 +227,9 @@ export default function Home() {
             <img src={`${import.meta.env.BASE_URL}logo-mark.svg`} alt="" aria-hidden="true" className="pc-mark-img" width="46" height="46" />
           </a>
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/shop" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Shop
-            </Link>
+            {/* Shop nav link — hidden until launch:
+            <Link href="/shop" className="...">Shop</Link>
+            */}
             <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Events
             </a>

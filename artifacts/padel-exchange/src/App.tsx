@@ -26,7 +26,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/host-an-event" component={HostAnEvent} />
-      <Route path="/shop" component={Shop} />
+      {/* Shop route — hidden until launch: <Route path="/shop" component={Shop} /> */}
       <Route component={NotFound} />
     </Switch>
   );

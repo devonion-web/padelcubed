@@ -1,5 +1,5 @@
 import { getStripeSync, getUncachableStripeClient } from './stripeClient.js';
-import { db, bookingsTable, eventsTable } from '@workspace/db';
+import { db, bookingsTable, eventsTable, walkinsTable } from '@workspace/db';
 import { and, eq } from 'drizzle-orm';
 import { sendBookingConfirmation } from './email.js';
 
@@ -36,6 +36,29 @@ export class WebhookHandlers {
 
     const sessionId: string = session.id;
     const meta = session.metadata ?? {};
+
+    // ── Admin on-site charge (walk-in or booking) ─────────────────────────────
+    if (meta.adminCharge === 'true') {
+      if (meta.walkinId) {
+        const id = parseInt(meta.walkinId, 10);
+        if (!isNaN(id)) {
+          await db.update(walkinsTable).set({ paid: true }).where(eq(walkinsTable.id, id));
+          console.log(`[webhook] Walk-in ${id} marked paid via admin charge`);
+        }
+      } else if (meta.bookingId) {
+        const id = parseInt(meta.bookingId, 10);
+        if (!isNaN(id)) {
+          await db
+            .update(bookingsTable)
+            .set({ paymentStatus: 'paid' })
+            .where(eq(bookingsTable.id, id));
+          console.log(`[webhook] Booking ${id} marked paid via admin charge`);
+        }
+      }
+      return; // Admin charges don't trigger the standard booking flow below
+    }
+
+    // ── Standard web booking checkout ─────────────────────────────────────────
     const { eventId, email, fullName, company } = meta;
 
     if (!eventId || !email) {
