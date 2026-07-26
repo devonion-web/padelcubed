@@ -157,12 +157,13 @@ router.post("/admin/events/:eventId/walkins", requireAdmin, async (req, res) => 
     sendWalkinConfirmation({
       to: email,
       name,
-      eventTitle: event.title,
-      eventDate: event.date,
-      eventTime: event.time,
-      eventVenue: event.venue,
-      eventLocation: event.location,
-      eventFormat: event.format,
+      eventTitle:     event.title,
+      eventDate:      event.date,
+      eventTime:      event.time,
+      eventVenue:     event.venue,
+      eventLocation:  event.location,
+      eventFormat:    event.format,
+      suppressionData: {}, // walk-in: no consent record; transactional — fail-open unless opted out
     }).catch((err) => console.error("[email] Walk-in confirmation failed:", err));
 
     res.status(201).json(row);

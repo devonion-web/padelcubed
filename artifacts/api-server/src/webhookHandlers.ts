@@ -92,16 +92,17 @@ export class WebhookHandlers {
 
     // Send confirmation email (now idempotent — only fires if status was not 'paid')
     sendBookingConfirmation({
-      to:            email,
-      name:          fullName ?? email,
-      eventId:       event.id,
-      bookingId:     booking.id,
-      eventTitle:    event.title,
-      eventDate:     event.date,
-      eventTime:     event.time,
-      eventVenue:    event.venue,
-      eventLocation: event.location,
-      eventFormat:   event.format,
+      to:              email,
+      name:            fullName ?? email,
+      eventId:         event.id,
+      bookingId:       booking.id,
+      eventTitle:      event.title,
+      eventDate:       event.date,
+      eventTime:       event.time,
+      eventVenue:      event.venue,
+      eventLocation:   event.location,
+      eventFormat:     event.format,
+      suppressionData: {}, // post-payment Stripe webhook; transactional — fail-open unless opted out
     }).catch(err => console.error('[email] Post-payment confirmation failed:', err));
 
     // Enqueue outbound webhook — async, never blocks this handler

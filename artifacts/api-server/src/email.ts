@@ -530,21 +530,22 @@ function qrTicketBlock(qrDataUri: string, bookingId: number): string {
 // ─── Booking confirmation ─────────────────────────────────────────────────────
 
 export interface BookingConfirmationParams {
-  to:              string;
-  name:            string;
-  eventId:         string;
-  bookingId:       number;
-  eventTitle:      string;
-  eventDate:       string;
-  eventTime:       string;
-  eventVenue:      string;
-  eventLocation:   string;
-  eventFormat?:    string;
-  suppressionData?: SuppressionData;
+  to:             string;
+  name:           string;
+  eventId:        string;
+  bookingId:      number;
+  eventTitle:     string;
+  eventDate:      string;
+  eventTime:      string;
+  eventVenue:     string;
+  eventLocation:  string;
+  eventFormat?:   string;
+  /** Required — pass {} if no consent record is available (transactional sends are fail-open; marketing would be fail-closed). */
+  suppressionData: SuppressionData;
 }
 
 export async function sendBookingConfirmation(params: BookingConfirmationParams): Promise<void> {
-  if (params.suppressionData && isEmailSuppressed(params.suppressionData, "transactional")) {
+  if (isEmailSuppressed(params.suppressionData, "transactional")) {
     console.log(`[email] Suppressed (opted out) booking confirmation to ${params.to}`);
     return;
   }
@@ -656,11 +657,12 @@ export interface RegistrationWelcomeParams {
   fullName:        string;
   padelLevel?:     string | null;
   interests?:      string[] | null;
-  suppressionData?: SuppressionData;
+  /** Required — caller must always express a suppression posture. */
+  suppressionData: SuppressionData;
 }
 
 export async function sendRegistrationWelcome(params: RegistrationWelcomeParams): Promise<void> {
-  if (params.suppressionData && isEmailSuppressed(params.suppressionData, "transactional")) {
+  if (isEmailSuppressed(params.suppressionData, "transactional")) {
     console.log(`[email] Suppressed (opted out) registration welcome to ${params.to}`);
     return;
   }
@@ -860,11 +862,12 @@ export interface WalkinEmailParams {
   eventVenue:      string;
   eventLocation:   string;
   eventFormat?:    string;
-  suppressionData?: SuppressionData;
+  /** Required — pass {} for walk-ins (no consent record; transactional sends are fail-open for opted-in, fail-closed for opted-out). */
+  suppressionData: SuppressionData;
 }
 
 export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise<void> {
-  if (params.suppressionData && isEmailSuppressed(params.suppressionData, "transactional")) {
+  if (isEmailSuppressed(params.suppressionData, "transactional")) {
     console.log(`[email] Suppressed (opted out) walk-in confirmation to ${params.to}`);
     return;
   }
@@ -915,8 +918,8 @@ export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise
 }
 
 // ─── Claim-registration verification code ────────────────────────────────────
-export async function sendClaimCode({ to, code, suppressionData }: { to: string; code: string; suppressionData?: SuppressionData }): Promise<void> {
-  if (suppressionData && isEmailSuppressed(suppressionData, "transactional")) {
+export async function sendClaimCode({ to, code, suppressionData }: { to: string; code: string; /** Required — caller must pass suppression posture. */ suppressionData: SuppressionData }): Promise<void> {
+  if (isEmailSuppressed(suppressionData, "transactional")) {
     console.log(`[email] Suppressed (opted out) claim code to ${to}`);
     return;
   }

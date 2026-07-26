@@ -25,8 +25,8 @@ function PartnerLogo({ name, logoLight, url, logoClassName }: { name: string; lo
       aria-label={`Visit ${name}`}
       onClick={() => trackPartnerClick(name)}
       className="flex-shrink-0 flex items-center justify-center h-14 px-12 mx-5 rounded-2xl
-                 border border-border/50 bg-card/40
-                 hover:border-primary/30 hover:bg-card
+                 border border-black/8 bg-white shadow-sm
+                 hover:shadow-md hover:border-black/12
                  transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
     >
       {logoLight ? (
@@ -34,7 +34,7 @@ function PartnerLogo({ name, logoLight, url, logoClassName }: { name: string; lo
           src={`${import.meta.env.BASE_URL}${logoLight}`}
           alt={name}
           className={`${logoClassName ?? "h-8"} w-auto object-contain`}
-          style={{ mixBlendMode: "screen" }}
+          style={{ filter: "brightness(0) opacity(0.65)" }}
           loading="lazy"
         />
       ) : (

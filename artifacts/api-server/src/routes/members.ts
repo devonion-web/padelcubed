@@ -217,7 +217,7 @@ router.post(
       }).catch(err => console.error("[members/claim] Code insert failed:", err));
 
       const { sendClaimCode } = await import("../email.js");
-      sendClaimCode({ to: targetEmail, code: rawCode }).catch(
+      sendClaimCode({ to: targetEmail, code: rawCode, suppressionData: {} }).catch(
         err => console.error("[members/claim] Email failed:", err),
       );
     }

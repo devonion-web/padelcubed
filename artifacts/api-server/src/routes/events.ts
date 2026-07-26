@@ -251,16 +251,17 @@ router.post("/events/:id/bookings", requireAdmin, async (req, res): Promise<void
         .returning();
 
       sendBookingConfirmation({
-        to: parsed.data.email,
-        name: parsed.data.fullName,
-        eventId: req.params.id,
-        bookingId: existing[0].id,
-        eventTitle: event.title,
-        eventDate: event.date,
-        eventTime: event.time,
-        eventVenue: event.venue,
-        eventLocation: event.location,
-        eventFormat: event.format,
+        to:              parsed.data.email,
+        name:            parsed.data.fullName,
+        eventId:         req.params.id,
+        bookingId:       existing[0].id,
+        eventTitle:      event.title,
+        eventDate:       event.date,
+        eventTime:       event.time,
+        eventVenue:      event.venue,
+        eventLocation:   event.location,
+        eventFormat:     event.format,
+        suppressionData: {}, // admin-direct booking; transactional — fail-open unless opted out
       }).catch((err) => console.error("[email] Booking re-confirmation failed:", err));
 
       res.status(201).json(updated);
@@ -280,16 +281,17 @@ router.post("/events/:id/bookings", requireAdmin, async (req, res): Promise<void
 
     // Fire-and-forget confirmation email
     sendBookingConfirmation({
-      to: parsed.data.email,
-      name: parsed.data.fullName,
-      eventId: req.params.id,
-      bookingId: booking.id,
-      eventTitle: event.title,
-      eventDate: event.date,
-      eventTime: event.time,
-      eventVenue: event.venue,
-      eventLocation: event.location,
-      eventFormat: event.format,
+      to:              parsed.data.email,
+      name:            parsed.data.fullName,
+      eventId:         req.params.id,
+      bookingId:       booking.id,
+      eventTitle:      event.title,
+      eventDate:       event.date,
+      eventTime:       event.time,
+      eventVenue:      event.venue,
+      eventLocation:   event.location,
+      eventFormat:     event.format,
+      suppressionData: {}, // admin-direct booking; transactional — fail-open unless opted out
     }).catch((err) => console.error("[email] Booking confirmation failed:", err));
 
     res.status(201).json(booking);
@@ -398,16 +400,17 @@ router.post("/events/:id/checkout", optionalMember, async (req, res): Promise<vo
           .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.email, email)));
 
         sendBookingConfirmation({
-          to: email,
-          name: fullName,
-          eventId: event.id,
-          bookingId: newBooking?.id ?? 0,
-          eventTitle: event.title,
-          eventDate: event.date,
-          eventTime: event.time,
-          eventVenue: event.venue,
-          eventLocation: event.location,
-          eventFormat: event.format,
+          to:              email,
+          name:            fullName,
+          eventId:         event.id,
+          bookingId:       newBooking?.id ?? 0,
+          eventTitle:      event.title,
+          eventDate:       event.date,
+          eventTime:       event.time,
+          eventVenue:      event.venue,
+          eventLocation:   event.location,
+          eventFormat:     event.format,
+          suppressionData: {}, // public checkout; transactional — fail-open unless opted out
         }).catch((err) => console.error("[email] Booking confirmation failed:", err));
       }
 
