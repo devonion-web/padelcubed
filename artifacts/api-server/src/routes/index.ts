@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health.js";
+import linkedInAuthRouter from "./auth-linkedin.js";
 import registrationsRouter from "./registrations.js";
 import corporateEnquiriesRouter from "./corporate-enquiries.js";
 import eventsRouter from "./events.js";
@@ -13,6 +14,7 @@ import shopRouter from "./shop.js";
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(linkedInAuthRouter);
 router.use(registrationsRouter);
 router.use(corporateEnquiriesRouter);
 router.use(eventsRouter);

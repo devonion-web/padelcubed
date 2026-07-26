@@ -1,12 +1,31 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Users, Briefcase, Handshake, ChevronLeft, Loader2, Check } from "lucide-react";
+import { X, Users, Briefcase, Handshake, ChevronLeft, Loader2, Check, Linkedin } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Intent  = "join" | "host" | "partner";
-type Step    = "pick" | "form" | "success";
+type Intent = "join" | "host" | "partner";
+type Step   = "pick" | "form" | "success";
 
-interface JoinFields    { fullName: string; email: string; company: string; jobTitle: string; padelLevel: string; gdpr: boolean; }
+export interface LinkedInPrefill {
+  name:             string;
+  email:            string;
+  linkedinVerified: boolean;
+}
+
+interface JoinFields {
+  fullName:     string;
+  email:        string;
+  company:      string;
+  jobTitle:     string;
+  industry:     string;
+  functionRole: string;
+  seniority:    string;
+  padelLevel:   string;
+  interests:    string[];
+  linkedinUrl:  string;
+  gdpr:         boolean;
+}
+
 interface HostFields    { contactName: string; company: string; workEmail: string; eventType: string; headcount: string; gdpr: boolean; }
 interface PartnerFields { contactName: string; company: string; workEmail: string; partnershipType: string; message: string; gdpr: boolean; }
 
@@ -14,36 +33,19 @@ interface PartnerFields { contactName: string; company: string; workEmail: strin
 const BASE = () => import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const INTENTS: { id: Intent; icon: React.ElementType; label: string; sublabel: string; cta: string; desc: string }[] = [
-  {
-    id: "join",
-    icon: Users,
-    label: "Join the community",
-    sublabel: "Individual",
-    cta: "Register your interest →",
-    desc: "Play at P³ events as an individual member.",
-  },
-  {
-    id: "host",
-    icon: Briefcase,
-    label: "Host an event",
-    sublabel: "Company",
-    cta: "Enquire now →",
-    desc: "Book a team day, client event or corporate outing.",
-  },
-  {
-    id: "partner",
-    icon: Handshake,
-    label: "Partner with us",
-    sublabel: "Sponsor / Advertiser",
-    cta: "Get in touch →",
-    desc: "Sponsor, co-brand or advertise alongside P³.",
-  },
+  { id: "join",    icon: Users,     label: "Join the community", sublabel: "Individual",          cta: "Register your interest →", desc: "Play at P³ events as an individual member." },
+  { id: "host",    icon: Briefcase, label: "Host an event",      sublabel: "Company",             cta: "Enquire now →",            desc: "Book a team day, client event or corporate outing." },
+  { id: "partner", icon: Handshake, label: "Partner with us",    sublabel: "Sponsor / Advertiser",cta: "Get in touch →",           desc: "Sponsor, co-brand or advertise alongside P³." },
 ];
 
-const PADEL_LEVELS = ["Never played", "Beginner", "Intermediate", "Advanced"] as const;
-const EVENT_TYPES  = ["Team day", "Client entertainment", "Product launch / Activation", "Conference social", "Other"] as const;
-const HEADCOUNTS   = ["Under 10", "10–20", "20–40", "40+"] as const;
-const PARTNER_TYPES = ["Sponsor an event", "Co-brand with P³", "Become a venue partner", "Media / advertising", "Other"] as const;
+const PADEL_LEVELS     = ["Never played", "Beginner", "Intermediate", "Advanced"] as const;
+const INDUSTRY_OPTIONS = ["Technology", "Financial Services", "Professional Services", "Cyber / Security", "Legal", "Consulting", "Healthcare", "Other"] as const;
+const FUNCTION_OPTIONS = ["Founder / CEO", "Risk / Compliance / GRC", "Security / CISO", "Product / Engineering", "Sales / Marketing", "Operations", "Investor", "Other"] as const;
+const SENIORITY_OPTIONS= ["Founder / Owner", "C-suite", "VP / Head of", "Director / Manager", "Other"] as const;
+const INTEREST_OPTIONS = ["Playing / fitness", "Meeting other founders", "Industry peers & ideas", "Just trying padel", "Social play (Americano events)"] as const;
+const EVENT_TYPES      = ["Team day", "Client entertainment", "Product launch / Activation", "Conference social", "Other"] as const;
+const HEADCOUNTS       = ["Under 10", "10–20", "20–40", "40+"] as const;
+const PARTNER_TYPES    = ["Sponsor an event", "Co-brand with P³", "Become a venue partner", "Media / advertising", "Other"] as const;
 
 const GDPR_TEXT = (
   <span className="text-xs text-muted-foreground leading-relaxed">
@@ -51,8 +53,7 @@ const GDPR_TEXT = (
     Read our{" "}
     <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
       Privacy Policy
-    </a>
-    .
+    </a>.
   </span>
 );
 
@@ -66,15 +67,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const inputCls = "w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-colors";
+const inputCls  = "w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-colors";
 const selectCls = inputCls + " cursor-pointer";
 
 // ─── Success screen ───────────────────────────────────────────────────────────
 function SuccessScreen({ intent, onClose }: { intent: Intent; onClose: () => void }) {
   const messages: Record<Intent, { heading: string; body: string }> = {
     join:    { heading: "You're on the list — welcome.", body: "We'll be in touch with details about the next event. Keep an eye on your inbox." },
-    host:    { heading: "Enquiry received.", body: "We'll come back to you within two working days to discuss your event." },
-    partner: { heading: "Thanks for reaching out.", body: "Someone from the P³ team will be in touch shortly." },
+    host:    { heading: "Enquiry received.",             body: "We'll come back to you within two working days to discuss your event." },
+    partner: { heading: "Thanks for reaching out.",      body: "Someone from the P³ team will be in touch shortly." },
   };
   const { heading, body } = messages[intent];
   return (
@@ -101,11 +102,91 @@ function SuccessScreen({ intent, onClose }: { intent: Intent; onClose: () => voi
   );
 }
 
+// ─── LinkedIn button ──────────────────────────────────────────────────────────
+function LinkedInButton() {
+  return (
+    <a
+      href="/api/auth/linkedin"
+      className="flex items-center justify-center gap-2.5 w-full rounded-xl h-11
+                 bg-[#0A66C2] hover:bg-[#0958a8] text-white text-sm font-semibold
+                 transition-colors no-underline"
+    >
+      <Linkedin className="h-4 w-4 fill-white stroke-none" />
+      Continue with LinkedIn
+    </a>
+  );
+}
+
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex-1 h-px bg-border" />
+      <span className="text-xs text-muted-foreground font-medium">or fill in manually</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+}
+
+// ─── Chip selectors ───────────────────────────────────────────────────────────
+function ChipGroup({
+  options,
+  value,
+  onChange,
+  multi = false,
+}: {
+  options: readonly string[];
+  value: string | string[];
+  onChange: (v: string | string[]) => void;
+  multi?: boolean;
+}) {
+  function toggle(opt: string) {
+    if (multi) {
+      const arr = value as string[];
+      onChange(arr.includes(opt) ? arr.filter(x => x !== opt) : [...arr, opt]);
+    } else {
+      onChange((value as string) === opt ? "" : opt);
+    }
+  }
+  function isActive(opt: string) {
+    return multi ? (value as string[]).includes(opt) : value === opt;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => toggle(opt)}
+          className={`rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
+            isActive(opt)
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-background text-muted-foreground hover:border-primary/40"
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Join form ────────────────────────────────────────────────────────────────
-function JoinForm({ onSuccess }: { onSuccess: () => void }) {
-  const [f, setF] = useState<JoinFields>({ fullName: "", email: "", company: "", jobTitle: "", padelLevel: "", gdpr: false });
+function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: LinkedInPrefill }) {
+  const [f, setF] = useState<JoinFields>({
+    fullName:     prefill?.name  ?? "",
+    email:        prefill?.email ?? "",
+    company:      "",
+    jobTitle:     "",
+    industry:     "",
+    functionRole: "",
+    seniority:    "",
+    padelLevel:   "",
+    interests:    [],
+    linkedinUrl:  "",
+    gdpr:         false,
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error,   setError]   = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -113,14 +194,19 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
     setLoading(true); setError("");
     try {
       const res = await fetch(`${BASE()}/api/registrations`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: f.fullName,
-          email: f.email,
-          company: f.company || undefined,
-          jobTitle: f.jobTitle || undefined,
-          padelLevel: f.padelLevel || undefined,
+        body:    JSON.stringify({
+          fullName:    f.fullName,
+          email:       f.email,
+          company:     f.company     || undefined,
+          jobTitle:    f.jobTitle    || undefined,
+          industry:    f.industry    || undefined,
+          function:    f.functionRole|| undefined,
+          seniority:   f.seniority   || undefined,
+          padelLevel:  f.padelLevel  || undefined,
+          interests:   f.interests.length ? f.interests : undefined,
+          linkedinUrl: f.linkedinUrl || undefined,
           gdprConsent: f.gdpr,
         }),
       });
@@ -135,14 +221,51 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
+
+      {/* LinkedIn CTA — only shown when not already verified */}
+      {!prefill?.linkedinVerified && (
+        <>
+          <div className="rounded-xl bg-muted/40 border border-border p-4 flex flex-col gap-3">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground">Faster with LinkedIn</span>
+              {" "}— we'll pre-fill your name and email automatically, and your profile stays linked to your account.
+            </p>
+            <LinkedInButton />
+          </div>
+          <OrDivider />
+        </>
+      )}
+
+      {/* Verified badge */}
+      {prefill?.linkedinVerified && (
+        <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-3.5 py-2.5">
+          <Linkedin className="h-4 w-4 text-[#0A66C2] fill-[#0A66C2] stroke-none flex-shrink-0" />
+          <span className="text-xs font-semibold text-blue-700">Verified via LinkedIn</span>
+          <Check className="h-3.5 w-3.5 text-blue-600 ml-auto" />
+        </div>
+      )}
+
+      {/* Name + Email */}
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Full name *">
-          <input required className={inputCls} placeholder="Jane Smith" value={f.fullName} onChange={e => setF({ ...f, fullName: e.target.value })} />
+          <input
+            required className={inputCls} placeholder="Jane Smith"
+            value={f.fullName} onChange={e => setF({ ...f, fullName: e.target.value })}
+            readOnly={prefill?.linkedinVerified}
+            style={prefill?.linkedinVerified ? { opacity: 0.7 } : undefined}
+          />
         </Field>
         <Field label="Work email *">
-          <input required type="email" className={inputCls} placeholder="jane@company.com" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} />
+          <input
+            required type="email" className={inputCls} placeholder="jane@company.com"
+            value={f.email} onChange={e => setF({ ...f, email: e.target.value })}
+            readOnly={prefill?.linkedinVerified}
+            style={prefill?.linkedinVerified ? { opacity: 0.7 } : undefined}
+          />
         </Field>
       </div>
+
+      {/* Company + Job title */}
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Company">
           <input className={inputCls} placeholder="Acme Corp" value={f.company} onChange={e => setF({ ...f, company: e.target.value })} />
@@ -151,24 +274,74 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
           <input className={inputCls} placeholder="Founder / Head of Risk" value={f.jobTitle} onChange={e => setF({ ...f, jobTitle: e.target.value })} />
         </Field>
       </div>
-      <Field label="Padel level">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {PADEL_LEVELS.map(level => (
-            <button
-              key={level} type="button"
-              onClick={() => setF({ ...f, padelLevel: level })}
-              className={`rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors text-center ${f.padelLevel === level ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:border-primary/40"}`}
-            >
-              {level}
-            </button>
-          ))}
-        </div>
+
+      {/* Industry */}
+      <Field label="Industry">
+        <select className={selectCls} value={f.industry} onChange={e => setF({ ...f, industry: e.target.value })}>
+          <option value="">Select your industry…</option>
+          {INDUSTRY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
       </Field>
+
+      {/* Function + Seniority */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Role type">
+          <select className={selectCls} value={f.functionRole} onChange={e => setF({ ...f, functionRole: e.target.value })}>
+            <option value="">Select…</option>
+            {FUNCTION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </Field>
+        <Field label="Seniority">
+          <select className={selectCls} value={f.seniority} onChange={e => setF({ ...f, seniority: e.target.value })}>
+            <option value="">Select…</option>
+            {SENIORITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </Field>
+      </div>
+
+      {/* Padel level */}
+      <Field label="Padel level">
+        <ChipGroup
+          options={PADEL_LEVELS}
+          value={f.padelLevel}
+          onChange={v => setF({ ...f, padelLevel: v as string })}
+        />
+      </Field>
+
+      {/* Interests */}
+      <Field label="What are you most interested in? (pick any)">
+        <ChipGroup
+          options={INTEREST_OPTIONS}
+          value={f.interests}
+          onChange={v => setF({ ...f, interests: v as string[] })}
+          multi
+        />
+      </Field>
+
+      {/* LinkedIn URL — only shown when not verified via OAuth */}
+      {!prefill?.linkedinVerified && (
+        <Field label="LinkedIn profile URL (optional)">
+          <input
+            type="url"
+            className={inputCls}
+            placeholder="https://www.linkedin.com/in/yourname"
+            value={f.linkedinUrl}
+            onChange={e => setF({ ...f, linkedinUrl: e.target.value })}
+          />
+        </Field>
+      )}
+
+      {/* GDPR */}
       <label className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
-        <input type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0" checked={f.gdpr} onChange={e => setF({ ...f, gdpr: e.target.checked })} />
+        <input
+          type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0"
+          checked={f.gdpr} onChange={e => setF({ ...f, gdpr: e.target.checked })}
+        />
         {GDPR_TEXT}
       </label>
+
       {error && <p className="text-xs text-destructive">{error}</p>}
+
       <button
         type="submit" disabled={loading || !f.gdpr}
         className="w-full rounded-xl h-11 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
@@ -183,23 +356,23 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
 function HostForm({ onSuccess }: { onSuccess: () => void }) {
   const [f, setF] = useState<HostFields>({ contactName: "", company: "", workEmail: "", eventType: "", headcount: "", gdpr: false });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error,   setError]   = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.gdpr) { setError("Please accept the privacy policy."); return; }
-    if (!f.eventType) { setError("Please select an event type."); return; }
+    if (!f.gdpr)      { setError("Please accept the privacy policy."); return; }
+    if (!f.eventType) { setError("Please select an event type.");      return; }
     setLoading(true); setError("");
     try {
       const res = await fetch(`${BASE()}/api/corporate-enquiries`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body:    JSON.stringify({
           contactName: f.contactName,
-          company: f.company,
-          workEmail: f.workEmail,
-          eventType: f.eventType,
-          headcount: f.headcount ? parseInt(f.headcount.replace(/\D.*/, ""), 10) : undefined,
+          company:     f.company,
+          workEmail:   f.workEmail,
+          eventType:   f.eventType,
+          headcount:   f.headcount ? parseInt(f.headcount.replace(/\D.*/, ""), 10) : undefined,
           gdprConsent: f.gdpr,
         }),
       });
@@ -258,7 +431,7 @@ function HostForm({ onSuccess }: { onSuccess: () => void }) {
 function PartnerForm({ onSuccess }: { onSuccess: () => void }) {
   const [f, setF] = useState<PartnerFields>({ contactName: "", company: "", workEmail: "", partnershipType: "", message: "", gdpr: false });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error,   setError]   = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -266,13 +439,13 @@ function PartnerForm({ onSuccess }: { onSuccess: () => void }) {
     setLoading(true); setError("");
     try {
       const res = await fetch(`${BASE()}/api/registrations`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: f.contactName,
-          email: f.workEmail,
-          company: f.company || undefined,
-          jobTitle: f.partnershipType ? `Partner enquiry — ${f.partnershipType}` : "Partner enquiry",
+        body:    JSON.stringify({
+          fullName:    f.contactName,
+          email:       f.workEmail,
+          company:     f.company     || undefined,
+          jobTitle:    f.partnershipType ? `Partner enquiry — ${f.partnershipType}` : "Partner enquiry",
           gdprConsent: f.gdpr,
         }),
       });
@@ -306,8 +479,7 @@ function PartnerForm({ onSuccess }: { onSuccess: () => void }) {
       </Field>
       <Field label="Brief message">
         <textarea
-          className={inputCls + " resize-none"}
-          rows={3}
+          className={inputCls + " resize-none"} rows={3}
           placeholder="Tell us a bit about what you have in mind…"
           value={f.message}
           onChange={e => setF({ ...f, message: e.target.value })}
@@ -330,13 +502,22 @@ function PartnerForm({ onSuccess }: { onSuccess: () => void }) {
 
 // ─── Main modal ───────────────────────────────────────────────────────────────
 interface IntentModalProps {
-  open: boolean;
-  onClose: () => void;
+  open:     boolean;
+  onClose:  () => void;
+  prefill?: LinkedInPrefill;
 }
 
-export function IntentModal({ open, onClose }: IntentModalProps) {
-  const [step, setStep]     = useState<Step>("pick");
+export function IntentModal({ open, onClose, prefill }: IntentModalProps) {
+  const [step,   setStep]   = useState<Step>("pick");
   const [intent, setIntent] = useState<Intent | null>(null);
+
+  // When prefill arrives (LinkedIn return), jump straight to join form
+  useEffect(() => {
+    if (open && prefill) {
+      setIntent("join");
+      setStep("form");
+    }
+  }, [open, prefill]);
 
   // Reset on close
   useEffect(() => {
@@ -358,15 +539,15 @@ export function IntentModal({ open, onClose }: IntentModalProps) {
   }, [open]);
 
   function pick(id: Intent) { setIntent(id); setStep("form"); }
-  function back() { setStep("pick"); }
-  function success() { setStep("success"); }
+  function back()           { setStep("pick"); }
+  function success()        { setStep("success"); }
 
   const current = INTENTS.find(i => i.id === intent);
 
   const formStepHeadings: Record<Intent, { title: string; sub: string }> = {
-    join:    { title: "Join the community",  sub: "Tell us a bit about yourself and we'll be in touch about upcoming events." },
-    host:    { title: "Host an event",       sub: "Give us the basics and we'll come back to you within two working days." },
-    partner: { title: "Partner with us",     sub: "Let us know what you have in mind and we'll be in touch shortly." },
+    join:    { title: "Join the community", sub: "Tell us a bit about yourself and we'll be in touch about upcoming events." },
+    host:    { title: "Host an event",      sub: "Give us the basics and we'll come back to you within two working days." },
+    partner: { title: "Partner with us",    sub: "Let us know what you have in mind and we'll be in touch shortly." },
   };
 
   return (
@@ -392,16 +573,14 @@ export function IntentModal({ open, onClose }: IntentModalProps) {
             transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
             className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
           >
-            <div
-              className={`pointer-events-auto w-full bg-card border border-border rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${step === "pick" ? "max-w-2xl" : "max-w-lg"}`}
-            >
+            <div className={`pointer-events-auto w-full bg-card border border-border rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${step === "pick" ? "max-w-2xl" : "max-w-lg"}`}>
+
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  {step === "form" && (
+                  {step === "form" && !prefill && (
                     <button
-                      onClick={back}
-                      aria-label="Back"
+                      onClick={back} aria-label="Back"
                       className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors flex-shrink-0"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -479,7 +658,7 @@ export function IntentModal({ open, onClose }: IntentModalProps) {
                           <span className="text-xs font-semibold text-primary">{current.sublabel}</span>
                         </div>
                       )}
-                      {intent === "join"    && <JoinForm    onSuccess={success} />}
+                      {intent === "join"    && <JoinForm    onSuccess={success} prefill={prefill} />}
                       {intent === "host"    && <HostForm    onSuccess={success} />}
                       {intent === "partner" && <PartnerForm onSuccess={success} />}
                     </motion.div>

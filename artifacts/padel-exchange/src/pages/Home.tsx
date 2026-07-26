@@ -191,19 +191,38 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
 }
 
 export default function Home() {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen]   = useState(false);
+  const [liPrefill, setLiPrefill]   = useState<{ name: string; email: string; linkedinVerified: boolean } | null>(null);
   const [bookingEvent, setBookingEvent] = useState<ApiEvent | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const openModal = () => setModalOpen(true);
 
-  // Detect ?booking=success return from Stripe
+  // Detect ?booking=success return from Stripe, or ?li_ok=1 return from LinkedIn OAuth
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
     if (params.get("booking") === "success") {
       setBookingSuccess(true);
-      // Clean the URL without reloading
       window.history.replaceState({}, "", window.location.pathname + "#events");
+      return;
+    }
+
+    if (params.get("li_ok") === "1") {
+      setLiPrefill({
+        name:             params.get("li_name")  ?? "",
+        email:            params.get("li_email") ?? "",
+        linkedinVerified: true,
+      });
+      setModalOpen(true);
+      // Remove params from URL without reload
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    if (params.get("li_err")) {
+      // LinkedIn returned an error — silently let the user try again manually
+      window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
@@ -832,7 +851,8 @@ export default function Home() {
 
       <IntentModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setLiPrefill(null); }}
+        prefill={liPrefill ?? undefined}
       />
 
       <BookingModal
