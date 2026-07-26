@@ -14,13 +14,16 @@ function cleanStates() {
 }
 
 // ── URL helpers ────────────────────────────────────────────────────────────────
-function siteOrigin(): string {
+function callbackUrl(): string {
+  // Explicit env var takes priority — set this to your production domain
+  if (process.env.LINKEDIN_REDIRECT_URI) return process.env.LINKEDIN_REDIRECT_URI;
   const host = process.env.REPLIT_DOMAINS?.split(",")[0];
-  return `https://${host ?? "localhost"}`;
+  return `https://${host ?? "localhost"}/api/auth/linkedin/callback`;
 }
 
-function callbackUrl(): string {
-  return `${siteOrigin()}/api/auth/linkedin/callback`;
+function siteOrigin(): string {
+  const cb = callbackUrl();
+  try { return new URL(cb).origin; } catch { return "https://localhost"; }
 }
 
 // ── GET /api/auth/linkedin — start OAuth flow ──────────────────────────────────
