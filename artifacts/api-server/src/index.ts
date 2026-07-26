@@ -18,8 +18,17 @@ async function initStripe() {
 
     const stripeSync = await getStripeSync();
 
-    const webhookBase = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
-    await stripeSync.findOrCreateManagedWebhook(`${webhookBase}/api/stripe/webhook`);
+    // REPLIT_DOMAINS is a dev-only variable. In production use SITE_URL, falling
+    // back to the first entry in REPLIT_DOMAINS (dev) so local testing still works.
+    const siteUrl =
+      process.env.SITE_URL ||
+      (process.env.REPLIT_DOMAINS
+        ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+        : null);
+    if (!siteUrl) {
+      throw new Error("SITE_URL (or REPLIT_DOMAINS) is required to register the Stripe webhook.");
+    }
+    await stripeSync.findOrCreateManagedWebhook(`${siteUrl}/api/stripe/webhook`);
     logger.info("Stripe webhook configured");
 
     // Backfill runs async so it doesn't block server startup
@@ -41,14 +50,10 @@ if (!rawPort) throw new Error("PORT environment variable is required.");
 const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) throw new Error(`Invalid PORT value: "${rawPort}"`);
 
-// Stripe init is non-fatal — other routes keep working if credentials are
-// temporarily unavailable. Shop routes have their own error handling.
-try {
-  await initStripe();
-} catch (err) {
-  logger.warn({ err }, "Stripe init failed — shop routes will return errors until resolved");
-}
-
+// Bind the port first so the health-check probe always gets a fast response.
+// Stripe init (which makes outbound network calls) runs in the background after
+// the server is already listening — if it hangs or fails the shop routes handle
+// the error themselves; the rest of the API is unaffected.
 app.listen(port, async (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -59,6 +64,11 @@ app.listen(port, async (err) => {
 
   // Start background webhook delivery worker (async, non-blocking)
   startWebhookWorker();
+
+  // Stripe init is non-fatal — fire-and-forget after server is up
+  initStripe().catch((stripeErr) =>
+    logger.warn({ err: stripeErr }, "Stripe init failed — shop routes will return errors until resolved")
+  );
 
   try {
     await seedIfEmpty();

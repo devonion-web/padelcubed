@@ -29,3 +29,4 @@ EMAIL_FROM = "P³ Events <info@padelcubed.co.uk>"
 LINKEDIN_REDIRECT_URI = "https://www.padelcubed.co.uk/api/auth/linkedin/callback"
 
 [userenv.production]
+SITE_URL = "https://www.padelcubed.com"
