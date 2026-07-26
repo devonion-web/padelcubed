@@ -39,14 +39,25 @@ function formatPrice(unitAmount: number, currency: string) {
 
 const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
 
-// Local fallback image for all P³ products until individual shots are added to Stripe
-const P3_APPAREL_IMG = `${import.meta.env.BASE_URL}apparel/p3-apparel.png`;
+// Per-product images keyed by product name (case-insensitive substring match)
+const PRODUCT_IMAGES: { match: string; src: string }[] = [
+  { match: "shirt",   src: `${import.meta.env.BASE_URL}apparel/p3-shirt.png` },
+  { match: "hoodie",  src: `${import.meta.env.BASE_URL}apparel/p3-hoodie.png` },
+  { match: "cap",     src: `${import.meta.env.BASE_URL}apparel/p3-cap.png` },
+  { match: "shorts",  src: `${import.meta.env.BASE_URL}apparel/p3-shorts.png` },
+];
 
-function ProductPlaceholder() {
+function getProductImage(name?: string): string {
+  const lower = (name ?? "").toLowerCase();
+  const match = PRODUCT_IMAGES.find((p) => lower.includes(p.match));
+  return match?.src ?? `${import.meta.env.BASE_URL}apparel/p3-apparel.png`;
+}
+
+function ProductPlaceholder({ name }: { name?: string }) {
   return (
     <img
-      src={P3_APPAREL_IMG}
-      alt="P³ apparel"
+      src={getProductImage(name)}
+      alt={name ?? "P³ apparel"}
       className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
     />
   );
@@ -72,7 +83,7 @@ function ProductCard({ product, onBuy }: { product: ShopProduct; onBuy: (p: Shop
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <ProductPlaceholder />
+          <ProductPlaceholder name={product.name} />
         )}
         {/* Size badge */}
         {!isSingleSize && sizes.length > 0 && (
