@@ -6,6 +6,7 @@ import {
   SubmitRegistrationResponse,
 } from "@workspace/api-zod";
 import { requireAdmin } from "../middleware/adminAuth.js";
+import { sendRegistrationWelcome, sendNewMemberNotification } from "../email.js";
 
 const router: IRouter = Router();
 
@@ -39,6 +40,27 @@ router.post("/registrations", async (req, res): Promise<void> => {
     .returning();
 
   res.status(201).json(SubmitRegistrationResponse.parse(registration));
+
+  // Fire both emails after responding — non-blocking
+  sendRegistrationWelcome({
+    to:         registration.email,
+    fullName:   registration.fullName,
+    padelLevel: registration.padelLevel,
+    interests:  registration.interests,
+  }).catch(err => console.error("[email] Welcome email failed:", err));
+
+  sendNewMemberNotification({
+    fullName:    registration.fullName,
+    email:       registration.email,
+    company:     registration.company,
+    jobTitle:    registration.jobTitle,
+    industry:    registration.industry,
+    function:    registration.function,
+    seniority:   registration.seniority,
+    padelLevel:  registration.padelLevel,
+    interests:   registration.interests,
+    linkedinUrl: registration.linkedinUrl,
+  }).catch(err => console.error("[email] Admin notification failed:", err));
 });
 
 // GET /admin/registrations — list all registrations (JWT admin only)

@@ -619,6 +619,192 @@ export async function sendPasswordResetEmail(params: {
   else       console.log(`[email] Sent password reset code to ${to}`);
 }
 
+// ─── Registration welcome (member) ───────────────────────────────────────────
+
+export interface RegistrationWelcomeParams {
+  to:         string;
+  fullName:   string;
+  padelLevel?: string | null;
+  interests?:  string[] | null;
+}
+
+export async function sendRegistrationWelcome(params: RegistrationWelcomeParams): Promise<void> {
+  const { to, fullName, padelLevel, interests } = params;
+  const firstName = fullName.split(" ")[0];
+
+  const html = baseEmail({
+    subject:    "You're on the P³ list — welcome",
+    preheader:  `${firstName}, you're registered. We'll be in touch about the October launch event.`,
+    badgeEmoji: "🎾",
+    badgeText:  "You're on the list",
+    headline:   `Welcome to P³, ${firstName}.`,
+    subline:    "People, Padel, Places is a curated padel community for founders and senior professionals. You&rsquo;ve secured your spot — we&rsquo;ll be in touch as the October launch event takes shape.",
+    body: `
+  <!-- ══ WHAT HAPPENS NEXT ══ -->
+  <tr><td style="padding:0 36px 24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:${B.offWhite};border:1px solid ${B.border};border-radius:16px;overflow:hidden;">
+      <tr><td style="padding:20px 24px 4px;">
+        <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:${B.mutedFg};
+                   text-transform:uppercase;letter-spacing:1px;">What happens next</p>
+      </td></tr>
+      ${[
+        ["📣", "Launch event announcement", "We'll email you first when the October event goes on sale — members get priority access before public release."],
+        ["🎾", "Curated events, not open courts", "Every P³ event uses a rotating format (Americano) so you play with everyone in the room. One evening, a dozen real connections."],
+        ["📱", "Get the app", "Download the P³ app before the day — it holds your entry ticket, live scores, and leaderboard position in real time."],
+      ].map(([icon, title, body]) => `
+      <tr><td style="padding:0 24px 16px;">
+        <table cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="width:36px;vertical-align:top;padding-top:2px;">
+            <div style="width:30px;height:30px;background:${B.tealPale};border:1px solid ${B.tealBorder};
+                        border-radius:8px;text-align:center;line-height:30px;font-size:14px;">${icon}</div>
+          </td>
+          <td style="vertical-align:top;padding-left:10px;">
+            <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:${B.darkText};">${title}</p>
+            <p style="margin:0;font-size:13px;color:${B.bodyText};line-height:1.6;">${body}</p>
+          </td>
+        </tr></table>
+      </td></tr>`).join("")}
+    </table>
+  </td></tr>
+
+  ${appDownloadBlock()}
+
+  <!-- ══ LEVEL / INTERESTS CONFIRMATION ══ -->
+  ${(padelLevel || (interests && interests.length)) ? `
+  <tr><td style="padding:0 36px 24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:${B.tealPale};border:1px solid ${B.tealBorder};border-radius:14px;">
+      <tr><td style="padding:16px 20px;">
+        <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:${B.teal};
+                   text-transform:uppercase;letter-spacing:1px;">Your profile</p>
+        ${padelLevel ? `<p style="margin:0 0 6px;font-size:13px;color:${B.darkText};">🎾&nbsp; <strong>Padel level:</strong> ${padelLevel}</p>` : ""}
+        ${interests && interests.length ? `<p style="margin:0;font-size:13px;color:${B.darkText};">✨&nbsp; <strong>Interests:</strong> ${interests.join(", ")}</p>` : ""}
+      </td></tr>
+    </table>
+  </td></tr>` : ""}
+
+  <!-- ══ SOCIAL LINKS ══ -->
+  <tr><td style="padding:0 36px 32px;" align="center">
+    <p style="margin:0 0 12px;font-size:12px;color:${B.mutedFg};">Follow us for updates</p>
+    <table cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="padding-right:8px;">
+        <a href="https://www.instagram.com/padelcubed/"
+           style="display:inline-block;background:${B.royalBlue};color:#fff;
+                  font-size:12px;font-weight:700;text-decoration:none;
+                  padding:8px 16px;border-radius:8px;">Instagram</a>
+      </td>
+      <td>
+        <a href="https://www.linkedin.com/company/people-padel-places/"
+           style="display:inline-block;background:#0A66C2;color:#fff;
+                  font-size:12px;font-weight:700;text-decoration:none;
+                  padding:8px 16px;border-radius:8px;">LinkedIn</a>
+      </td>
+    </tr></table>
+  </td></tr>`,
+  });
+
+  const { error } = await resend.emails.send({
+    from: FROM, to,
+    subject: "You're on the P³ list — welcome",
+    html,
+  });
+
+  if (error) console.error("[email] Resend error (registration welcome):", error);
+  else       console.log(`[email] Sent registration welcome to ${to}`);
+}
+
+// ─── New member notification (admin) ─────────────────────────────────────────
+
+export interface NewMemberNotificationParams {
+  fullName:     string;
+  email:        string;
+  company?:     string | null;
+  jobTitle?:    string | null;
+  industry?:    string | null;
+  function?:    string | null;
+  seniority?:   string | null;
+  padelLevel?:  string | null;
+  interests?:   string[] | null;
+  linkedinUrl?: string | null;
+  linkedinVerified?: boolean;
+}
+
+export async function sendNewMemberNotification(params: NewMemberNotificationParams): Promise<void> {
+  const ADMIN_TO = "info@padelcubed.co.uk";
+
+  const row = (label: string, value: string | null | undefined) =>
+    value ? `
+    <tr>
+      <td style="padding:9px 16px;font-size:12px;font-weight:700;color:${B.mutedFg};
+                 text-transform:uppercase;letter-spacing:0.7px;white-space:nowrap;
+                 border-bottom:1px solid ${B.border};width:140px;">${label}</td>
+      <td style="padding:9px 16px;font-size:13px;color:${B.darkText};
+                 border-bottom:1px solid ${B.border};">${value}</td>
+    </tr>` : "";
+
+  const html = baseEmail({
+    subject:    `New member: ${params.fullName}`,
+    preheader:  `${params.fullName}${params.company ? ` · ${params.company}` : ""} just registered their interest on P³.`,
+    badgeEmoji: "🆕",
+    badgeText:  "New Member",
+    headline:   params.fullName,
+    subline:    `${params.company ? `${params.company}${params.jobTitle ? ` — ${params.jobTitle}` : ""}` : params.jobTitle ?? "Just registered their interest on padelcubed.co.uk."}`,
+    body: `
+  <!-- ══ PROFILE TABLE ══ -->
+  <tr><td style="padding:0 36px 24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:${B.offWhite};border:1px solid ${B.border};border-radius:16px;overflow:hidden;">
+      <tr><td colspan="2" style="padding:14px 16px 0;">
+        <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:${B.mutedFg};
+                   text-transform:uppercase;letter-spacing:1px;">Profile</p>
+      </td></tr>
+      ${row("Email",        `<a href="mailto:${params.email}" style="color:${B.royalBlue};text-decoration:none;">${params.email}</a>`)}
+      ${row("Company",      params.company)}
+      ${row("Job title",    params.jobTitle)}
+      ${row("Industry",     params.industry)}
+      ${row("Role type",    params.function)}
+      ${row("Seniority",    params.seniority)}
+      ${row("Padel level",  params.padelLevel)}
+      ${row("Interests",    params.interests?.join(", "))}
+      ${row("LinkedIn",     params.linkedinUrl
+        ? `<a href="${params.linkedinUrl}" style="color:${B.royalBlue};text-decoration:none;">${params.linkedinUrl}</a>`
+        : params.linkedinVerified ? "Verified via OAuth (no URL captured)" : null)}
+    </table>
+  </td></tr>
+
+  <!-- ══ QUICK ACTIONS ══ -->
+  <tr><td style="padding:0 36px 32px;">
+    <table cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="padding-right:8px;">
+        <a href="mailto:${params.email}?subject=Welcome to P³"
+           style="display:inline-block;background:${B.teal};color:#fff;
+                  font-size:13px;font-weight:700;text-decoration:none;
+                  padding:10px 18px;border-radius:9px;">Reply to ${params.fullName.split(" ")[0]}</a>
+      </td>
+      <td>
+        <a href="https://www.padelcubed.co.uk/api/admin/registrations/export"
+           style="display:inline-block;background:${B.offWhite};color:${B.darkText};
+                  border:1px solid ${B.border};
+                  font-size:13px;font-weight:700;text-decoration:none;
+                  padding:10px 18px;border-radius:9px;">Export all members</a>
+      </td>
+    </tr></table>
+  </td></tr>`,
+  });
+
+  const { error } = await resend.emails.send({
+    from:    FROM,
+    to:      ADMIN_TO,
+    replyTo: params.email,
+    subject: `New member: ${params.fullName}`,
+    html,
+  });
+
+  if (error) console.error("[email] Resend error (new member notification):", error);
+  else       console.log(`[email] Sent new member notification for ${params.email}`);
+}
+
 // ─── Walk-in confirmation ─────────────────────────────────────────────────────
 
 export interface WalkinEmailParams {
