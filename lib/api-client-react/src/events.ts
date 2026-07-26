@@ -179,6 +179,24 @@ export function usePublicLeaderboard<TData = LeaderboardData, TError = ErrorType
   });
 }
 
+// ─── GET /my-bookings?email= ─────────────────────────────────────────────────
+
+export interface MyBooking {
+  id:            number;
+  eventId:       string;
+  status:        string;
+  paymentStatus: string;
+  bookedAt:      string;
+}
+
+export const getMyBookingsUrl = (email: string) =>
+  `/api/my-bookings?email=${encodeURIComponent(email)}`;
+
+/** Plain async fetch — call this imperatively (e.g. in a sync effect). */
+export async function fetchMyBookings(email: string): Promise<MyBooking[]> {
+  return customFetch<MyBooking[]>(getMyBookingsUrl(email));
+}
+
 // ─── POST /events/:id/bookings ────────────────────────────────────────────────
 
 const bookEventFn =

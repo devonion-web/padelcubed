@@ -411,6 +411,53 @@ function videoLinksBlock(): string {
   </td></tr>`;
 }
 
+function appDownloadBlock(): string {
+  return `
+  <!-- ══ APP DOWNLOAD ══ -->
+  <tr><td style="padding:0 36px 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:${B.royalBlue};border-radius:14px;overflow:hidden;">
+      <tr><td style="padding:20px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="vertical-align:top;width:44px;">
+            <div style="width:40px;height:40px;background:rgba(255,255,255,0.12);
+                        border-radius:10px;text-align:center;line-height:40px;
+                        font-size:20px;">📱</div>
+          </td>
+          <td style="vertical-align:top;padding-left:14px;">
+            <p style="margin:0 0 4px;font-size:15px;font-weight:900;color:${B.textLight};">
+              Get the P&#179; App
+            </p>
+            <p style="margin:0 0 12px;font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6;">
+              On the day, open the app to access your live leaderboard position, round-by-round scores,
+              and your QR entry ticket — all in one place.
+            </p>
+            <table cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="padding-right:8px;">
+                <a href="https://www.padelcubed.co.uk/padel-cubed-mobile/"
+                   style="display:inline-block;background:${B.teal};color:#fff;
+                          font-size:13px;font-weight:700;text-decoration:none;
+                          padding:9px 16px;border-radius:8px;">
+                  &#128247; Open App
+                </a>
+              </td>
+              <td>
+                <a href="https://www.padelcubed.co.uk"
+                   style="display:inline-block;background:transparent;color:${B.teal};
+                          font-size:13px;font-weight:700;text-decoration:none;
+                          padding:9px 16px;border-radius:8px;
+                          border:1.5px solid ${B.teal};">
+                  Visit website
+                </a>
+              </td>
+            </tr></table>
+          </td>
+        </tr></table>
+      </td></tr>
+    </table>
+  </td></tr>`;
+}
+
 function qrTicketBlock(qrDataUri: string, bookingId: number): string {
   return `
   <tr><td style="padding:0 36px 32px;">
@@ -493,6 +540,7 @@ export async function sendBookingConfirmation(params: BookingConfirmationParams)
       ${venueBlock(eventVenue)}
       ${eventFormat ? formatBlock(eventFormat) : ""}
       ${whatToBringBlock()}
+      ${appDownloadBlock()}
       ${videoLinksBlock()}
       ${qrTicketBlock(qrDataUri, bookingId)}
     `,
@@ -615,6 +663,7 @@ export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise
       ${venueBlock(eventVenue)}
       ${eventFormat ? formatBlock(eventFormat) : ""}
       ${whatToBringBlock()}
+      ${appDownloadBlock()}
       ${videoLinksBlock()}
       ${cancelNote}
     `,

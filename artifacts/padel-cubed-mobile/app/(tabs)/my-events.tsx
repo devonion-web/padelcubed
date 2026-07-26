@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -181,10 +182,29 @@ export default function MyEventsScreen() {
   const isWeb = Platform.OS === 'web';
 
   const { isRegistered, profile, isLoading: profileLoading } = useProfile();
-  const { bookedEventIds, isLoading: bookingsLoading } = useBookings();
+  const { bookedEventIds, syncFromServer, isLoading: bookingsLoading } = useBookings();
   const { data: allEvents = [], isLoading: eventsLoading } = useEvents();
 
   const isLoading = profileLoading || bookingsLoading || eventsLoading;
+
+  // ── Server sync ──────────────────────────────────────────────────────────────
+  const [isSyncing, setIsSyncing] = useState(false);
+  const hasSyncedRef = useRef(false);
+
+  const sync = useCallback(async () => {
+    if (!profile?.email) return;
+    setIsSyncing(true);
+    await syncFromServer(profile.email);
+    setIsSyncing(false);
+  }, [profile?.email, syncFromServer]);
+
+  // Sync once automatically when profile is first available
+  useEffect(() => {
+    if (profile?.email && !hasSyncedRef.current) {
+      hasSyncedRef.current = true;
+      sync();
+    }
+  }, [profile?.email, sync]);
   const topPadding = isWeb ? 67 : insets.top;
 
   // Filter to only events the user has booked (preserving server order)
@@ -274,6 +294,14 @@ export default function MyEventsScreen() {
             { paddingBottom: isWeb ? 84 + 24 : insets.bottom + 100 },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isSyncing}
+              onRefresh={sync}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         >
           <View style={styles.listHeader}>
             <Text style={[styles.listTitle, { color: colors.foreground }]}>
