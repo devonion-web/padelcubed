@@ -22,6 +22,7 @@ export interface AdminEvent extends ApiEvent {
   bookedCount: number;
   checkedInCount: number;
   walkinCount: number;
+  walkinCheckedInCount: number;
   liveStatus: LiveStatus;
   courtsCount?: number | null;
   roundDurationMinutes?: number | null;
@@ -30,6 +31,7 @@ export interface AdminEvent extends ApiEvent {
 
 export interface AdminBooking extends ApiBooking {
   checkedInAt: string | null;
+  paymentStatus: "free" | "pending" | "paid";
 }
 
 export interface CheckInInput {
@@ -214,6 +216,43 @@ export function useCheckIn<TError = ErrorType<{ error: string }>, TContext = unk
 ): UseMutationResult<AdminBooking, TError, { data: BodyType<CheckInInput> }, TContext> {
   return useMutation({
     mutationFn: checkInFn(eventId, token),
+    ...options?.mutation,
+  });
+}
+
+// ─── PATCH /admin/bookings/:id/payment ───────────────────────────────────────
+
+export function useUpdateBookingPayment<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: {
+    mutation?: UseMutationOptions<AdminBooking, TError, { bookingId: number; paymentStatus: "free" | "pending" | "paid" }, TContext>;
+  },
+): UseMutationResult<AdminBooking, TError, { bookingId: number; paymentStatus: "free" | "pending" | "paid" }, TContext> {
+  return useMutation({
+    mutationFn: ({ bookingId, paymentStatus }) =>
+      customFetch<AdminBooking>(`/api/admin/bookings/${bookingId}/payment`, {
+        method: "PATCH",
+        headers: authHeaders(token),
+        body: JSON.stringify({ paymentStatus }),
+      }),
+    ...options?.mutation,
+  });
+}
+
+// ─── DELETE /admin/bookings/:id ───────────────────────────────────────────────
+
+export function useDeleteBooking<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: {
+    mutation?: UseMutationOptions<{ ok: boolean }, TError, { bookingId: number }, TContext>;
+  },
+): UseMutationResult<{ ok: boolean }, TError, { bookingId: number }, TContext> {
+  return useMutation({
+    mutationFn: ({ bookingId }) =>
+      customFetch<{ ok: boolean }>(`/api/admin/bookings/${bookingId}`, {
+        method: "DELETE",
+        headers: authHeaders(token),
+      }),
     ...options?.mutation,
   });
 }

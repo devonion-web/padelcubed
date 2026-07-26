@@ -397,8 +397,10 @@ function LoginScreen() {
 
 function EventRow({ event, onPress }: { event: AdminEvent; onPress: () => void }) {
   const colors = useColors();
-  const pct      = event.maxSpots ? Math.min(event.bookedCount / event.maxSpots, 1) : 0;
-  const checkedPct = event.bookedCount ? Math.min(event.checkedInCount / event.bookedCount, 1) : 0;
+  const totalAttendees = (event.bookedCount ?? 0) + (event.walkinCount ?? 0);
+  const totalCheckedIn = (event.checkedInCount ?? 0) + (event.walkinCheckedInCount ?? 0);
+  const pct        = event.maxSpots ? Math.min(totalAttendees / event.maxSpots, 1) : 0;
+  const checkedPct = totalAttendees ? Math.min(totalCheckedIn / totalAttendees, 1) : 0;
   const isLive  = event.liveStatus === 'live';
   const isEnded = event.liveStatus === 'ended';
 
@@ -441,12 +443,12 @@ function EventRow({ event, onPress }: { event: AdminEvent; onPress: () => void }
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>
-          <Text style={[styles.statNum, { color: colors.primary }]}>{event.bookedCount}</Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>/{event.maxSpots ?? '—'} booked</Text>
+          <Text style={[styles.statNum, { color: colors.primary }]}>{totalAttendees}</Text>
+          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>/{event.maxSpots ?? '—'} attending</Text>
         </View>
         <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
         <View style={styles.stat}>
-          <Text style={[styles.statNum, { color: '#19C3B0' }]}>{event.checkedInCount}</Text>
+          <Text style={[styles.statNum, { color: '#19C3B0' }]}>{totalCheckedIn}</Text>
           <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>checked in</Text>
         </View>
         {(event.walkinCount ?? 0) > 0 && (

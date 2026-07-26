@@ -30,6 +30,8 @@ import {
   useAdminEvent,
   useCheckIn,
   useUndoCheckIn,
+  useUpdateBookingPayment,
+  useDeleteBooking,
   getAdminEventBookingsQueryKey,
   useAmericanoState,
   useWalkins,
@@ -44,31 +46,63 @@ import type { AdminBooking, LiveStatus, Walkin } from '@workspace/api-client-rea
 
 function BookingRow({
   booking,
-  onToggle,
+  onToggleCheckin,
   toggling,
+  onTogglePayment,
+  togglingPayment,
+  onDelete,
+  deleting,
 }: {
   booking: AdminBooking;
-  onToggle: () => void;
+  onToggleCheckin: () => void;
   toggling: boolean;
+  onTogglePayment: () => void;
+  togglingPayment: boolean;
+  onDelete: () => void;
+  deleting: boolean;
 }) {
   const colors = useColors();
   const isCheckedIn = Boolean(booking.checkedInAt);
+  const isPaid = booking.paymentStatus === 'paid';
+  const isFree = booking.paymentStatus === 'free';
+  const unpaidAccent = '#f59e0b';
+
+  const handlePress = () => {
+    Alert.alert(
+      booking.fullName,
+      'Booking options',
+      [
+        {
+          text: 'Remove booking',
+          style: 'destructive',
+          onPress: onDelete,
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
 
   return (
     <TouchableOpacity
-      onPress={onToggle}
-      disabled={toggling}
-      activeOpacity={0.7}
+      onPress={handlePress}
+      activeOpacity={0.75}
       style={[
         styles.row,
         {
           backgroundColor: colors.card,
-          borderColor: isCheckedIn ? `${colors.primary}55` : colors.border,
+          borderColor: isCheckedIn ? `${colors.primary}55` : (!isFree && !isPaid) ? `${unpaidAccent}88` : colors.border,
           borderRadius: colors.radius,
+          opacity: deleting ? 0.4 : 1,
+          borderLeftWidth: (!isFree && !isPaid) ? 3 : 1,
+          borderLeftColor: (!isFree && !isPaid) ? unpaidAccent : colors.border,
         },
       ]}
     >
-      <View
+      {/* Check-in circle — tap to toggle */}
+      <TouchableOpacity
+        onPress={(e) => { e.stopPropagation?.(); onToggleCheckin(); }}
+        disabled={toggling}
+        activeOpacity={0.7}
         style={[
           styles.checkCircle,
           {
@@ -82,7 +116,7 @@ function BookingRow({
         ) : isCheckedIn ? (
           <Feather name="check" size={14} color="#fff" />
         ) : null}
-      </View>
+      </TouchableOpacity>
 
       <View style={{ flex: 1 }}>
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
@@ -92,19 +126,41 @@ function BookingRow({
           <Text style={[styles.company, { color: colors.mutedForeground }]} numberOfLines={1}>
             {booking.company}
           </Text>
-        ) : null}
+        ) : (
+          <Text style={[styles.company, { color: colors.mutedForeground }]} numberOfLines={1}>
+            {booking.email}
+          </Text>
+        )}
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      {/* Payment badge — tap to cycle free→paid / pending→paid / paid→pending */}
+      {isFree ? (
         <View style={[styles.badge, { backgroundColor: '#22c55e22' }]}>
-          <Text style={[styles.badgeText, { color: '#22c55e' }]}>Paid</Text>
+          <Text style={[styles.badgeText, { color: '#22c55e' }]}>Free</Text>
         </View>
-        {isCheckedIn ? (
-          <View style={[styles.badge, { backgroundColor: `${colors.primary}22` }]}>
-            <Text style={[styles.badgeText, { color: colors.primary }]}>In</Text>
-          </View>
-        ) : null}
-      </View>
+      ) : (
+        <TouchableOpacity
+          onPress={(e) => { e.stopPropagation?.(); onTogglePayment(); }}
+          disabled={togglingPayment}
+          activeOpacity={0.7}
+          style={[
+            styles.badge,
+            {
+              backgroundColor: isPaid ? '#22c55e22' : `${unpaidAccent}22`,
+              borderWidth: 1,
+              borderColor: isPaid ? '#22c55e44' : `${unpaidAccent}66`,
+            },
+          ]}
+        >
+          {togglingPayment ? (
+            <ActivityIndicator size="small" color={colors.mutedForeground} style={{ width: 34 }} />
+          ) : (
+            <Text style={[styles.badgeText, { color: isPaid ? '#22c55e' : unpaidAccent, fontWeight: isPaid ? '500' : '600' }]}>
+              {isPaid ? 'Paid' : 'Unpaid'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
@@ -288,7 +344,11 @@ export default function AdminEventDetailScreen() {
 
   const checkInMutation = useCheckIn(id ?? '', token);
   const undoMutation    = useUndoCheckIn(id ?? '', token);
+  const updateBookingPaymentMutation = useUpdateBookingPayment(token);
+  const deleteBookingMutation = useDeleteBooking(token);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [togglingBookingPaymentId, setTogglingBookingPaymentId] = useState<number | null>(null);
+  const [deletingBookingId, setDeletingBookingId] = useState<number | null>(null);
 
   const { data: walkins = [] } = useWalkins(id ?? '', token, {
     query: { refetchInterval: liveStatus === 'live' ? 10_000 : false },
@@ -301,7 +361,9 @@ export default function AdminEventDetailScreen() {
   const walkinCheckedIn = walkins.filter((w) => w.checkedInAt).length;
   const checkedIn  = bookings.filter((b) => b.checkedInAt).length + walkinCheckedIn;
   const totalCount = bookings.length + walkins.length;
-  const unpaidCount = walkins.filter((w) => !w.paid).length;
+  const unpaidBookings = bookings.filter((b) => b.paymentStatus === 'pending').length;
+  const unpaidWalkins  = walkins.filter((w) => !w.paid).length;
+  const unpaidCount    = unpaidBookings + unpaidWalkins;
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -333,6 +395,35 @@ export default function AdminEventDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setTogglingPaidId(null);
+    }
+  };
+
+  const handleToggleBookingPayment = async (booking: AdminBooking) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTogglingBookingPaymentId(booking.id);
+    try {
+      const next = booking.paymentStatus === 'paid' ? 'pending' : 'paid';
+      await updateBookingPaymentMutation.mutateAsync({ bookingId: booking.id, paymentStatus: next });
+      queryClient.invalidateQueries({ queryKey: getAdminEventBookingsQueryKey(id ?? '', token) });
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setTogglingBookingPaymentId(null);
+    }
+  };
+
+  const handleDeleteBooking = async (booking: AdminBooking) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setDeletingBookingId(booking.id);
+    try {
+      await deleteBookingMutation.mutateAsync({ bookingId: booking.id });
+      queryClient.invalidateQueries({ queryKey: getAdminEventBookingsQueryKey(id ?? '', token) });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', 'Could not remove booking. Please try again.');
+    } finally {
+      setDeletingBookingId(null);
     }
   };
 
@@ -465,8 +556,12 @@ export default function AdminEventDetailScreen() {
                 <BookingRow
                   key={b.id}
                   booking={b}
-                  onToggle={() => handleToggle(b)}
+                  onToggleCheckin={() => handleToggle(b)}
                   toggling={togglingId === b.id}
+                  onTogglePayment={() => handleToggleBookingPayment(b)}
+                  togglingPayment={togglingBookingPaymentId === b.id}
+                  onDelete={() => handleDeleteBooking(b)}
+                  deleting={deletingBookingId === b.id}
                 />
               ))}
             </>

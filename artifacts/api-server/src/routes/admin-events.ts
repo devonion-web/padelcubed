@@ -84,11 +84,17 @@ router.get("/admin/events", requireAdmin, async (req, res): Promise<void> => {
           .from(walkinsTable)
           .where(eq(walkinsTable.eventId, ev.id));
 
+        const [walkinsCheckedIn] = await db
+          .select({ total: count() })
+          .from(walkinsTable)
+          .where(and(eq(walkinsTable.eventId, ev.id), isNotNull(walkinsTable.checkedInAt)));
+
         return {
           ...ev,
           bookedCount: Number(booked?.total ?? 0),
           checkedInCount: Number(checkedIn?.total ?? 0),
           walkinCount: Number(walkins?.total ?? 0),
+          walkinCheckedInCount: Number(walkinsCheckedIn?.total ?? 0),
           liveStatus: getLiveStatus(ev.eventDate),
         };
       }),
@@ -125,13 +131,15 @@ router.get("/admin/events/:id", requireAdmin, async (req, res): Promise<void> =>
       return;
     }
 
-    const [[booked], [checkedIn], [walkins]] = await Promise.all([
+    const [[booked], [checkedIn], [walkins], [walkinsCheckedIn]] = await Promise.all([
       db.select({ total: count() }).from(bookingsTable)
         .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.status, "confirmed"))),
       db.select({ total: count() }).from(bookingsTable)
         .where(and(eq(bookingsTable.eventId, event.id), eq(bookingsTable.status, "confirmed"), isNotNull(bookingsTable.checkedInAt))),
       db.select({ total: count() }).from(walkinsTable)
         .where(eq(walkinsTable.eventId, event.id)),
+      db.select({ total: count() }).from(walkinsTable)
+        .where(and(eq(walkinsTable.eventId, event.id), isNotNull(walkinsTable.checkedInAt))),
     ]);
 
     res.json({
@@ -139,6 +147,7 @@ router.get("/admin/events/:id", requireAdmin, async (req, res): Promise<void> =>
       bookedCount: Number(booked?.total ?? 0),
       checkedInCount: Number(checkedIn?.total ?? 0),
       walkinCount: Number(walkins?.total ?? 0),
+      walkinCheckedInCount: Number(walkinsCheckedIn?.total ?? 0),
       liveStatus: getLiveStatus(event.eventDate),
     });
   } catch (err) {
@@ -269,6 +278,49 @@ router.delete("/admin/events/:id/checkin", requireAdmin, async (req, res): Promi
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to undo check-in" });
+  }
+});
+
+// ─── PATCH /admin/bookings/:id/payment ───────────────────────────────────────
+
+const PaymentBody = z.object({
+  paymentStatus: z.enum(["free", "pending", "paid"]),
+});
+
+router.patch("/admin/bookings/:id/payment", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const parsed = PaymentBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "paymentStatus must be free | pending | paid" }); return; }
+  try {
+    const [booking] = await db
+      .update(bookingsTable)
+      .set({ paymentStatus: parsed.data.paymentStatus })
+      .where(eq(bookingsTable.id, id))
+      .returning();
+    if (!booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    res.json(booking);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update payment status" });
+  }
+});
+
+// ─── DELETE /admin/bookings/:id ───────────────────────────────────────────────
+
+router.delete("/admin/bookings/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  try {
+    const [deleted] = await db
+      .delete(bookingsTable)
+      .where(eq(bookingsTable.id, id))
+      .returning();
+    if (!deleted) { res.status(404).json({ error: "Booking not found" }); return; }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete booking" });
   }
 });
 
