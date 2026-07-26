@@ -3,10 +3,14 @@ packages:
   - lib/*
   - lib/integrations/*
   - scripts
+  - tests
 
 autoInstallPeers: false
 
 catalog:
+  '@types/supertest':  ^6.0.2
+  supertest:           ^7.1.0
+  vitest:              ^3.2.4
   '@replit/vite-plugin-cartographer': ^0.5.21
   '@replit/vite-plugin-dev-banner': ^0.1.1
   '@replit/vite-plugin-runtime-error-modal': ^0.0.6

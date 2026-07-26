@@ -8,3 +8,4 @@
 - [Events DB source of truth](events-db-source.md) — events are DB-only; no static arrays remain; published boolean controls visibility; GET /events includes attendeeCount via grouped subquery.
 - [Stripe shop setup](stripe-shop.md) — credential field is `settings.secret` not `settings.secret_key`; syncBackfill requires `{ object: 'all' }`; seed before backfill.
 - [Security audit fixes](security-fixes.md) — 9-fix audit applied; key decisions on iss-check, booking guard, GDPR scrub, claim codes DB, suppression helper.
+- [Test suite setup](test-suite-setup.md) — @workspace/tests; 128 tests green; schema-push not migrate; truncateAll pg_tables pattern; claimLimiter null-eq production bug.

@@ -190,7 +190,7 @@ export function PartnerCard() {
         }}
       >
         <EventCard title="The City Kickoff" date="AUG 6" venue="Racketeer · Acton" sponsor="Corlytics" />
-        <EventCard title="The Finance Edition" date="SEP 10" venue="Surbiton Racquet Club" sponsor="Finativ" />
+        <EventCard title="The Surbiton Exchange" date="SEP 10" venue="Surbiton Racquet Club" sponsor="Risk Rising, Corlytics & Finativ" />
         <SponsoredCard />
         <EventCard title="The GRC Exchange" date="OCT 8" venue="Racketeer · Acton" sponsor="GRC Edge" />
         <EventCard title="The October Smash" date="OCT 29" venue="Padium · London" sponsor="Apollo 1971" />
