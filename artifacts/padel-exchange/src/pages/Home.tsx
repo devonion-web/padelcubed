@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { IntentModal } from "@/components/IntentModal";
 import { BookingModal } from "@/components/BookingModal";
 import { PartnersSection, VenuesSection } from "@/components/PartnersVenues";
+import { EventsSection } from "@/components/EventsSection";
 import { AdSlot } from "@/components/AdSlot";
 import {
   Accordion,
@@ -247,13 +248,6 @@ export default function Home() {
     }
   }, []);
 
-  // ─── Events from API — hidden until launch; re-enable when events go live ──
-  // const { data: events = [] } = useQuery<ApiEvent[]>({
-  //   queryKey: ["/api/events"],
-  //   queryFn: () => fetch("/api/events").then((r) => r.json()),
-  //   staleTime: 60_000,
-  // });
-
   const scrollToHow = () => {
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -270,8 +264,8 @@ export default function Home() {
             {/* Shop nav link — hidden until launch:
             <Link href="/shop" className="...">Shop</Link>
             */}
-            <a href="#launch" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Launch Event
+            <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Events
             </a>
             <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Host an event
@@ -288,11 +282,11 @@ export default function Home() {
         <PartnersSection />
 
         {/* Hero Section */}
-        <section className="relative flex items-start pt-20">
+        <section className="relative flex items-start pt-20 bg-slate-950">
           <div className="absolute inset-0 z-0 overflow-hidden">
             {/* Ken Burns animated hero image */}
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-45"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-55"
               style={{
                 backgroundImage: `url(${import.meta.env.BASE_URL}padel/hero-video-poster.jpg)`,
                 animation: "kenBurns 24s ease-in-out infinite alternate",
@@ -304,8 +298,8 @@ export default function Home() {
               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25"
               style={{ backgroundImage: `url(${heroImage})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/30 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-background/10 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/50 via-slate-950/10 to-transparent" />
           </div>
 
           <div className="container relative z-10 mx-auto px-4 md:px-8 pt-1 md:pt-2 pb-12">
@@ -316,29 +310,29 @@ export default function Home() {
                 transition={{ duration: 0.8, ease: "easeOut" }}
               >
                 <div className="flex justify-center mb-8">
-                  <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm">
-                    <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
+                  <div className="inline-flex items-center rounded-full border border-[#13D4DB]/30 bg-[#13D4DB]/10 px-4 py-1.5 text-sm font-medium text-[#13D4DB] backdrop-blur-sm">
+                    <span className="flex h-2 w-2 rounded-full bg-[#13D4DB] mr-2 animate-pulse" />
                     Join 120+ professionals already on the list
                   </div>
                 </div>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-foreground leading-[1.05] mb-4">
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-white leading-[1.05] mb-4">
                   People,{" "}
-                  <span className="text-muted-foreground">Padel,{" "}</span>
-                  <span className="text-primary/80">Places.</span>
+                  <span className="text-white/60">Padel,{" "}</span>
+                  <span className="text-[#13D4DB]">Places.</span>
                 </h1>
-                <p className="text-xl md:text-2xl text-foreground/70 font-medium max-w-2xl mb-10 leading-relaxed">
+                <p className="text-xl md:text-2xl text-white/70 font-medium max-w-2xl mb-10 leading-relaxed">
                   Curated padel events for senior professionals and founders — premium venues, top-level play, real connections.
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <Button size="lg" onClick={openModal} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group">
+                  <Button size="lg" onClick={openModal} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group bg-[#0F9090] hover:bg-[#0d7f7f] text-white border-0">
                     Register your interest
                     <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
-                  <Button variant="outline" size="lg" onClick={scrollToHow} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto bg-transparent border-muted-foreground/30 hover:bg-white/5">
+                  <Button variant="outline" size="lg" onClick={scrollToHow} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto bg-transparent border-white/30 text-white hover:bg-white/10">
                     How it works
                   </Button>
                 </div>
-                <p className="text-sm text-foreground/50 mt-3 text-center">Get in touch — no commitment required.</p>
+                <p className="text-sm text-white/50 mt-3 text-center">Get in touch — no commitment required.</p>
               </motion.div>
             </div>
           </div>
@@ -348,60 +342,11 @@ export default function Home() {
         {/* Venues — directly below hero */}
         <VenuesSection />
 
-        {/* ── Launch Event Teaser ──────────────────────────────────────────────── */}
-        <section className="border-t border-border/40 py-12 md:py-16">
-          <div className="container mx-auto px-4 md:px-8">
-            <FadeIn>
-              <div className="flex items-center gap-3 mb-8">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-                <span className="text-sm font-semibold text-primary uppercase tracking-widest">Coming October 2025</span>
-              </div>
-
-              <div className="relative rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] flex flex-col justify-end">
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${import.meta.env.BASE_URL}padel/social-game.jpg)` }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/45 to-black/10" />
-
-                <div className="relative z-10 p-7 md:p-10 flex flex-col gap-5">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white/15 text-white backdrop-blur-sm border border-white/20 self-start">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                    Launch Event — registrations opening soon
-                  </span>
-
-                  <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                    P³ London Launch
-                  </h2>
-
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4 text-primary/80" />
-                      October 2025 · Date TBC
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="h-4 w-4 text-primary/80" />
-                      London · Venue TBC
-                    </span>
-                  </div>
-
-                  <div className="pt-5 border-t border-white/20 flex items-center justify-between gap-4 flex-wrap">
-                    <p className="text-sm text-white/60 max-w-md">
-                      Our first event — curated play, real connections, a premium London venue. Register now to be first in line when spots open.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={openModal}
-                      className="flex-shrink-0 text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-full transition-colors shadow-lg shadow-primary/30"
-                    >
-                      Register interest →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </section>
+        {/* ── Events Section ───────────────────────────────────────────────────── */}
+        <EventsSection
+          onRegister={openModal}
+          onBook={(e) => setBookingEvent(e)}
+        />
 
         {/* Photo Strip — infinite auto-scrolling marquee */}
         <div className="overflow-hidden border-y border-border/40 bg-background py-0 select-none" aria-hidden="true">
@@ -421,7 +366,7 @@ export default function Home() {
                   className="h-full w-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-500"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               </div>
             ))}
           </div>
@@ -454,9 +399,9 @@ export default function Home() {
         <section className="py-12 md:py-16 bg-card/30 border-y border-border/50">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
-              <div className="mb-16">
+              <div className="mb-16 text-center">
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Why join</h2>
-                <p className="text-lg text-muted-foreground max-w-2xl">Produced social events designed to make real connections — not another awkward room with name badges and canapés.</p>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Produced social events designed to make real connections — not another awkward room with name badges and canapés.</p>
               </div>
             </FadeIn>
 
@@ -664,61 +609,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Launch Event Section ─────────────────────────────────────────────── */}
-        <section id="launch" className="py-12 md:py-20 border-t border-border/50 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/4 rounded-full blur-[140px] translate-x-1/3 -translate-y-1/4 pointer-events-none" />
-          <div className="container mx-auto px-4 md:px-8 relative z-10">
-            <FadeIn>
-              <div className="max-w-3xl mx-auto text-center">
-                <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-                  <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-semibold text-primary tracking-wide">Launch Event · October 2025</span>
-                </div>
-
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-                  P³ London Launch
-                </h2>
-
-                <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
-                  Our first event is coming this October — a premium London venue, curated play, a live leaderboard, and an evening built for real connections. Date and venue to be announced.
-                </p>
-
-                <p className="text-sm text-muted-foreground mb-10">
-                  Register your interest now. You'll be first to know when spots open.
-                </p>
-
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Button
-                    onClick={openModal}
-                    size="lg"
-                    className="rounded-full px-8 text-base font-semibold shadow-lg shadow-primary/20 w-full sm:w-auto"
-                  >
-                    Register interest
-                  </Button>
-                  <a
-                    href="mailto:info@padelcubed.co.uk"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Questions? Email us →
-                  </a>
-                </div>
-
-                <div className="mt-16 pt-10 border-t border-border/50 grid grid-cols-3 gap-6 text-center">
-                  {[
-                    { label: "Format", value: "Americano" },
-                    { label: "Location", value: "London" },
-                    { label: "Date", value: "October 2025" },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
-                      <p className="text-lg font-bold text-foreground">{value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </section>
 
         {/* Founders Section */}
         <section id="ambassadors" className="py-12 md:py-16 bg-card/30 border-y border-border/50">
@@ -896,7 +786,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-6 text-sm font-medium">
-              <a href="#launch" className="text-muted-foreground hover:text-foreground transition-colors">Launch Event</a>
+              <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
               <a href="#ambassadors" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
               <Link href="/host-an-event" className="text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>

@@ -16,6 +16,8 @@ export interface Partner {
   blurb: string;
   showInCarousel: boolean;
   logoClassName?: string;
+  /** CSS filter applied to the logo image on light (white-card) backgrounds */
+  logoFilter?: string;
 }
 
 const partners: Partner[] = [
@@ -29,6 +31,7 @@ const partners: Partner[] = [
     url: "https://www.riskrising.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
     blurb: "Risk Rising helps financial services firms build resilient, high-performing risk and compliance functions.",
     showInCarousel: true,
+    logoFilter: "brightness(0) opacity(0.7)",
   },
   {
     id: "panorays",
@@ -41,6 +44,7 @@ const partners: Partner[] = [
     blurb: "End-to-end third-party cyber risk management, powered by native AI — helping enterprises secure their entire supply chain.",
     showInCarousel: true,
     logoClassName: "h-11",
+    logoFilter: "brightness(0) opacity(0.7)",
   },
   {
     id: "logicgate",
@@ -69,8 +73,8 @@ const partners: Partner[] = [
     name: "Finativ",
     tier: "founding",
     category: "Specialist Advisory",
-    logoLight: "partners/finativ.png",      // white version — carousel sits on the brand-blue background
-    logoDark:  "partners/finativ-dark.png", // dark-text version for any light-bg contexts
+    logoLight: "partners/finativ-dark.png",
+    logoDark:  "partners/finativ-dark.png",
     url: "https://www.finativ.co.uk/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
     blurb: "Specialist consulting and advisory for asset, motor, invoice and other finance companies — strategic insight from experienced leaders.",
     showInCarousel: true,

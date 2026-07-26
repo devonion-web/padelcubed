@@ -15,7 +15,7 @@ function trackPartnerClick(name: string) {
 }
 
 // ─── Partner logo tile ────────────────────────────────────────────────────────
-function PartnerLogo({ name, logoLight, url, logoClassName }: { name: string; logoLight: string; url: string; logoClassName?: string }) {
+function PartnerLogo({ name, logoLight, url, logoClassName, logoFilter }: { name: string; logoLight: string; url: string; logoClassName?: string; logoFilter?: string }) {
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   return (
     <a
@@ -25,8 +25,8 @@ function PartnerLogo({ name, logoLight, url, logoClassName }: { name: string; lo
       aria-label={`Visit ${name}`}
       onClick={() => trackPartnerClick(name)}
       className="flex-shrink-0 flex items-center justify-center h-14 px-12 mx-5 rounded-2xl
-                 border border-black/8 bg-white shadow-sm
-                 hover:shadow-md hover:border-black/12
+                 border border-border bg-white shadow-sm
+                 hover:shadow-md hover:border-primary/30
                  transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
     >
       {logoLight ? (
@@ -34,7 +34,7 @@ function PartnerLogo({ name, logoLight, url, logoClassName }: { name: string; lo
           src={`${import.meta.env.BASE_URL}${logoLight}`}
           alt={name}
           className={`${logoClassName ?? "h-8"} w-auto object-contain`}
-          style={{ filter: "brightness(0) opacity(0.65)" }}
+          style={logoFilter ? { filter: logoFilter } : undefined}
           loading="lazy"
         />
       ) : (
@@ -97,13 +97,13 @@ export function PartnersSection() {
         >
           <div className="hidden motion-reduce:flex flex-wrap justify-center gap-4 px-4">
             {carouselPartners.map((p) => (
-              <PartnerLogo key={p.id} name={p.name} logoLight={p.logoLight} url={p.url} logoClassName={p.logoClassName} />
+              <PartnerLogo key={p.id} name={p.name} logoLight={p.logoLight} url={p.url} logoClassName={p.logoClassName} logoFilter={p.logoFilter} />
             ))}
           </div>
           <div className="motion-reduce:hidden flex">
             <div className="p3-carousel-track flex">
               {items.map((p, i) => (
-                <PartnerLogo key={`${p.id}-${i}`} name={p.name} logoLight={p.logoLight} url={p.url} logoClassName={p.logoClassName} />
+                <PartnerLogo key={`${p.id}-${i}`} name={p.name} logoLight={p.logoLight} url={p.url} logoClassName={p.logoClassName} logoFilter={p.logoFilter} />
               ))}
             </div>
           </div>
