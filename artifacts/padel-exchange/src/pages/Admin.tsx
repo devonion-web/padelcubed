@@ -7,6 +7,8 @@ import {
   useAdminUsers,
   useCreateAdminUser,
   useDeleteAdminUser,
+  useCreateRegistration,
+  useDeleteRegistration,
   getAdminUsersQueryKey,
   getAdminRegistrationsQueryKey,
 } from "@workspace/api-client-react";
@@ -102,11 +104,128 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, user: AdminUser) =>
   );
 }
 
+// ─── Add member dialog ────────────────────────────────────────────────────────
+
+const SENIORITY_OPTIONS = ["C-Suite", "VP / Director", "Senior Manager", "Manager", "Associate", "Analyst", "Other"];
+const PADEL_OPTIONS = ["Never played", "Beginner", "Intermediate", "Advanced", "Competitive"];
+const INTEREST_OPTIONS = ["Networking", "Playing padel", "Hosting events", "Sponsorship", "Media & content", "Community building"];
+
+function AddMemberDialog({ token, onCreated }: { token: string; onCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+  const [form, setForm] = useState({
+    fullName: "", email: "", company: "", jobTitle: "",
+    industry: "", function: "", seniority: "", padelLevel: "",
+    linkedinUrl: "", interests: [] as string[],
+  });
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const toggleInterest = (i: string) => setForm(f => ({
+    ...f,
+    interests: f.interests.includes(i) ? f.interests.filter(x => x !== i) : [...f.interests, i],
+  }));
+
+  const create = useCreateRegistration(token, {
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Member added", description: `${form.fullName} is on the list.` });
+        setOpen(false);
+        setForm({ fullName: "", email: "", company: "", jobTitle: "", industry: "", function: "", seniority: "", padelLevel: "", linkedinUrl: "", interests: [] });
+        onCreated();
+      },
+      onError: (e: any) => {
+        toast({ title: "Error", description: e?.message ?? "Failed to add member", variant: "destructive" });
+      },
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    create.mutate({ ...form, gdprConsent: true });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add member
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add member manually</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Input placeholder="Full name *" value={form.fullName} onChange={e => set("fullName", e.target.value)} required />
+            </div>
+            <div className="col-span-2">
+              <Input type="email" placeholder="Email *" value={form.email} onChange={e => set("email", e.target.value)} required />
+            </div>
+            <Input placeholder="Company" value={form.company} onChange={e => set("company", e.target.value)} />
+            <Input placeholder="Job title" value={form.jobTitle} onChange={e => set("jobTitle", e.target.value)} />
+            <Input placeholder="Industry" value={form.industry} onChange={e => set("industry", e.target.value)} />
+            <Input placeholder="Function" value={form.function} onChange={e => set("function", e.target.value)} />
+            <Select value={form.seniority} onValueChange={v => set("seniority", v)}>
+              <SelectTrigger><SelectValue placeholder="Seniority" /></SelectTrigger>
+              <SelectContent>{SENIORITY_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={form.padelLevel} onValueChange={v => set("padelLevel", v)}>
+              <SelectTrigger><SelectValue placeholder="Padel level" /></SelectTrigger>
+              <SelectContent>{PADEL_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+            </Select>
+            <div className="col-span-2">
+              <Input placeholder="LinkedIn URL" value={form.linkedinUrl} onChange={e => set("linkedinUrl", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">Interests</p>
+            <div className="flex flex-wrap gap-2">
+              {INTEREST_OPTIONS.map(i => (
+                <button key={i} type="button"
+                  onClick={() => toggleInterest(i)}
+                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    form.interests.includes(i)
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:border-primary"
+                  }`}
+                >
+                  {i}
+                </button>
+              ))}
+            </div>
+          </div>
+          <Button type="submit" className="w-full" disabled={create.isPending || !form.fullName || !form.email}>
+            {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Add to list
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Members tab ──────────────────────────────────────────────────────────────
 
 function MembersTab({ token }: { token: string }) {
   const [search, setSearch] = useState("");
+  const qc = useQueryClient();
+  const { toast } = useToast();
   const { data: registrations, isLoading } = useAdminRegistrations(token);
+
+  const deleteReg = useDeleteRegistration(token, {
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getAdminRegistrationsQueryKey(token) });
+        toast({ title: "Member removed" });
+      },
+      onError: (e: any) => {
+        toast({ title: "Error", description: e?.message ?? "Failed to remove member", variant: "destructive" });
+      },
+    },
+  });
 
   const filtered = (registrations ?? []).filter(r => {
     if (!search) return true;
@@ -120,7 +239,14 @@ function MembersTab({ token }: { token: string }) {
   });
 
   const handleExport = () => {
-    window.open(`/api/admin/registrations/export?adminPassword=_jwt_&token=${encodeURIComponent(token)}`, "_blank");
+    fetch(`/api/admin/registrations/export`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "members.csv"; a.click();
+        URL.revokeObjectURL(url);
+      });
   };
 
   return (
@@ -140,9 +266,13 @@ function MembersTab({ token }: { token: string }) {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <Button onClick={handleExport} disabled={!registrations?.length} size="sm">
+          <AddMemberDialog
+            token={token}
+            onCreated={() => qc.invalidateQueries({ queryKey: getAdminRegistrationsQueryKey(token) })}
+          />
+          <Button onClick={handleExport} disabled={!registrations?.length} size="sm" variant="outline">
             <Download className="mr-2 h-4 w-4" />
-            Export CSV
+            CSV
           </Button>
         </div>
       </div>
@@ -162,12 +292,13 @@ function MembersTab({ token }: { token: string }) {
                   <TableHead>Professional</TableHead>
                   <TableHead>Level</TableHead>
                   <TableHead>Interests</TableHead>
+                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       {search ? "No results." : "No members yet."}
                     </TableCell>
                   </TableRow>
@@ -206,6 +337,21 @@ function MembersTab({ token }: { token: string }) {
                           <Badge key={idx} variant="outline" className="text-[10px] py-0">{i}</Badge>
                         ))}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        disabled={deleteReg.isPending}
+                        onClick={() => {
+                          if (confirm(`Remove ${r.fullName} from the list? This cannot be undone.`)) {
+                            deleteReg.mutate({ id: r.id });
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

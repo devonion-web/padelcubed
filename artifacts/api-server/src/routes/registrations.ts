@@ -63,6 +63,50 @@ router.post("/registrations", async (req, res): Promise<void> => {
   }).catch(err => console.error("[email] Admin notification failed:", err));
 });
 
+// POST /api/admin/registrations — manually add a member (JWT admin only, no welcome email)
+router.post("/admin/registrations", requireAdmin, async (req, res): Promise<void> => {
+  const parsed = SubmitRegistrationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { gdprConsent, ...rest } = parsed.data;
+
+  const existing = await db
+    .select({ id: registrationsTable.id })
+    .from(registrationsTable)
+    .where(eq(registrationsTable.email, rest.email));
+
+  if (existing.length > 0) {
+    res.status(409).json({ error: "This email is already on the list." });
+    return;
+  }
+
+  const [registration] = await db
+    .insert(registrationsTable)
+    .values({ ...rest, gdprConsent: gdprConsent ?? false })
+    .returning();
+
+  res.status(201).json(SubmitRegistrationResponse.parse(registration));
+});
+
+// DELETE /api/admin/registrations/:id — remove a member (JWT admin only)
+router.delete("/admin/registrations/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  try {
+    await db.delete(registrationsTable).where(eq(registrationsTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete registration" });
+  }
+});
+
 // GET /admin/registrations — list all registrations (JWT admin only)
 router.get("/admin/registrations", requireAdmin, async (req, res): Promise<void> => {
   try {

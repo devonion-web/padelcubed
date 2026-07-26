@@ -342,6 +342,53 @@ export function useDeleteAdminUser<TError = ErrorType<unknown>, TContext = unkno
   });
 }
 
+// ─── POST /api/admin/registrations (manual add) ───────────────────────────────
+
+export interface CreateRegistrationInput {
+  fullName: string;
+  email: string;
+  company?: string;
+  jobTitle?: string;
+  industry?: string;
+  function?: string;
+  seniority?: string;
+  padelLevel?: string;
+  interests?: string[];
+  linkedinUrl?: string;
+  gdprConsent?: boolean;
+}
+
+export function useCreateRegistration<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: { mutation?: UseMutationOptions<AdminRegistration, TError, CreateRegistrationInput, TContext> },
+): UseMutationResult<AdminRegistration, TError, CreateRegistrationInput, TContext> {
+  return useMutation({
+    mutationFn: (data) =>
+      customFetch<AdminRegistration>("/api/admin/registrations", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify(data),
+      }),
+    ...options?.mutation,
+  });
+}
+
+// ─── DELETE /api/admin/registrations/:id ──────────────────────────────────────
+
+export function useDeleteRegistration<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: { mutation?: UseMutationOptions<{ ok: boolean }, TError, { id: number }, TContext> },
+): UseMutationResult<{ ok: boolean }, TError, { id: number }, TContext> {
+  return useMutation({
+    mutationFn: ({ id }) =>
+      customFetch<{ ok: boolean }>(`/api/admin/registrations/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(token),
+      }),
+    ...options?.mutation,
+  });
+}
+
 // ─── GET /admin/registrations ─────────────────────────────────────────────────
 
 export interface AdminRegistration {
