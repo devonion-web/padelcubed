@@ -1,0 +1,71 @@
+You are working on the P3 (Padel Cubed) codebase in this workspace. BOTH products
+are P3 — one brand:
+- web (repo: padel-exchange) — the P3 acquisition funnel: landing + registration
+- mobile (repo: padel-cubed-mobile) — the P3 event app: events, booking, on-site admin
+
+Context: P3 is a curated social-padel events community for professionals.
+Registration segmentation (industry, function, seniority, ability) is the
+commercial engine. Payment is taken in person — the app does NOT process payments.
+Audience includes security/GRC professionals: data handling must be exemplary (GDPR).
+
+Do this in TWO phases. Complete Phase 1 and STOP for my go-ahead before Phase 2.
+Change NO code in Phase 1.
+
+── PHASE 1 — AUDIT (report only) ──
+Give me an accurate written report of the CURRENT state of both products. Be
+specific and do not assume — read the actual code and env/secrets config:
+
+1. Features per product: built & working / stubbed / missing.
+2. Data model: list DB tables and which are actually used vs ignored.
+3. Registration lifecycle: where a sign-up is captured, stored, and what happens
+   after. Does ANY data leave the app (webhook / API / email)? State it explicitly.
+4. INTEGRATIONS — report the real status of each, incl. which env vars/secrets
+   exist and whether the code actually uses them:
+   a. LinkedIn — is "Sign in with LinkedIn (OIDC)" wired? Client ID/secret set?
+      Redirect URI configured? Does it create a real member account on login?
+   b. Instagram — any integration at all? (Expected: none.)
+   c. Email — is a transport configured (Resend/Postmark/etc.)? What emails
+      actually send today? Is forgot-password still console.logged?
+   d. Any other external services (analytics, auth, storage, webhooks).
+5. Member management / identity: are there real accounts, or device-local only?
+   Where does profile/booking data live? Can a user recover data after reinstall?
+6. Segmentation fields captured at registration and exactly where they're stored.
+7. Admin: capabilities and how each admin route is authenticated (flag any
+   ?adminPassword= query-string auth).
+8. GDPR/security notes: consent capture, opt-out, data-at-rest, credential leaks.
+
+Output as a structured report. Then stop and wait for my go-ahead.
+
+── PHASE 2 — DESIGN THE AUTOMATED STRUCTURE (propose first, build on approval) ──
+Using the audit, design a seamless, automated structure so I can stay on top of
+registrations, marketing admin, and content. Clearly separate what the APP should
+own from what belongs in external tools (a data hub + Make.com + a social
+scheduler) — the app must NOT try to post to social networks itself.
+
+The app should own / expose:
+- ONE source of truth for member + registration data, with LinkedIn sign-in
+  giving members real, recoverable accounts.
+- An OUTBOUND webhook/API that fires on every new registration and booking
+  (name, email, segmentation, consent, UTM) so data flows to my automation hub
+  with no manual export.
+- An admin MARKETING DASHBOARD: registrations over time, by segment/cohort, by
+  UTM source; event fill and show rates; a live total for social proof.
+- Event CMS: events served from the DB (single source), editable without redeploy,
+  consumed by both web and mobile.
+- Aggregate/opt-in cohort export (CSV + API) for sponsor matching.
+- Content hooks the marketing layer can consume: a structured event-recap payload,
+  leaderboard result data, and next-event info — NOT an in-app social poster.
+- Exemplary GDPR: consent capture + status, easy opt-out, suppression, no sales.
+
+Deliver a PRIORITISED plan (what you'd build, in what order, with the integration
+points), then wait for my approval before writing code.
+
+── GUARDRAILS (do not violate) ──
+- No in-app payments / Stripe / checkout — payment is in person.
+- Do NOT delete registration segmentation fields — redesign the flow if needed,
+  keep every field (the commercial engine).
+- Serve events from the DB, not static arrays; web + mobile use the same endpoints.
+- Remove any ?adminPassword= query-string auth; put admin behind JWT.
+- Adopt migration-based schema changes before touching tables with real data.
+- British English in user-facing copy; brand voice confident, warm, not corporate.
+- Don't break working flows; propose before any large refactor.
