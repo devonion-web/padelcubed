@@ -58,10 +58,13 @@ const GDPR_TEXT = (
 );
 
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-foreground">{label}</label>
+      <div className="flex items-baseline justify-between gap-2">
+        <label className="text-sm font-medium text-foreground">{label}</label>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      </div>
       {children}
     </div>
   );
@@ -257,12 +260,10 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
             style={prefill?.linkedinVerified ? { opacity: 0.7 } : undefined}
           />
         </Field>
-        <Field label="Work email *">
+        <Field label="Work email *" hint={prefill?.linkedinVerified ? "Update if your LinkedIn uses a personal email" : undefined}>
           <input
             required type="email" className={inputCls} placeholder="jane@company.com"
             value={f.email} onChange={e => setF({ ...f, email: e.target.value })}
-            readOnly={prefill?.linkedinVerified}
-            style={prefill?.linkedinVerified ? { opacity: 0.7 } : undefined}
           />
         </Field>
       </div>
