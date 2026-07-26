@@ -219,16 +219,38 @@ export default function ProfileScreen() {
             <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
 
-          {/* Follow on Instagram */}
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://www.instagram.com/padelcubed')}
-            activeOpacity={0.75}
-            style={[styles.instagramBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
-          >
-            <Feather name="instagram" size={16} color="#E1306C" />
-            <Text style={[styles.instagramText, { color: colors.foreground }]}>Follow us on Instagram</Text>
-            <Text style={[styles.instagramHandle, { color: colors.mutedForeground }]}>@padelcubed</Text>
-          </TouchableOpacity>
+          {/* Follow us */}
+          <View style={[styles.followCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.followTitle, { color: colors.mutedForeground }]}>FOLLOW US</Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://www.instagram.com/padelcubed')}
+              activeOpacity={0.7}
+              style={[styles.followRow, { borderBottomColor: colors.border }]}
+            >
+              <View style={[styles.followIconWrap, { backgroundColor: '#E1306C18' }]}>
+                <Feather name="instagram" size={16} color="#E1306C" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.followPlatform, { color: colors.foreground }]}>Instagram</Text>
+                <Text style={[styles.followHandle, { color: colors.mutedForeground }]}>@padelcubed</Text>
+              </View>
+              <Feather name="arrow-up-right" size={15} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://www.linkedin.com/company/people-padel-places/')}
+              activeOpacity={0.7}
+              style={styles.followRow}
+            >
+              <View style={[styles.followIconWrap, { backgroundColor: '#0A66C218' }]}>
+                <Feather name="linkedin" size={16} color="#0A66C2" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.followPlatform, { color: colors.foreground }]}>LinkedIn</Text>
+                <Text style={[styles.followHandle, { color: colors.mutedForeground }]}>People, Padel, Places</Text>
+              </View>
+              <Feather name="arrow-up-right" size={15} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
 
           {/* Clear registration (dev/testing convenience) */}
           <TouchableOpacity onPress={handleClear} activeOpacity={0.7} style={styles.clearButton}>
@@ -388,24 +410,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
   },
-  instagramBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  followCard: {
     borderWidth: 1,
     borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    overflow: 'hidden',
     marginTop: 4,
   },
-  instagramText: {
+  followTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 10,
+    letterSpacing: 1.2,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  followRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  followIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  followPlatform: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    flex: 1,
   },
-  instagramHandle: {
+  followHandle: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    fontSize: 12,
+    marginTop: 1,
   },
   clearButton: {
     alignItems: 'center',

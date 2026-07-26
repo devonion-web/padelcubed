@@ -814,6 +814,48 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-8 pb-10">
           <AdSlot slot="home-banner" className="max-w-2xl mx-auto" />
         </div>
+
+        {/* Social follow section */}
+        <section className="border-t border-border bg-card">
+          <div className="container mx-auto px-4 md:px-8 py-16">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">Stay in the loop</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">Event announcements, behind-the-scenes, and community moments — follow us to keep up.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
+              <a
+                href="https://www.instagram.com/padelcubed"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center gap-4 rounded-2xl border border-border bg-background hover:bg-muted/40 transition-colors px-6 py-5 group"
+              >
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="white" stroke="none"/></svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground group-hover:text-primary transition-colors">Instagram</p>
+                  <p className="text-sm text-muted-foreground">@padelcubed</p>
+                </div>
+                <svg className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+              </a>
+              <a
+                href="https://www.linkedin.com/company/people-padel-places/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center gap-4 rounded-2xl border border-border bg-background hover:bg-muted/40 transition-colors px-6 py-5 group"
+              >
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 bg-[#0A66C2]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground group-hover:text-primary transition-colors">LinkedIn</p>
+                  <p className="text-sm text-muted-foreground">People, Padel, Places</p>
+                </div>
+                <svg className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+              </a>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
@@ -838,7 +880,7 @@ export default function Home() {
               <Link href="/host-an-event" className="text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="https://www.instagram.com/padelcubed" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">Instagram</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
+              <a href="https://www.linkedin.com/company/people-padel-places/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
               <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
             </div>
           </div>
