@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # ── Job 1: API integration tests + mobile static tests ───────────────────────
+  api-mobile:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: p3_test       # service creates the test DB on startup
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    env:
+      # ── DATABASE_URL intentionally points at 'postgres' (the default DB) ──
+      # The Vitest globalSetup (tests/setup/globalSetup.ts) derives the test URL
+      # by swapping the DB name to 'p3_test', then asserts prodDbName ≠ testDbName.
+      # If DATABASE_URL already ends in '/p3_test', both names are equal and the
+      # safety guard fires.  Pointing at '/postgres' gives:
+      #   prodDbName = "postgres"  ≠  testDbName = "p3_test"  → guard passes ✓
+      # The Docker service already created p3_test; globalSetup creates it if absent.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+      SESSION_SECRET: test-session-secret
+
+      # RESEND_API_KEY is read at module top-level in artifacts/api-server/src/email.ts
+      # ( `const resend = new Resend(process.env.RESEND_API_KEY)` ).
+      # A dummy value is required so the import succeeds; no emails are sent in tests.
+      RESEND_API_KEY: re_test_00000000000000000000000000000000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+
+      # API integration tests (Vitest + supertest; globalSetup pushes schema to p3_test)
+      - run: pnpm test:api
+
+      # Mobile static tests (no DB, no server required)
+      - run: pnpm test:mobile
+
+  # ── Job 2: Web E2E tests (Playwright + Chromium) ─────────────────────────────
+  web:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: p3_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    env:
+      # Web job: no Vitest DB guard runs — the Playwright globalSetup only applies
+      # the NixOS LD_LIBRARY_PATH shim (skipped on CI; see playwrightGlobalSetup.ts).
+      # DATABASE_URL points directly at p3_test for both the schema-push step
+      # and the API server started by Playwright's webServer config.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/p3_test
+
+      SESSION_SECRET: test-session-secret
+
+      # Same import-time dummy as api-mobile job.
+      RESEND_API_KEY: re_test_00000000000000000000000000000000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+
+      # Install Chromium and all its system-level dependencies.
+      # On Ubuntu runners this is the correct way to satisfy Chromium's lib deps
+      # (libgbm, libudev, libglib, etc.) — no LD_LIBRARY_PATH shim needed.
+      - run: pnpm --filter @workspace/tests exec playwright install --with-deps chromium
+
+      # Push the Drizzle schema to p3_test so the API server can start cleanly.
+      # The project uses schema-push (not migrate) — this is the same command the
+      # Vitest globalSetup runs, but here we call it explicitly since the Playwright
+      # globalSetup does not perform DB setup.
+      - name: Push DB schema
+        run: pnpm --filter @workspace/db run push-force
+
+      # Playwright's webServer config (see tests/playwright.config.ts) boots both
+      # the API server (port 8080) and the Vite dev server (port 24308) before
+      # running tests, and shuts them down after.
+      - run: pnpm test:web
