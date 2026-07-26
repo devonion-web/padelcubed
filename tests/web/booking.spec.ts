@@ -1,118 +1,134 @@
 /**
  * Web E2E — BookingModal (event checkout).
  *
- * The BookingModal is opened from event cards (not directly from the homepage
- * hero — that opens IntentModal). We trigger it by injecting a custom event or
- * by locating an event card's "Book" button if present.
+ * EventsSection filters the /api/events response through FEATURED_IDS = ["2","4"],
+ * so mocked events MUST use those IDs to appear on the homepage.
  *
- * Because the booking UI is triggered programmatically from parent components,
- * and not always directly linked from the homepage, we test the BookingModal
- * component behaviour by:
- *   a) Intercepting the checkout API
- *   b) Using the page's JS context to open the modal with a known event object
+ * Flow for each test:
+ *   1. Intercept GET /api/events → return mocked events with FEATURED IDs.
+ *   2. Navigate to /.
+ *   3. Wait for event cards to render (React Query fetch).
+ *   4. Click "Book a spot →" on the appropriate card.
+ *   5. BookingModal opens (role="dialog" aria-modal="true").
+ *   6. Fill form + check gdpr → click submit button.
  *
  * Tests:
- *   1. Free event → POST to /api/events/:id/checkout → success state shown.
- *   2. Paid event → POST returns a Stripe URL → window.location.href set.
- *   3. gdpr not checked → inline validation error shown.
+ *   1. Free event → POST /api/events/2/checkout → success state shown.
+ *   2. Paid event → POST /api/events/4/checkout → returns Stripe URL → redirect.
+ *   3. gdpr not checked → submit button is disabled.
  *   4. Duplicate booking (409) → inline error shown.
  */
 
 import { test, expect } from "@playwright/test";
 
-// ── helper: navigate and find a "Book" / "Reserve" button ────────────────────
+// ── Shared event fixtures (IDs must match FEATURED_IDS in EventsSection) ──────
 
-async function openBookingModal(page: import("@playwright/test").Page, isPaid = false) {
-  // Intercept the events API to return a predictable event list that includes
-  // one free and one paid event so the booking buttons are always present.
+const FREE_EVENT = {
+  id: "2",
+  title: "The Surbiton Exchange",
+  date: "Thursday 18 September 2026",
+  dateShort: "18 Sep",
+  time: "6:30 pm – 9:30 pm",
+  venue: "Surbiton Racket & Fitness Club",
+  location: "London",
+  format: "Americano",
+  sponsor: "Risk Rising",
+  price: "Free",
+  pricePence: 0,
+  status: "available",       // "soon" would show "Register interest →", not "Book a spot →"
+  maxSpots: 16,
+  attendeeCount: 4,
+  published: true,
+  description: "Pre-launch event for registered members.",
+};
+
+const PAID_EVENT = {
+  id: "4",
+  title: "The Padium Launch",
+  date: "Thursday 9 October 2026",
+  dateShort: "9 Oct",
+  time: "6:30 pm – 9:30 pm",
+  venue: "Padium Canary Wharf",
+  location: "London",
+  format: "Americano",
+  sponsor: "P³",
+  price: "£35",
+  pricePence: 3500,
+  status: "available",
+  maxSpots: 32,
+  attendeeCount: 8,
+  published: true,
+  description: "The flagship P³ launch event.",
+};
+
+// ── Helper ────────────────────────────────────────────────────────────────────
+
+/**
+ * Mock /api/events, navigate to homepage, wait for event cards to load,
+ * click the "Book a spot →" button for the target event, and return the
+ * BookingModal locator.
+ *
+ * @param cardIndex  0 = first event card (event "2" / free), 1 = second (event "4" / paid)
+ */
+async function openBookingModal(
+  page: import("@playwright/test").Page,
+  cardIndex: 0 | 1 = 0,
+) {
   await page.route("**/api/events", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([
-        {
-          id: "free-e2e",
-          title: "Free E2E Event",
-          date: "Thursday 1 January 2026",
-          dateShort: "1 Jan",
-          time: "6:30 pm – 9:30 pm",
-          venue: "Test Venue",
-          location: "London",
-          format: "Americano",
-          sponsor: "E2E Sponsor",
-          price: "Free",
-          pricePence: 0,
-          status: "available",
-          maxSpots: 16,
-          attendeeCount: 4,
-          published: true,
-        },
-        {
-          id: "paid-e2e",
-          title: "Paid E2E Event",
-          date: "Thursday 1 January 2026",
-          dateShort: "1 Jan",
-          time: "6:30 pm – 9:30 pm",
-          venue: "Test Venue",
-          location: "London",
-          format: "Americano",
-          sponsor: "E2E Sponsor",
-          price: "£35",
-          pricePence: 3500,
-          status: "available",
-          maxSpots: 16,
-          attendeeCount: 4,
-          published: true,
-        },
-      ]),
+      body: JSON.stringify([FREE_EVENT, PAID_EVENT]),
     })
   );
 
   await page.goto("/");
 
-  // Look for a Book/Reserve button in event cards
-  const bookBtn = page.getByRole("button", {
-    name: isPaid ? /pay.*reserve|book|reserve/i : /book|reserve spot|free/i,
-  }).first();
+  // Wait for React Query to fetch and render the event cards
+  const bookBtns = page.getByRole("button", { name: "Book a spot →" });
+  await expect(bookBtns.first()).toBeVisible({ timeout: 10_000 });
 
-  const isVisible = await bookBtn.isVisible().catch(() => false);
-  if (!isVisible) {
-    // Event cards may not render on the homepage; skip gracefully
-    test.skip(!isVisible, "No bookable event card found on homepage — BookingModal opened from event page");
-    return null;
-  }
+  // Click the correct card's button
+  await bookBtns.nth(cardIndex).click();
 
-  await bookBtn.click();
-
+  // BookingModal has aria-modal="true"; IntentModal also has it but is not open here
   const modal = page.locator('[role="dialog"][aria-modal="true"]');
-  await expect(modal).toBeVisible();
+  await expect(modal).toBeVisible({ timeout: 5000 });
   return modal;
 }
 
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
 test.describe("BookingModal", () => {
   test("free event → success state after checkout POST", async ({ page }) => {
-    await page.route("**/api/events/free-e2e/checkout", (route) =>
-      route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true }) })
+    await page.route("**/api/events/2/checkout", (route) =>
+      route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true }),
+      })
     );
 
-    const modal = await openBookingModal(page, false);
-    if (!modal) return;
+    const modal = await openBookingModal(page, 0);
 
     await modal.getByPlaceholder("Jane Smith").fill("Free Booker");
     await modal.getByPlaceholder("jane@company.com").fill("free@e2e.test");
 
     const gdpr = modal.getByRole("checkbox").first();
+    await gdpr.scrollIntoViewIfNeeded();
     await gdpr.check();
 
-    await modal.getByRole("button", { name: /book|reserve|pay/i }).click();
+    // Free event submit button text: "Reserve my spot"
+    await modal.getByRole("button", { name: /reserve my spot/i }).click();
 
-    await expect(modal.getByText(/confirmed|you're in|booked/i)).toBeVisible({ timeout: 8000 });
+    // Success screen text
+    await expect(modal.getByText(/you're in/i)).toBeVisible({ timeout: 8000 });
   });
 
   test("paid event → checkout POST returns Stripe URL → redirect initiated", async ({ page }) => {
-    const stripeUrl = "https://checkout.stripe.com/pay/cs_test_placeholder";
+    const stripeUrl = "https://checkout.stripe.com/pay/cs_test_e2e_placeholder";
 
-    await page.route("**/api/events/paid-e2e/checkout", (route) =>
+    await page.route("**/api/events/4/checkout", (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -120,56 +136,51 @@ test.describe("BookingModal", () => {
       })
     );
 
-    // Intercept navigation to Stripe so we don't actually leave the page
-    let navigatedTo = "";
-    await page.route(stripeUrl, async (route) => {
-      navigatedTo = route.request().url();
-      await route.fulfill({ status: 200, body: "<html><body>Stripe</body></html>" });
-    });
+    // Intercept the Stripe redirect so the test works without real connectivity
+    await page.route("https://checkout.stripe.com/**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<html><body>Stripe mock checkout</body></html>",
+      })
+    );
 
-    const modal = await openBookingModal(page, true);
-    if (!modal) return;
+    const modal = await openBookingModal(page, 1);
 
     await modal.getByPlaceholder("Jane Smith").fill("Stripe Booker");
     await modal.getByPlaceholder("jane@company.com").fill("stripe@e2e.test");
 
     const gdpr = modal.getByRole("checkbox").first();
+    await gdpr.scrollIntoViewIfNeeded();
     await gdpr.check();
 
-    // Allow navigation for the Stripe redirect
+    // Paid event submit button text: "Pay £35 & reserve spot"
     await Promise.all([
-      page.waitForURL(/checkout\.stripe\.com|e2e\.test/, { timeout: 8000 }).catch(() => {}),
-      modal.getByRole("button", { name: /pay|book|reserve/i }).click(),
+      page.waitForURL(/checkout\.stripe\.com/, { timeout: 8000 }),
+      modal.getByRole("button", { name: /pay.*reserve/i }).click(),
     ]);
 
-    // Either navigated to Stripe OR the button triggered navigation
-    expect(navigatedTo || page.url()).toMatch(/stripe|e2e/i);
+    expect(page.url()).toContain("checkout.stripe.com");
   });
 
-  test("gdpr not checked → inline error shown on submit attempt", async ({ page }) => {
-    // Mock checkout so a bug doesn't accidentally succeed
+  test("gdpr not checked → submit button is disabled", async ({ page }) => {
     await page.route("**/api/events/*/checkout", (route) =>
       route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true }) })
     );
 
-    const modal = await openBookingModal(page, false);
-    if (!modal) return;
+    const modal = await openBookingModal(page, 0);
 
     await modal.getByPlaceholder("Jane Smith").fill("No Consent");
     await modal.getByPlaceholder("jane@company.com").fill("noconsent@e2e.test");
 
-    // Do NOT check gdpr
-    await modal.getByRole("button", { name: /book|reserve|pay/i }).click();
-
-    // The submit button is disabled until gdpr is checked, so it should remain
-    // in its initial state without calling the API
-    await expect(
-      modal.getByRole("button", { name: /book|reserve|pay/i })
-    ).toBeDisabled();
+    // gdpr NOT checked — button must be disabled (the component disables when !fields.gdpr)
+    const submitBtn = modal.getByRole("button", { name: /reserve my spot/i });
+    await submitBtn.scrollIntoViewIfNeeded();
+    await expect(submitBtn).toBeDisabled();
   });
 
   test("duplicate booking (409) → inline error message shown", async ({ page }) => {
-    await page.route("**/api/events/free-e2e/checkout", (route) =>
+    await page.route("**/api/events/2/checkout", (route) =>
       route.fulfill({
         status: 409,
         contentType: "application/json",
@@ -177,17 +188,17 @@ test.describe("BookingModal", () => {
       })
     );
 
-    const modal = await openBookingModal(page, false);
-    if (!modal) return;
+    const modal = await openBookingModal(page, 0);
 
     await modal.getByPlaceholder("Jane Smith").fill("Dup Booker");
     await modal.getByPlaceholder("jane@company.com").fill("dup-book@e2e.test");
 
     const gdpr = modal.getByRole("checkbox").first();
+    await gdpr.scrollIntoViewIfNeeded();
     await gdpr.check();
 
-    await modal.getByRole("button", { name: /book|reserve|pay/i }).click();
+    await modal.getByRole("button", { name: /reserve my spot/i }).click();
 
-    await expect(modal.getByText(/already booked|something went wrong/i)).toBeVisible({ timeout: 6000 });
+    await expect(modal.getByText(/already booked|booking failed/i)).toBeVisible({ timeout: 6000 });
   });
 });
