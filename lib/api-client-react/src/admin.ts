@@ -257,6 +257,91 @@ export function useDeleteBooking<TError = ErrorType<unknown>, TContext = unknown
   });
 }
 
+// ─── POST /admin/auth/login ───────────────────────────────────────────────────
+
+export interface AdminLoginResult {
+  token: string;
+  user: { id: number; email: string; name: string; role: "superadmin" | "admin" };
+}
+
+export async function adminLogin(email: string, password: string): Promise<AdminLoginResult> {
+  return customFetch<AdminLoginResult>("/api/admin/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+// ─── GET /admin/auth/users ────────────────────────────────────────────────────
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: "superadmin" | "admin";
+  createdAt: string;
+}
+
+export const getAdminUsersQueryKey = (token: string) =>
+  ["/api/admin/auth/users", token] as const;
+
+export function useAdminUsers<TData = AdminUser[], TError = ErrorType<unknown>>(
+  token: string,
+  options?: { query?: Omit<UseQueryOptions<AdminUser[], TError, TData>, "queryKey"> },
+): UseQueryResult<TData, TError> {
+  const { query: queryOptions } = options ?? {};
+  return useQuery({
+    queryKey: getAdminUsersQueryKey(token),
+    queryFn: ({ signal }) =>
+      customFetch<AdminUser[]>("/api/admin/auth/users", {
+        signal,
+        headers: authHeaders(token),
+      }),
+    enabled: Boolean(token),
+    ...queryOptions,
+  });
+}
+
+// ─── POST /admin/auth/users ───────────────────────────────────────────────────
+
+export interface CreateAdminUserInput {
+  email: string;
+  password: string;
+  name: string;
+  role: "superadmin" | "admin";
+}
+
+export function useCreateAdminUser<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: { mutation?: UseMutationOptions<AdminUser, TError, CreateAdminUserInput, TContext> },
+): UseMutationResult<AdminUser, TError, CreateAdminUserInput, TContext> {
+  return useMutation({
+    mutationFn: (data) =>
+      customFetch<AdminUser>("/api/admin/auth/users", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify(data),
+      }),
+    ...options?.mutation,
+  });
+}
+
+// ─── DELETE /admin/auth/users/:id ─────────────────────────────────────────────
+
+export function useDeleteAdminUser<TError = ErrorType<unknown>, TContext = unknown>(
+  token: string,
+  options?: { mutation?: UseMutationOptions<{ ok: boolean }, TError, { id: number }, TContext> },
+): UseMutationResult<{ ok: boolean }, TError, { id: number }, TContext> {
+  return useMutation({
+    mutationFn: ({ id }) =>
+      customFetch<{ ok: boolean }>(`/api/admin/auth/users/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(token),
+      }),
+    ...options?.mutation,
+  });
+}
+
 // ─── GET /admin/registrations ─────────────────────────────────────────────────
 
 export interface AdminRegistration {
