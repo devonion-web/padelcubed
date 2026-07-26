@@ -1,0 +1,63 @@
+Go ahead with Phase 2. Two decisions are now locked — build to these:
+
+DECISION A — PAYMENT: Event tickets are paid UPFRONT ONLINE via Stripe. This
+REPLACES the earlier "pay on arrival / no in-app payments" rule. Formalise Stripe
+as the event-ticketing payment path (not an accidental Shop side-effect).
+
+DECISION B — SCOPE: Build ONE bundled foundation covering all three areas below.
+
+First give me a PRIORITISED build plan (order, integration points, schema
+changes, risks) and WAIT for my approval before writing code. Use migration-based
+schema changes (drizzle-kit generate + migrate), not push. Don't break working
+flows.
+
+━━ AREA 1 — PAYMENT (formalise, don't leave ad hoc) ━━
+- Each event has a real ticket price in the DB. Booking a spot creates a Stripe
+  Checkout session; the booking is only confirmed once payment succeeds.
+- The existing checkout.session.completed webhook marks the booking paid and
+  sends the receipt/confirmation email. Verify it's robust (idempotent, verifies
+  signature).
+- Keep an admin "mark paid" for WALK-INS and any in-person/card-on-the-day cases,
+  plus an end-of-night reconciliation view (booked / paid / checked-in / takings).
+- A clear cancellation + refund policy hook (even if refunds are manual at first).
+- If a separate merchandise Shop exists, keep it cleanly SEPARATE from event
+  ticketing — different products, no shared booking side-effects.
+
+━━ AREA 2 — MEMBER ACCOUNTS + SECURITY ━━
+- Finish LinkedIn OIDC into a REAL sign-in: create a member session + a member
+  record in the DB (not just form pre-fill). Link a member's registrations and
+  bookings to their account.
+- Profile + tickets recover automatically after reinstall via the account (no
+  more device-local-only identity).
+- SECURE GET /api/my-bookings — it must require the authenticated member (or a
+  verified one-time email link), never a raw ?email= anyone can query.
+- Keep admin JWT as-is; note the masterPassword bootstrap escape hatch but leave
+  it unless I say otherwise.
+
+━━ AREA 3 — MARKETING AUTOMATION (the core of my ask) ━━
+- OUTBOUND WEBHOOK: fire to a configurable URL (my automation hub) on every new
+  registration AND every booking/payment. Payload: name, email, all segmentation
+  fields, consent, event, amount paid, and UTM source. This is what lets my hub
+  stop being blind. Make the URL an env var; sign the payload.
+- UTM CAPTURE: capture utm_source/medium/campaign on the web funnel, persist
+  against the registration, and include it in the webhook payload.
+- ADMIN MARKETING DASHBOARD: registrations over time; breakdown by cohort
+  (industry/function/seniority/ability); by UTM source; event fill rate and
+  show rate; and a single live "total members" figure I can use for social proof.
+- CONTENT HOOKS (feed my scheduler/Make — do NOT build an in-app social poster):
+  a structured event-recap payload (result, top 3, fun stat) and leaderboard
+  result data, exposed via API so my marketing layer can turn them into posts.
+
+━━ AREA 4 — GDPR / DATA HYGIENE ━━
+- Public self-serve data deletion / opt-out for members (not admin-only).
+- Stop logging PII: remove email addresses and password-reset codes from server
+  logs.
+- Record consent (status + timestamp) per member; honour opt-outs/suppression.
+- Treat the outbound webhook target as a named sub-processor (config, not code).
+
+━━ GUARDRAILS (updated) ━━
+- Upfront online payment IS the model now (supersedes the old in-person rule).
+- Do NOT delete registration segmentation fields — they are the commercial engine.
+- Web + mobile consume the same endpoints; events from the DB.
+- British English, brand voice confident/warm/not corporate.
+- Propose the plan first; build only on my approval.
