@@ -1,0 +1,66 @@
+Build an automated test suite for P³ covering the API, the web app and the
+mobile app. First INVENTORY what test tooling already exists and PROPOSE the
+runner choices + folder layout, then WAIT for my go-ahead before writing tests.
+Migration-safe, don't break working flows. British English.
+
+Design goals:
+- Both web and mobile consume the SAME API, so the API integration layer is the
+  priority — it covers the core logic of both clients at once.
+- Every Phase 2 audit finding becomes a PERMANENT regression test, named so a
+  failure points straight back to the finding (e.g. "B1_member_jwt_rejected_on_admin").
+- Tests run with one command and gate the build (red = fail). Use a SEPARATE test
+  database, never prod. Use real Stripe TEST-MODE signatures (Stripe CLI/fixtures),
+  never fabricated signatures.
+
+━━ LAYER 1 — API INTEGRATION (Vitest or Jest + supertest) ━━
+Regression tests (from the audit):
+- B1: member JWT (iss:'p3-member') → 401/403 on admin routes; admin JWT → 200.
+- B2: unauth POST /events/:id/bookings → 401; admin+paid event → 400 and 0 rows;
+  free event (pricePence===0) → 201 confirmed; unauth DELETE → 401.
+- B3: full deletion cycle → 0 PII across members, registrations, bookings AND
+  webhook_log.payload_json; consent audit + delivery history retained.
+- H1: authenticated checkout (test mode) → booking.memberId set → GET
+  /api/my-bookings returns it.
+- H2: webhook to a dead URL → row logged, retried with back-off, terminal at the
+  attempt cap, excluded from further drains; a transient failure recovers.
+- H3: suppression is fail-closed — opted-out AND deleted member → welcome + admin
+  notification suppressed; a row with consent_marketing_at NULL → excluded from a
+  marketing-type send; a consented member → sends.
+- M1: claim code persists across restart, is HMAC-signed, expires, locks out after
+  N attempts.
+- Cross-member: member A cannot read member B's bookings by any means.
+- Stripe: missing/invalid signature → 400; idempotent replay of a VALID test-mode
+  event → exactly one confirmation email, paid once, takings counted once.
+- Consent: three granular timestamps stored per submitted combo; backfill logic
+  (events-only) covered.
+- Rate limiting: keyed on the real client IP (trust proxy) and enforced.
+Happy paths: register (all consent combos + UTM), LinkedIn OIDC upsert + auto-link
+by email, book free + paid, my-bookings, self-serve delete, insights endpoint.
+
+━━ LAYER 2 — WEB E2E (Playwright) ━━
+- Registration: the three consent checkboxes (each combo) → correct consent stored;
+  none pre-ticked.
+- UTM in the URL → captured on the registration.
+- Free event → confirmed inline; paid event → redirected to Stripe Checkout (test).
+- my-bookings requires auth; shows only the signed-in member's bookings.
+- Self-serve account deletion flow works end to end.
+- LinkedIn sign-in: stub/mock the OIDC callback so it runs headless in CI.
+
+━━ LAYER 3 — MOBILE (Expo / React Native) ━━
+- Jest + React Native Testing Library: form validation, the consent UI, and the
+  API client (attaches Bearer, reads/writes expo-secure-store, hydrates profile
+  from GET /members/me on launch).
+- Confirm mobile does NOT call any removed/unauth endpoint.
+- OPTIONAL (flag effort before building): one Maestro flow on a simulator —
+  launch → sign in → view bookings. Skip if setup cost is high; the API layer
+  already covers the logic.
+
+━━ INFRA ━━
+- Test DB spun up + migrated per run; seed + teardown so tests are isolated and
+  repeatable.
+- A local capture endpoint for outbound webhooks so tests can assert payload
+  shape/signature.
+- Single `npm test` (or documented equivalent) running all layers; add a CI step
+  that fails on any red.
+- Report: which audit findings are now covered, total test count, and anything
+  NOT covered (with why).
