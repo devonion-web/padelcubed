@@ -207,12 +207,12 @@ export default function Home() {
     }
   }, []);
 
-  // ─── Events from API ─────────────────────────────────────────────────────
-  const { data: events = [] } = useQuery<ApiEvent[]>({
-    queryKey: ["/api/events"],
-    queryFn: () => fetch("/api/events").then((r) => r.json()),
-    staleTime: 60_000,
-  });
+  // ─── Events from API — hidden until launch; re-enable when events go live ──
+  // const { data: events = [] } = useQuery<ApiEvent[]>({
+  //   queryKey: ["/api/events"],
+  //   queryFn: () => fetch("/api/events").then((r) => r.json()),
+  //   staleTime: 60_000,
+  // });
 
   const scrollToHow = () => {
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
@@ -230,8 +230,8 @@ export default function Home() {
             {/* Shop nav link — hidden until launch:
             <Link href="/shop" className="...">Shop</Link>
             */}
-            <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Events
+            <a href="#launch" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Launch Event
             </a>
             <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Host an event
@@ -308,153 +308,57 @@ export default function Home() {
         {/* Venues — directly below hero */}
         <VenuesSection />
 
-        {/* ── Featured Events — prominent section below hero ─────────────────── */}
+        {/* ── Launch Event Teaser ──────────────────────────────────────────────── */}
         <section className="border-t border-border/40 py-12 md:py-16">
           <div className="container mx-auto px-4 md:px-8">
             <FadeIn>
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-semibold text-primary uppercase tracking-widest">Upcoming events</span>
-                </div>
-                <a
-                  href="#events"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
-                >
-                  All events
-                  <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </a>
+              <div className="flex items-center gap-3 mb-8">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-semibold text-primary uppercase tracking-widest">Coming October 2025</span>
               </div>
 
-              {/* Layout: featured card left, two smaller cards stacked right */}
-              {events.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="relative rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] flex flex-col justify-end">
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${import.meta.env.BASE_URL}padel/social-game.jpg)` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/45 to-black/10" />
 
-                {/* ── Featured event (first / soonest) ── */}
-                {(() => {
-                  const ev = events[0];
-                  if (!ev) return null;
-                  const canBook = ev.status !== "soon";
-                  return (
+                <div className="relative z-10 p-7 md:p-10 flex flex-col gap-5">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-white/15 text-white backdrop-blur-sm border border-white/20 self-start">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    Launch Event — registrations opening soon
+                  </span>
+
+                  <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                    P³ London Launch
+                  </h2>
+
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 text-primary/80" />
+                      October 2025 · Date TBC
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4 text-primary/80" />
+                      London · Venue TBC
+                    </span>
+                  </div>
+
+                  <div className="pt-5 border-t border-white/20 flex items-center justify-between gap-4 flex-wrap">
+                    <p className="text-sm text-white/60 max-w-md">
+                      Our first event — curated play, real connections, a premium London venue. Register now to be first in line when spots open.
+                    </p>
                     <button
                       type="button"
-                      onClick={() => canBook && setBookingEvent(ev)}
-                      className={`md:col-span-3 group relative flex flex-col justify-end rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] text-left ${canBook ? "cursor-pointer" : "cursor-default"}`}
+                      onClick={openModal}
+                      className="flex-shrink-0 text-sm font-semibold text-white bg-primary hover:bg-primary/90 px-5 py-2.5 rounded-full transition-colors shadow-lg shadow-primary/30"
                     >
-                      {/* Photo background */}
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.03]"
-                        style={{ backgroundImage: `url(${import.meta.env.BASE_URL}padel/social-game.jpg)` }}
-                      />
-                      {/* Dark gradient so text is legible */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
-
-                      {/* Content */}
-                      <div className="relative z-10 p-7 md:p-8 flex flex-col gap-4">
-                        {/* Status badge */}
-                        {ev.status === "available" && (
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-primary text-white shadow-lg">
-                              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                              {ev.maxSpots ? `${ev.maxSpots - (ev.attendeeCount ?? 0)} spots left` : "Spaces available"} — book now
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Title */}
-                        <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight group-hover:text-primary/90 transition-colors">
-                          {ev.title}
-                        </h2>
-
-                        {/* Meta row */}
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/80">
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4 text-primary/80" />
-                            {ev.date}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="h-4 w-4 text-primary/80" />
-                            {ev.time}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4 text-primary/80" />
-                            {ev.venue} · {ev.location}
-                          </span>
-                        </div>
-
-                        {/* Bottom row: price + CTA */}
-                        <div className="flex items-center justify-between pt-4 border-t border-white/20">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl font-bold text-white">{ev.price}</span>
-                            <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full">{ev.format}</span>
-                          </div>
-                          {canBook && (
-                            <span className="text-xs font-semibold text-white bg-primary/80 hover:bg-primary px-3 py-1.5 rounded-full transition-colors">
-                              Reserve spot →
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      Register interest →
                     </button>
-                  );
-                })()}
-
-                {/* ── Next two events stacked ── */}
-                <div className="md:col-span-2 flex flex-col gap-4">
-                  {events.slice(1, 3).map((ev, i) => {
-                    const canBook = ev.status !== "soon";
-                    return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => canBook && setBookingEvent(ev)}
-                      className={`group flex flex-col gap-4 p-6 rounded-3xl border border-border bg-card/40 hover:bg-card hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5 transition-all duration-300 text-left flex-1 ${canBook ? "cursor-pointer" : "cursor-default"}`}
-                    >
-                      {/* Status + price */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
-                          {ev.status === "available" ? "Spaces available" : ev.status === "limited" ? "Limited spaces" : "Opening soon"}
-                        </span>
-                        <span className="text-sm font-bold text-foreground">{ev.price}</span>
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="text-xl font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
-                        {ev.title}
-                      </h3>
-
-                      {/* Meta */}
-                      <div className="flex flex-col gap-2 mt-auto">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4 flex-shrink-0 text-primary/60" />
-                          <span>{ev.date}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 flex-shrink-0 text-primary/60" />
-                          <span>{ev.venue} · {ev.location}</span>
-                        </div>
-                      </div>
-
-                      {/* Sponsor + CTA */}
-                      <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                          <BadgePercent className="h-3.5 w-3.5 text-primary/50 flex-shrink-0" />
-                          <span className="truncate">Sponsored by {ev.sponsor}</span>
-                        </div>
-                        {canBook && (
-                          <span className="text-xs font-semibold text-primary flex-shrink-0">
-                            Reserve →
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                    );
-                  })}
+                  </div>
                 </div>
-
               </div>
-              )}
             </FadeIn>
           </div>
         </section>
@@ -720,120 +624,58 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Upcoming Events Section */}
-        <section id="events" className="py-12 md:py-16 border-t border-border/50 relative overflow-hidden">
+        {/* ── Launch Event Section ─────────────────────────────────────────────── */}
+        <section id="launch" className="py-12 md:py-20 border-t border-border/50 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/4 rounded-full blur-[140px] translate-x-1/3 -translate-y-1/4 pointer-events-none" />
           <div className="container mx-auto px-4 md:px-8 relative z-10">
             <FadeIn>
-              <div className="mb-4">
-                <span className="text-primary text-sm font-semibold tracking-widest uppercase">Upcoming events</span>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
-                <div>
-                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Reserve your spot</h2>
-                  <p className="text-lg text-muted-foreground max-w-xl">
-                    One ticket, the whole night — hosted play, a live leaderboard, prizes and drinks. Our partners help us put it on, so it stays a proper experience and keeps everyone on court.
-                  </p>
+              <div className="max-w-3xl mx-auto text-center">
+                <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+                  <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-sm font-semibold text-primary tracking-wide">Launch Event · October 2025</span>
                 </div>
-                <div className="flex-shrink-0 text-right hidden md:block">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Typical saving</p>
-                  <p className="text-3xl font-bold text-primary">~55%</p>
-                  <p className="text-xs text-muted-foreground">vs walk-in court rate</p>
+
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                  P³ London Launch
+                </h2>
+
+                <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
+                  Our first event is coming this October — a premium London venue, curated play, a live leaderboard, and an evening built for real connections. Date and venue to be announced.
+                </p>
+
+                <p className="text-sm text-muted-foreground mb-10">
+                  Register your interest now. You'll be first to know when spots open.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Button
+                    onClick={openModal}
+                    size="lg"
+                    className="rounded-full px-8 text-base font-semibold shadow-lg shadow-primary/20 w-full sm:w-auto"
+                  >
+                    Register interest
+                  </Button>
+                  <a
+                    href="mailto:info@padelcubed.co.uk"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Questions? Email us →
+                  </a>
                 </div>
-              </div>
-            </FadeIn>
 
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {events.map((ev, i) => {
-                const statusConfig = ({
-                  available: { dot: "bg-emerald-400", label: "Spaces available", labelClass: "text-emerald-400" },
-                  limited:   { dot: "bg-amber-400",   label: "Limited spaces",   labelClass: "text-amber-400" },
-                  soon:      { dot: "bg-muted-foreground/40", label: "Opening soon", labelClass: "text-muted-foreground" },
-                } as Record<string, { dot: string; label: string; labelClass: string }>)[ev.status]
-                  ?? { dot: "bg-muted-foreground/40", label: "Opening soon", labelClass: "text-muted-foreground" };
-
-                return (
-                  <FadeIn key={ev.title} delay={i * 0.07}>
-                    <div className="group flex flex-col h-full rounded-3xl border border-border bg-card/50 hover:bg-card hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-                      {/* Top accent bar */}
-                      <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
-
-                      <div className="flex flex-col flex-1 p-7">
-                        {/* Status + sponsor row */}
-                        <div className="flex items-center justify-between mb-5">
-                          <div className="flex items-center gap-2">
-                            <span className={`flex h-2 w-2 rounded-full ${statusConfig.dot}`} />
-                            <span className={`text-xs font-semibold ${statusConfig.labelClass}`}>
-                              {statusConfig.label}
-                              {ev.status === "available" && ev.maxSpots && ev.attendeeCount !== undefined
-                                ? ` · ${ev.maxSpots - ev.attendeeCount} left`
-                                : null}
-                            </span>
-                          </div>
-                          <span className="text-[11px] font-medium text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border">
-                            Sponsored by {ev.sponsor}
-                          </span>
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-xl font-bold text-foreground mb-5 leading-tight">{ev.title}</h3>
-
-                        {/* Meta */}
-                        <div className="space-y-2.5 mb-6 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2.5">
-                            <Calendar className="h-4 w-4 text-primary/60 flex-shrink-0" />
-                            <span>{ev.date}</span>
-                          </div>
-                          <div className="flex items-center gap-2.5">
-                            <Clock className="h-4 w-4 text-primary/60 flex-shrink-0" />
-                            <span>{ev.time} &nbsp;·&nbsp; {ev.format}</span>
-                          </div>
-                          <div className="flex items-center gap-2.5">
-                            <MapPin className="h-4 w-4 text-primary/60 flex-shrink-0" />
-                            <span><span className="text-foreground font-medium">{ev.venue}</span> &nbsp;·&nbsp; {ev.location}</span>
-                          </div>
-                        </div>
-
-                        {/* Spacer */}
-                        <div className="flex-1" />
-
-                        {/* Price + CTA */}
-                        <div className="pt-5 border-t border-border flex items-center justify-between gap-4">
-                          <div>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-2xl font-bold text-foreground">{ev.price}</span>
-                              <span className="text-sm text-muted-foreground">/person</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              <Ticket className="inline h-3 w-3 mr-1 opacity-60" />
-                              Sponsored event · subsidised rate
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => setBookingEvent(ev)}
-                            disabled={ev.status === "soon"}
-                            className="rounded-full px-5 text-sm font-semibold flex-shrink-0 disabled:opacity-40"
-                          >
-                            {ev.status === "soon" ? "Notify me" : "Reserve spot"}
-                          </Button>
-                        </div>
-                      </div>
+                <div className="mt-16 pt-10 border-t border-border/50 grid grid-cols-3 gap-6 text-center">
+                  {[
+                    { label: "Format", value: "Americano" },
+                    { label: "Location", value: "London" },
+                    { label: "Date", value: "October 2025" },
+                  ].map(({ label, value }) => (
+                    <div key={label}>
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
+                      <p className="text-lg font-bold text-foreground">{value}</p>
                     </div>
-                  </FadeIn>
-                );
-              })}
-            </div>
-
-            <FadeIn delay={0.4}>
-              <p className="mt-10 text-center text-sm text-muted-foreground">
-                Not seeing the right date? <a href="mailto:info@padelcubed.co.uk" className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity">Get in touch</a> and we'll match you to the next suitable event.
-              </p>
-            </FadeIn>
-
-            {/* Events inline ad slot — only renders when a live advert is scheduled */}
-            <FadeIn delay={0.5}>
-              <AdSlot slot="events-inline" className="mt-10 max-w-xl mx-auto" />
+                  ))}
+                </div>
+              </div>
             </FadeIn>
           </div>
         </section>
@@ -972,7 +814,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-6 text-sm font-medium">
-              <a href="#events" className="text-muted-foreground hover:text-foreground transition-colors">Events</a>
+              <a href="#launch" className="text-muted-foreground hover:text-foreground transition-colors">Launch Event</a>
               <a href="#ambassadors" className="text-muted-foreground hover:text-foreground transition-colors">Ambassadors</a>
               <Link href="/host-an-event" className="text-muted-foreground hover:text-foreground transition-colors">Host an event</Link>
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
