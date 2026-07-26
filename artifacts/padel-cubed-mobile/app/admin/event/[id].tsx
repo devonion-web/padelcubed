@@ -300,7 +300,7 @@ export default function AdminEventDetailScreen() {
 
   const walkinCheckedIn = walkins.filter((w) => w.checkedInAt).length;
   const checkedIn  = bookings.filter((b) => b.checkedInAt).length + walkinCheckedIn;
-  const totalCount = bookings.length;
+  const totalCount = bookings.length + walkins.length;
   const unpaidCount = walkins.filter((w) => !w.paid).length;
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -437,10 +437,10 @@ export default function AdminEventDetailScreen() {
       {/* ── Attendee list ── */}
       {isLoading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
-      ) : bookings.length === 0 ? (
+      ) : bookings.length === 0 && walkins.length === 0 ? (
         <View style={styles.center}>
           <Feather name="inbox" size={32} color={colors.mutedForeground} />
-          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No bookings yet</Text>
+          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No attendees yet</Text>
         </View>
       ) : (
         <ScrollView
@@ -450,14 +450,27 @@ export default function AdminEventDetailScreen() {
           <Text style={[styles.listHint, { color: colors.mutedForeground }]}>
             Tap a booking to toggle check-in · tap Unpaid/Paid badge to mark payment · tap a walk-in name to remove
           </Text>
-          {bookings.map((b) => (
-            <BookingRow
-              key={b.id}
-              booking={b}
-              onToggle={() => handleToggle(b)}
-              toggling={togglingId === b.id}
-            />
-          ))}
+
+          {/* Bookings section */}
+          {bookings.length > 0 && (
+            <>
+              {walkins.length > 0 && (
+                <View style={[styles.sectionDivider, { borderColor: colors.border }]}>
+                  <Text style={[styles.sectionLabel, { color: colors.mutedForeground, backgroundColor: colors.background }]}>
+                    Bookings ({bookings.length})
+                  </Text>
+                </View>
+              )}
+              {bookings.map((b) => (
+                <BookingRow
+                  key={b.id}
+                  booking={b}
+                  onToggle={() => handleToggle(b)}
+                  toggling={togglingId === b.id}
+                />
+              ))}
+            </>
+          )}
 
           {/* Walk-ins section */}
           {walkins.length > 0 && (
