@@ -238,6 +238,15 @@ function AdminEventsList() {
           </View>
         </View>
         <Text style={[styles.adminSubtitle, { color: colors.mutedForeground }]}>Event dashboard</Text>
+        <TouchableOpacity
+          style={[styles.membersBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => router.push('/admin/members' as never)}
+          activeOpacity={0.75}
+        >
+          <Feather name="users" size={15} color={colors.primary} />
+          <Text style={[styles.membersBtnText, { color: colors.foreground }]}>View Members</Text>
+          <Feather name="chevron-right" size={15} color={colors.mutedForeground} style={{ marginLeft: 'auto' }} />
+        </TouchableOpacity>
       </LinearGradient>
 
       {isLoading ? (
@@ -309,4 +318,7 @@ const styles = StyleSheet.create({
   livePillText: { fontFamily: 'Inter_700Bold', fontSize: 10, color: '#22c55e', letterSpacing: 0.5 },
   endedPill: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
   endedPillText: { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.5 },
+
+  membersBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginTop: 8 },
+  membersBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
 });

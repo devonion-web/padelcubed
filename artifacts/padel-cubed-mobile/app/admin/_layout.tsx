@@ -11,6 +11,8 @@ export default function AdminLayout() {
       <Stack.Screen name="americano/[id]" />
       <Stack.Screen name="leaderboard/[id]" />
       <Stack.Screen name="format-setup/[id]" />
+      <Stack.Screen name="members/index" />
+      <Stack.Screen name="members/[id]" />
     </Stack>
   );
 }

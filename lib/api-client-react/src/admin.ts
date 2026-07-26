@@ -257,6 +257,44 @@ export function useDeleteBooking<TError = ErrorType<unknown>, TContext = unknown
   });
 }
 
+// ─── GET /admin/registrations ─────────────────────────────────────────────────
+
+export interface AdminRegistration {
+  id: number;
+  fullName: string;
+  email: string;
+  company: string | null;
+  jobTitle: string | null;
+  industry: string | null;
+  function: string | null;
+  seniority: string | null;
+  padelLevel: string | null;
+  interests: string[] | null;
+  linkedinUrl: string | null;
+  gdprConsent: boolean;
+  createdAt: string;
+}
+
+export const getAdminRegistrationsQueryKey = (token: string) =>
+  ["/api/admin/registrations", token] as const;
+
+export function useAdminRegistrations<TData = AdminRegistration[], TError = ErrorType<unknown>>(
+  token: string,
+  options?: { query?: Omit<UseQueryOptions<AdminRegistration[], TError, TData>, "queryKey"> },
+): UseQueryResult<TData, TError> {
+  const { query: queryOptions } = options ?? {};
+  return useQuery({
+    queryKey: getAdminRegistrationsQueryKey(token),
+    queryFn: ({ signal }) =>
+      customFetch<AdminRegistration[]>("/api/admin/registrations", {
+        signal,
+        headers: authHeaders(token),
+      }),
+    enabled: Boolean(token),
+    ...queryOptions,
+  });
+}
+
 // ─── DELETE /admin/events/:id/checkin ────────────────────────────────────────
 
 const undoCheckInFn =

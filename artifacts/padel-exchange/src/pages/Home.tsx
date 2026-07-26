@@ -255,6 +255,9 @@ export default function Home() {
             <Link href="/host-an-event" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Host an event
             </Link>
+            <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Admin
+            </Link>
           </nav>
           <Button onClick={openModal} className="rounded-full px-6 text-sm font-semibold">
             Apply
