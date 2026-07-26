@@ -95,9 +95,32 @@ function SuccessScreen({ intent, onClose }: { intent: Intent; onClose: () => voi
         <h3 className="text-xl font-bold text-foreground mb-2">{heading}</h3>
         <p className="text-sm text-muted-foreground max-w-sm">{body}</p>
       </div>
+
+      {intent === "join" && (
+        <div className="w-full max-w-xs flex flex-col gap-3 pt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground font-medium">one more thing</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <p className="text-xs text-muted-foreground text-center">Follow us on LinkedIn for event updates and community news</p>
+          <a
+            href="https://www.linkedin.com/company/people-padel-places/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 w-full rounded-xl h-11
+                       bg-[#0A66C2] hover:bg-[#0958a8] text-white text-sm font-semibold
+                       transition-colors no-underline"
+          >
+            <Linkedin className="h-4 w-4 fill-white stroke-none" />
+            Follow Padelcubed on LinkedIn
+          </a>
+        </div>
+      )}
+
       <button
         onClick={onClose}
-        className="mt-2 rounded-full px-8 h-10 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+        className="mt-1 rounded-full px-8 h-10 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
       >
         Done
       </button>

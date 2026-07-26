@@ -684,23 +684,32 @@ export async function sendRegistrationWelcome(params: RegistrationWelcomeParams)
     </table>
   </td></tr>` : ""}
 
-  <!-- ══ SOCIAL LINKS ══ -->
-  <tr><td style="padding:0 36px 32px;" align="center">
-    <p style="margin:0 0 12px;font-size:12px;color:${B.mutedFg};">Follow us for updates</p>
-    <table cellpadding="0" cellspacing="0" border="0"><tr>
-      <td style="padding-right:8px;">
-        <a href="https://www.instagram.com/padelcubed/"
-           style="display:inline-block;background:${B.royalBlue};color:#fff;
-                  font-size:12px;font-weight:700;text-decoration:none;
-                  padding:8px 16px;border-radius:8px;">Instagram</a>
-      </td>
-      <td>
+  <!-- ══ LINKEDIN FOLLOW CTA ══ -->
+  <tr><td style="padding:0 36px 16px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="background:#EEF4FF;border:1px solid #C7D9F8;border-radius:14px;">
+      <tr><td style="padding:20px 24px;" align="center">
+        <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:${B.darkText};">Stay in the loop</p>
+        <p style="margin:0 0 16px;font-size:12px;color:${B.bodyText};line-height:1.5;">
+          Follow us on LinkedIn for event announcements, community updates, and early access news.
+        </p>
         <a href="https://www.linkedin.com/company/people-padel-places/"
            style="display:inline-block;background:#0A66C2;color:#fff;
-                  font-size:12px;font-weight:700;text-decoration:none;
-                  padding:8px 16px;border-radius:8px;">LinkedIn</a>
-      </td>
-    </tr></table>
+                  font-size:13px;font-weight:700;text-decoration:none;
+                  padding:10px 24px;border-radius:10px;">
+          Follow Padelcubed on LinkedIn
+        </a>
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <!-- ══ SOCIAL LINKS ══ -->
+  <tr><td style="padding:0 36px 32px;" align="center">
+    <p style="margin:0 0 12px;font-size:12px;color:${B.mutedFg};">Also find us on</p>
+    <a href="https://www.instagram.com/padelcubed/"
+       style="display:inline-block;background:${B.royalBlue};color:#fff;
+              font-size:12px;font-weight:700;text-decoration:none;
+              padding:8px 16px;border-radius:8px;">Instagram</a>
   </td></tr>`,
   });
 
