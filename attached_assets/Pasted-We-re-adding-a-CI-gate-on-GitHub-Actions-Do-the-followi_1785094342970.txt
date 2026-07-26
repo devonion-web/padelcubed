@@ -1,0 +1,76 @@
+We're adding a CI gate on GitHub Actions. Do the following, plan first if anything
+is ambiguous, and don't change app behaviour:
+
+1. Ensure the repo is on GitHub (connect Replit's Git integration and push if it
+   isn't already). Confirm the default branch is `main`.
+2. Add .github/workflows/ci.yml (starter below). Fill the two TODOs:
+   - the import-time env the app needs (dummy/test values) so app.ts imports clean;
+   - the web job's server boot — start the API + web dev server, or set Playwright's
+     `webServer` in the config to boot both, so `pnpm test:web` has something to hit.
+3. Make the Playwright nix-store LD_LIBRARY_PATH shim from the Replit setup
+   CONDITIONAL — only apply it when running on Replit, skip it in CI (Ubuntu runners
+   get their libs from `playwright install --with-deps`). It must not break the CI run.
+4. Confirm the API safety guard is satisfied by the CI DB name (p3_test).
+5. Open a test PR and show me: both jobs (api-mobile, web) running and GREEN in
+   Actions, and that a deliberately-failing test turns the check RED and blocks the
+   merge. Then STOP.
+
+--- .github/workflows/ci.yml (starter) ---
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  api-mobile:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: p3_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/p3_test
+      SESSION_SECRET: test-session-secret
+      # TODO: add any other env read at IMPORT time (dummy values)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm test:mobile
+  web:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: p3_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/p3_test
+      SESSION_SECRET: test-session-secret
+      # TODO: same import-time env as above
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @workspace/tests exec playwright install --with-deps chromium
+      # TODO: boot API + web dev server (or Playwright webServer), then:
+      - run: pnpm test:web
