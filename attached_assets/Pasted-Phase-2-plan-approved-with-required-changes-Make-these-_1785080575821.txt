@@ -1,0 +1,24 @@
+Phase 2 plan — approved with required changes. Make these before writing any code. Items 1–3 are blocking (expensive to retrofit); 4–5 are required; 6–7 are additions.
+
+1. Consent must be granular, not a single consent_at.
+Replace the single consent timestamp with separate, independently-recorded consents: (a) event operations, (b) marketing email, (c) sharing segmented cohort data with sponsors. Schema must store these as distinct fields/timestamps on members (and capture them at registration). Do not collapse them into one flag — the sponsor-cohort model depends on (c) existing as its own consent.
+
+2. Do not backfill consent_at = created_at blindly.
+First confirm whether the original registration form actually captured a consent step. If it did, backfill is fine. If it did not, do NOT stamp a consent timestamp on those rows — leave the consent fields null for pre-existing members and flag them as requiring re-permissioning. Report back which case applies before running the migration.
+
+3. GDPR deletion must cascade PII across all tables.
+DELETE /api/members/me must anonymise PII everywhere it is stored — not just the members row, but also the PII columns on registrations (name, email, company, jobTitle, and all segmentation fields) and bookings. Retain non-PII rows + consent audit record as planned, but no personal data may survive the deletion in any table.
+
+4. Decide web JWT storage now: httpOnly cookie + CSRF protection.
+Do not defer this to build time and do not use localStorage. Use a short-lived httpOnly session cookie with CSRF protection on the web target. Native stays on expo-secure-store.
+
+5. Webhook retry must be asynchronous, off the webhook_log queue.
+Firing/retrying must not run inside the request thread — a slow or down endpoint must never block or time out a registration. Implement a background processor that drains the queue on a schedule, and name explicitly how that worker stays alive across restarts on Replit.
+
+6. Add a "claim your registration" fallback for email mismatch.
+When a member's LinkedIn email ≠ their original registration email, first sign-in will not auto-link and creates an orphaned duplicate. Add a lightweight flow to let an authenticated member claim/link an existing registration so it isn't a dead end.
+
+7. Rate-limit new public endpoints.
+Especially the booking-verify token request (email-enumeration / spam vector) and POST /api/registrations. Also confirm the mobile app no longer calls the removed ?email= booking lookup before deleting that path.
+
+Not a code task, but must ship alongside: privacy-policy / sub-processor (DPA) update covering the webhook provider and sponsor cohort sharing — the granular consent in item 1 must be backed by published policy. (Owner to handle with legal.)

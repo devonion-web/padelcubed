@@ -402,7 +402,7 @@ export default function RegisterScreen() {
             {gdprConsent && <Feather name="check" size={12} color={colors.primaryForeground} />}
           </View>
           <Text style={[styles.gdprText, { color: colors.mutedForeground }]}>
-            I agree to People, Padel, Places (operated by Risk Rising Ltd) storing my details and contacting me about events.{' '}
+            I agree to Dev AI Ltd (operating P³) storing my details and contacting me about P³ events.{' '}
             <Text style={{ color: colors.primary }}>Privacy policy</Text>
           </Text>
         </TouchableOpacity>

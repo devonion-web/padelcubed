@@ -479,27 +479,7 @@ router.post("/events/:id/checkout", async (req, res): Promise<void> => {
   }
 });
 
-// ── GET /my-bookings?email= — confirmed bookings for a player (used by app sync) ─
-router.get("/my-bookings", async (req, res): Promise<void> => {
-  const email = (req.query.email as string)?.trim().toLowerCase();
-  if (!email) { res.status(400).json({ error: "email required" }); return; }
-  try {
-    const bookings = await db
-      .select({
-        id:            bookingsTable.id,
-        eventId:       bookingsTable.eventId,
-        status:        bookingsTable.status,
-        paymentStatus: bookingsTable.paymentStatus,
-        bookedAt:      bookingsTable.bookedAt,
-      })
-      .from(bookingsTable)
-      .where(and(eq(bookingsTable.email, email), eq(bookingsTable.status, "confirmed")));
-    res.json(bookings);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch bookings" });
-  }
-});
+// GET /my-bookings — moved to members.ts (requireMember auth)
 
 // ── GET /events/:eventId/leaderboard — public, no auth ────────────────────────
 

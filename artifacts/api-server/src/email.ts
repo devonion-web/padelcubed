@@ -873,3 +873,37 @@ export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise
   if (error) console.error("[email] Resend error (walk-in confirmation):", error);
   else       console.log(`[email] Sent walk-in confirmation to ${to}`);
 }
+
+// ─── Claim-registration verification code ────────────────────────────────────
+export async function sendClaimCode({ to, code }: { to: string; code: string }): Promise<void> {
+  const html = baseEmail({
+    subject:    "Link your P³ registration — verification code",
+    preheader:  `Your code is ${code} — valid for 10 minutes.`,
+    badgeEmoji: "🔗",
+    badgeText:  "Account linking",
+    headline:   "Link your registration",
+    subline:    "You asked to link an existing P³ registration to your Dev AI account.",
+    body: `
+      <tr><td style="padding:24px 32px 0;">
+        <p style="margin:0 0 16px;font-size:15px;color:${B.bodyText};line-height:1.65;">
+          Enter the code below in the P³ app to complete the link. It expires in <strong>10 minutes</strong>.
+        </p>
+        <div style="background:${B.tealPale};border:1px solid ${B.tealBorder};border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;">
+          <span style="font-size:36px;font-weight:700;letter-spacing:0.2em;color:${B.royalBlue};font-family:monospace;">${code}</span>
+        </div>
+        <p style="margin:0;font-size:13px;color:${B.mutedFg};line-height:1.65;">
+          If you didn't request this, you can safely ignore this email.
+        </p>
+      </td></tr>
+    `,
+  });
+
+  const { error } = await resend.emails.send({
+    from: FROM, to,
+    subject: "Link your P³ registration — verification code",
+    html,
+  });
+
+  if (error) console.error("[email] Resend error (claim code):", error);
+  else console.log(`[email] Sent claim code to ${to}`);
+}

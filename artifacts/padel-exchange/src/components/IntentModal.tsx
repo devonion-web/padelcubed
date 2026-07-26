@@ -13,17 +13,19 @@ export interface LinkedInPrefill {
 }
 
 interface JoinFields {
-  fullName:     string;
-  email:        string;
-  company:      string;
-  jobTitle:     string;
-  industry:     string;
-  functionRole: string;
-  seniority:    string;
-  padelLevel:   string;
-  interests:    string[];
-  linkedinUrl:  string;
-  gdpr:         boolean;
+  fullName:         string;
+  email:            string;
+  company:          string;
+  jobTitle:         string;
+  industry:         string;
+  functionRole:     string;
+  seniority:        string;
+  padelLevel:       string;
+  interests:        string[];
+  linkedinUrl:      string;
+  gdpr:             boolean; // events consent — required
+  consentMarketing: boolean; // marketing email — optional
+  consentSponsor:   boolean; // sponsor cohort — optional
 }
 
 interface HostFields    { contactName: string; company: string; workEmail: string; eventType: string; headcount: string; gdpr: boolean; }
@@ -49,7 +51,7 @@ const PARTNER_TYPES    = ["Sponsor an event", "Co-brand with P³", "Become a ven
 
 const GDPR_TEXT = (
   <span className="text-xs text-muted-foreground leading-relaxed">
-    I consent to People, Padel, Places (operated by Risk Rising Ltd) processing my data to respond to this enquiry.
+    I consent to Dev AI Ltd (operating P³) processing my data to respond to this enquiry.
     Read our{" "}
     <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
       Privacy Policy
@@ -201,26 +203,32 @@ function ChipGroup({
 // ─── Join form ────────────────────────────────────────────────────────────────
 function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: LinkedInPrefill }) {
   const [f, setF] = useState<JoinFields>({
-    fullName:     prefill?.name  ?? "",
-    email:        prefill?.email ?? "",
-    company:      "",
-    jobTitle:     "",
-    industry:     "",
-    functionRole: "",
-    seniority:    "",
-    padelLevel:   "",
-    interests:    [],
-    linkedinUrl:  "",
-    gdpr:         false,
+    fullName:         prefill?.name  ?? "",
+    email:            prefill?.email ?? "",
+    company:          "",
+    jobTitle:         "",
+    industry:         "",
+    functionRole:     "",
+    seniority:        "",
+    padelLevel:       "",
+    interests:        [],
+    linkedinUrl:      "",
+    gdpr:             false,
+    consentMarketing: false,
+    consentSponsor:   false,
   });
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.gdpr) { setError("Please accept the privacy policy."); return; }
+    if (!f.gdpr) { setError("Please tick the required privacy checkbox to continue."); return; }
     setLoading(true); setError("");
     try {
+      // Read UTMs stored by Home.tsx on mount (sessionStorage)
+      let utms: Record<string, string> = {};
+      try { utms = JSON.parse(sessionStorage.getItem("p3_utms") ?? "{}"); } catch { /**/ }
+
       const res = await fetch(`${BASE()}/api/registrations`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,7 +243,10 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
           padelLevel:  f.padelLevel  || undefined,
           interests:   f.interests.length ? f.interests : undefined,
           linkedinUrl: f.linkedinUrl || undefined,
-          gdprConsent: f.gdpr,
+          gdprConsent:      f.gdpr,
+          consentMarketing: f.consentMarketing,
+          consentSponsor:   f.consentSponsor,
+          ...utms,
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d?.error ?? "Submission failed."); }
@@ -357,14 +368,45 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
         </Field>
       )}
 
-      {/* GDPR */}
-      <label className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
-        <input
-          type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0"
-          checked={f.gdpr} onChange={e => setF({ ...f, gdpr: e.target.checked })}
-        />
-        {GDPR_TEXT}
-      </label>
+      {/* ── Consent ─────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-2">
+        {/* Required: event operations */}
+        <label className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+          <input
+            type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0"
+            checked={f.gdpr} onChange={e => setF({ ...f, gdpr: e.target.checked })}
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            <span className="text-destructive font-medium">Required — </span>
+            I agree to Dev AI Ltd (operating P³) storing my details and contacting me about P³ events.{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Policy</a>.
+          </span>
+        </label>
+
+        {/* Optional: marketing email */}
+        <label className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+          <input
+            type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0"
+            checked={f.consentMarketing} onChange={e => setF({ ...f, consentMarketing: e.target.checked })}
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground/70">Optional — </span>
+            I'd like to receive broader marketing communications from Dev AI / P³ (e.g. news, offers, community updates).
+          </span>
+        </label>
+
+        {/* Optional: sponsor cohort */}
+        <label className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+          <input
+            type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0"
+            checked={f.consentSponsor} onChange={e => setF({ ...f, consentSponsor: e.target.checked })}
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground/70">Optional — </span>
+            I'm happy for anonymised attendee cohort data (e.g. seniority, industry mix) to be shared with P³ event sponsors for matching purposes. No personal data is shared.
+          </span>
+        </label>
+      </div>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
 

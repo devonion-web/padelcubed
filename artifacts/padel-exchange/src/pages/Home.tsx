@@ -202,6 +202,27 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
+    // Capture UTM params into sessionStorage for attribution (read by JoinForm at submit)
+    const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+    const utms: Record<string, string> = {};
+    for (const key of utmKeys) {
+      const val = params.get(key);
+      if (val) utms[key.replace("_", "")] = val; // e.g. utmSource, utmMedium
+    }
+    // Map to camelCase keys expected by the API
+    const utmMap: Record<string, string> = {
+      utm_source: "utmSource", utm_medium: "utmMedium",
+      utm_campaign: "utmCampaign", utm_content: "utmContent", utm_term: "utmTerm",
+    };
+    const utmPayload: Record<string, string> = {};
+    for (const key of utmKeys) {
+      const val = params.get(key);
+      if (val) utmPayload[utmMap[key]] = val;
+    }
+    if (Object.keys(utmPayload).length > 0) {
+      try { sessionStorage.setItem("p3_utms", JSON.stringify(utmPayload)); } catch { /**/ }
+    }
+
     if (params.get("booking") === "success") {
       setBookingSuccess(true);
       window.history.replaceState({}, "", window.location.pathname + "#events");

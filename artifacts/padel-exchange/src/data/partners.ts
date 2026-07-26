@@ -69,9 +69,9 @@ const partners: Partner[] = [
     name: "Finativ",
     tier: "founding",
     category: "Specialist Advisory",
-    logoLight: "",
-    logoDark: "",
-    url: "https://www.finativ.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    logoLight: "partners/finativ.png",      // white version — carousel sits on the brand-blue background
+    logoDark:  "partners/finativ-dark.png", // dark-text version for any light-bg contexts
+    url: "https://www.finativ.co.uk/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
     blurb: "Specialist consulting and advisory for asset, motor, invoice and other finance companies — strategic insight from experienced leaders.",
     showInCarousel: true,
   },

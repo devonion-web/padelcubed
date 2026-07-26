@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
+import rateLimit from "express-rate-limit";
+import { z } from "zod";
 import { db, registrationsTable } from "@workspace/db";
 import {
   SubmitRegistrationBody,
@@ -7,18 +9,47 @@ import {
 } from "@workspace/api-zod";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { sendRegistrationWelcome, sendNewMemberNotification } from "../email.js";
+import { enqueueWebhook } from "../lib/webhookService.js";
+
+// ── Rate limiter: 20 submissions per 15 min per IP (email-enumeration + spam) ─
+const registrationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many registration attempts — please try again in 15 minutes." },
+});
+
+// ── Extended body schema: core fields from api-zod + UTMs + granular consent ──
+const ExtendedRegistrationBody = SubmitRegistrationBody.extend({
+  // UTM attribution (all optional — not always present)
+  utmSource:   z.string().optional(),
+  utmMedium:   z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmContent:  z.string().optional(),
+  utmTerm:     z.string().optional(),
+  // Granular consent beyond the base gdprConsent flag
+  consentMarketing: z.boolean().optional().default(false),
+  consentSponsor:   z.boolean().optional().default(false),
+});
 
 const router: IRouter = Router();
 
 // POST /registrations — public registration of interest
-router.post("/registrations", async (req, res): Promise<void> => {
-  const parsed = SubmitRegistrationBody.safeParse(req.body);
+router.post("/registrations", registrationLimiter, async (req, res): Promise<void> => {
+  const parsed = ExtendedRegistrationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const { gdprConsent, ...rest } = parsed.data;
+  const {
+    gdprConsent,
+    consentMarketing,
+    consentSponsor,
+    utmSource, utmMedium, utmCampaign, utmContent, utmTerm,
+    ...rest
+  } = parsed.data;
 
   // Check for duplicate email
   const existing = await db
@@ -31,17 +62,29 @@ router.post("/registrations", async (req, res): Promise<void> => {
     return;
   }
 
+  const now = new Date();
+
   const [registration] = await db
     .insert(registrationsTable)
     .values({
       ...rest,
       gdprConsent: gdprConsent ?? false,
+      // Granular consent timestamps — only set if explicitly given
+      consentEventsAt:    gdprConsent      ? now : undefined,
+      consentMarketingAt: consentMarketing ? now : undefined,
+      consentSponsorAt:   consentSponsor   ? now : undefined,
+      // UTM attribution
+      utmSource:   utmSource   || undefined,
+      utmMedium:   utmMedium   || undefined,
+      utmCampaign: utmCampaign || undefined,
+      utmContent:  utmContent  || undefined,
+      utmTerm:     utmTerm     || undefined,
     })
     .returning();
 
   res.status(201).json(SubmitRegistrationResponse.parse(registration));
 
-  // Fire both emails after responding — non-blocking
+  // Fire emails after responding — non-blocking
   sendRegistrationWelcome({
     to:         registration.email,
     fullName:   registration.fullName,
@@ -61,6 +104,25 @@ router.post("/registrations", async (req, res): Promise<void> => {
     interests:   registration.interests,
     linkedinUrl: registration.linkedinUrl,
   }).catch(err => console.error("[email] Admin notification failed:", err));
+
+  // Enqueue outbound webhook — never blocks the response
+  enqueueWebhook("registration.created", {
+    registration: {
+      id:       registration.id,
+      fullName: registration.fullName,
+      email:    registration.email,
+      company:  registration.company,
+      jobTitle: registration.jobTitle,
+      industry: registration.industry,
+      seniority: registration.seniority,
+    },
+    attribution: { utmSource, utmMedium, utmCampaign, utmContent, utmTerm },
+    consent: {
+      events:    !!gdprConsent,
+      marketing: !!consentMarketing,
+      sponsor:   !!consentSponsor,
+    },
+  }).catch(err => console.error("[webhook] Enqueue failed after registration:", err));
 });
 
 // POST /api/admin/registrations — manually add a member (JWT admin only, no welcome email)

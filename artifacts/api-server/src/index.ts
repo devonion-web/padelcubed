@@ -32,6 +32,8 @@ async function initStripe() {
   }
 }
 
+import { startWebhookWorker } from "./lib/webhookWorker.js";
+
 // ── Server startup ────────────────────────────────────────────────────────────
 const rawPort = process.env["PORT"];
 if (!rawPort) throw new Error("PORT environment variable is required.");
@@ -54,6 +56,9 @@ app.listen(port, async (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Start background webhook delivery worker (async, non-blocking)
+  startWebhookWorker();
 
   try {
     await seedIfEmpty();

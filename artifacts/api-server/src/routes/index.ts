@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health.js";
 import linkedInAuthRouter from "./auth-linkedin.js";
+import membersRouter from "./members.js";
 import registrationsRouter from "./registrations.js";
 import corporateEnquiriesRouter from "./corporate-enquiries.js";
 import eventsRouter from "./events.js";
@@ -10,11 +11,13 @@ import adminWalkinsRouter from "./admin-walkins.js";
 import adminAmericanoRouter from "./admin-americano.js";
 import adminChargeRouter from "./admin-charge.js";
 import shopRouter from "./shop.js";
+import adminInsightsRouter from "./admin-insights.js";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(linkedInAuthRouter);
+router.use(membersRouter);
 router.use(registrationsRouter);
 router.use(corporateEnquiriesRouter);
 router.use(eventsRouter);
@@ -24,5 +27,6 @@ router.use(adminWalkinsRouter);
 router.use(adminAmericanoRouter);
 router.use(adminChargeRouter);
 router.use(shopRouter);
+router.use(adminInsightsRouter);
 
 export default router;

@@ -29,7 +29,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   Loader2, Download, Lock, Search, Users, Shield, Plus, Trash2, Eye, EyeOff,
+  BarChart3, TrendingUp,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Login ────────────────────────────────────────────────────────────────────
@@ -440,6 +442,150 @@ function InviteDialog({ token, onCreated }: { token: string; onCreated: () => vo
   );
 }
 
+// ─── Insights tab ─────────────────────────────────────────────────────────────
+
+const BASE = () => import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface InsightsData {
+  totals: { registrations: number; withMemberAccount: number; consentEvents: number; consentMarketing: number; consentSponsor: number; withUtm: number };
+  consentRates: { events: number; marketing: number; sponsor: number };
+  byIndustry:   { label: string; value: number }[];
+  bySeniority:  { label: string; value: number }[];
+  byFunction:   { label: string; value: number }[];
+  byPadelLevel: { label: string; value: number }[];
+  utmSources:   { label: string; value: number }[];
+  utmCampaigns: { label: string; value: number }[];
+  weeklySignups:{ week: string; value: number }[];
+}
+
+function Bar({ value, max, colour = "bg-primary" }: { value: number; max: number; colour?: string }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+        <div className={`${colour} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs font-medium text-muted-foreground w-8 text-right">{value}</span>
+    </div>
+  );
+}
+
+function BreakdownCard({ title, rows }: { title: string; rows: { label: string; value: number }[] }) {
+  const max = Math.max(...rows.map(r => r.value), 1);
+  return (
+    <Card>
+      <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">{title}</CardTitle></CardHeader>
+      <CardContent className="space-y-2.5">
+        {rows.slice(0, 8).map(r => (
+          <div key={r.label}>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-foreground truncate max-w-[70%]">{r.label}</span>
+            </div>
+            <Bar value={r.value} max={max} />
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-xs text-muted-foreground">No data yet</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function InsightsTab({ token }: { token: string }) {
+  const { data, isLoading, error } = useQuery<InsightsData>({
+    queryKey: ["admin-insights", token],
+    queryFn: async () => {
+      const r = await fetch(`${BASE()}/api/admin/insights`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) throw new Error("Failed to load insights");
+      return r.json();
+    },
+    staleTime: 60_000,
+  });
+
+  if (isLoading) return (
+    <div className="flex h-64 items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+  if (error || !data) return (
+    <div className="rounded-xl border border-border bg-card p-6 text-muted-foreground text-sm">
+      Failed to load insights — {(error as any)?.message}
+    </div>
+  );
+
+  const { totals, consentRates } = data;
+  const pct = (n: number) => totals.registrations > 0
+    ? Math.round((n / totals.registrations) * 100)
+    : 0;
+
+  return (
+    <div className="space-y-8">
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[
+          { label: "Total registrations", value: totals.registrations },
+          { label: "Member accounts",     value: `${totals.withMemberAccount} (${pct(totals.withMemberAccount)}%)` },
+          { label: "Events consent",       value: `${totals.consentEvents} (${consentRates.events ?? 0}%)` },
+          { label: "Marketing consent",    value: `${totals.consentMarketing} (${consentRates.marketing ?? 0}%)` },
+          { label: "Sponsor consent",      value: `${totals.consentSponsor} (${consentRates.sponsor ?? 0}%)` },
+          { label: "With UTM source",      value: `${totals.withUtm} (${pct(totals.withUtm)}%)` },
+        ].map(k => (
+          <Card key={k.label}>
+            <CardContent className="pt-5">
+              <p className="text-2xl font-bold tabular-nums">{k.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{k.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Weekly signups chart (simple bar) */}
+      {data.weeklySignups.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold">Weekly signups (last 12 weeks)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-1.5 h-24">
+              {data.weeklySignups.map(w => {
+                const maxW = Math.max(...data.weeklySignups.map(x => x.value), 1);
+                const h = Math.round((w.value / maxW) * 100);
+                return (
+                  <div key={w.week} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[9px] text-muted-foreground">{w.value}</span>
+                    <div
+                      className="w-full bg-primary/80 rounded-t-sm"
+                      style={{ height: `${h}%`, minHeight: "2px" }}
+                    />
+                    <span className="text-[9px] text-muted-foreground rotate-45 origin-left translate-y-2">
+                      {w.week.slice(5)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Segmentation grids */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <BreakdownCard title="Industry"     rows={data.byIndustry} />
+        <BreakdownCard title="Seniority"    rows={data.bySeniority} />
+        <BreakdownCard title="Function"     rows={data.byFunction} />
+        <BreakdownCard title="Padel level"  rows={data.byPadelLevel} />
+      </div>
+
+      {/* Attribution */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <BreakdownCard title="UTM source"   rows={data.utmSources} />
+        <BreakdownCard title="UTM campaign" rows={data.utmCampaigns.length ? data.utmCampaigns : []} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Team tab ─────────────────────────────────────────────────────────────────
 
 function TeamTab({ token, currentUserId }: { token: string; currentUserId: number }) {
@@ -529,7 +675,7 @@ function TeamTab({ token, currentUserId }: { token: string; currentUserId: numbe
 
 // ─── Main admin panel ─────────────────────────────────────────────────────────
 
-type Tab = "members" | "team";
+type Tab = "members" | "insights" | "team";
 
 function AdminPanel({ token, user, onLock }: { token: string; user: AdminUser; onLock: () => void }) {
   const [tab, setTab] = useState<Tab>("members");
@@ -561,7 +707,7 @@ function AdminPanel({ token, user, onLock }: { token: string; user: AdminUser; o
         <div className="flex items-end justify-between mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight mb-4">
-              {tab === "members" ? "Members" : "Team"}
+              {tab === "members" ? "Members" : tab === "insights" ? "Insights" : "Team"}
             </h1>
             <div className="flex gap-1 bg-muted/50 rounded-lg p-1 w-fit border border-border">
               <button
@@ -574,6 +720,17 @@ function AdminPanel({ token, user, onLock }: { token: string; user: AdminUser; o
               >
                 <Users className="h-4 w-4" />
                 Members
+              </button>
+              <button
+                onClick={() => setTab("insights")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  tab === "insights"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Insights
               </button>
               {user.role === "superadmin" && (
                 <button
@@ -592,8 +749,9 @@ function AdminPanel({ token, user, onLock }: { token: string; user: AdminUser; o
           </div>
         </div>
 
-        {tab === "members" && <MembersTab token={token} />}
-        {tab === "team" && user.role === "superadmin" && (
+        {tab === "members"  && <MembersTab token={token} />}
+        {tab === "insights" && <InsightsTab token={token} />}
+        {tab === "team"     && user.role === "superadmin" && (
           <TeamTab token={token} currentUserId={user.id} />
         )}
       </main>

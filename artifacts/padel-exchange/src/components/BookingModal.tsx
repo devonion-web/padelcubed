@@ -30,7 +30,7 @@ const inputCls =
 
 const GDPR_TEXT = (
   <span className="text-xs text-muted-foreground leading-relaxed">
-    I consent to People, Padel, Places (operated by Risk Rising Ltd) processing my data
+    I consent to Dev AI Ltd (operating P³) processing my data
     to manage my booking. Read our{" "}
     <a
       href="/privacy"

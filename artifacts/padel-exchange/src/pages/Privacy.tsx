@@ -42,7 +42,7 @@ export default function Privacy() {
 
         <Section title="1. Who we are">
           <p>
-            People, Padel, Places is operated by Risk Rising Ltd ("we", "us", "our"). For the purposes of
+            People, Padel, Places is operated by Dev AI Ltd ("we", "us", "our"). For the purposes of
             UK data protection law, we are the <strong className="text-foreground">data controller</strong> in respect of
             personal data collected through this website.
           </p>
@@ -253,7 +253,7 @@ export default function Privacy() {
 
       <footer className="border-t border-border bg-card/50 py-8 mt-8">
         <div className="container mx-auto px-4 md:px-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} People, Padel, Places · Risk Rising Ltd. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} People, Padel, Places · Dev AI Ltd. All rights reserved.</p>
         </div>
       </footer>
     </div>
