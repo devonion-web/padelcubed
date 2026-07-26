@@ -1,0 +1,106 @@
+Phase 2 is built. Before I trust it, AUDIT it — do not just confirm the plan
+was followed. For each item below, TRY TO BREAK IT, then report PASS/FAIL with
+the exact file + line and a one-line reproduction. Do NOT silently fix things:
+list every finding first, ranked most-severe first, and wait for my go-ahead
+before changing code. Where a test is possible, write and run it and paste the
+result. British English.
+
+━━ 1. AUTH & ACCESS CONTROL (highest priority) ━━
+- With member A's JWT, call GET /api/my-bookings and GET /api/members/me and
+  confirm you get ONLY A's data. Then TRY TO READ member B's bookings by any
+  means (guessing IDs, tampering the JWT payload, omitting the token). All must
+  be rejected. NOTE: a 401 on an unauthenticated call proves auth is REQUIRED,
+  not that cross-member access is blocked — I need the A-cannot-read-B test run
+  explicitly, with output.
+- Confirm the old unauthenticated ?email= lookup is GONE — not hidden, not
+  deprecated-but-live. Grep the codebase for every caller (web AND mobile) and
+  confirm none still hit it.
+- Present a MEMBER JWT to an ADMIN-only route and confirm it's rejected. Present
+  an ADMIN JWT to a member route. Confirm the two JWTs use separate signing
+  claims/namespaces and cannot be swapped or role-escalated.
+- Confirm the member JWT is httpOnly cookie + CSRF (double-submit) on web and
+  Bearer/secure-store on native — NOT localStorage. Then confirm CSRF is
+  actually ENFORCED on state-changing member routes (DELETE /members/me, claim,
+  cancel) — a request with a valid cookie but missing/wrong CSRF token must be
+  rejected. Show where.
+- Test the one-time email verify link for legacy bookings: confirm it's HMAC-
+  signed, expires (24h), and a tampered or expired token is rejected.
+
+━━ 2. PAYMENT INTEGRITY ━━
+- Replay the checkout.session.completed webhook for the SAME session twice.
+  Confirm: exactly ONE confirmation email, booking marked paid once, takings
+  counted once. Paste the test output — I want to see the replay actually run,
+  not just "the check exists."
+- Confirm the Stripe webhook verifies the signature and rejects an unsigned or
+  wrongly-signed payload.
+- Confirm a booking CANNOT reach 'confirmed'/'paid' without a genuine paid
+  event — hit the legacy POST /events/:id/bookings on a PAID event and confirm
+  it returns 400 and does NOT create a confirmed booking.
+- Confirm FREE events (pricePence === 0) still book and confirm immediately.
+- Confirm the reconciliation view (booked / paid / checked-in / takings) matches
+  the DB for a test event, and admin "mark paid" for a walk-in works and shows up.
+- Confirm memberId lands in Stripe metadata when the buyer is authenticated, and
+  the webhook links the paid booking to that member.
+
+━━ 3. GDPR — DELETION, SUPPRESSION, LOGS (the one to get right) ━━
+- Create a test member with a registration + a booking + at least one fired
+  webhook. Call DELETE /api/members/me. Then SEARCH EVERY TABLE for their PII:
+  members, registrations (name, email, company, jobTitle, all segmentation
+  fields), bookings — AND webhook_log.payload_json, which stores the full
+  registration/booking payload incl. name, email and segmentation. Confirm NO
+  personal data survives in ANY table, including the webhook log; only
+  anonymised rows + the consent audit record remain. Report each table checked
+  with the actual query output.
+- After deletion (or opt-out), trigger an outbound email AND the outbound
+  webhook for that member. Confirm BOTH are suppressed.
+- Confirm the outbound webhook target is documented as a named sub-processor and
+  that PII already sent to it is covered by a retention note (it can't be
+  reached by DELETE — so it must be accounted for, not ignored).
+- Grep server logs (Pino) for email addresses and password-reset codes across a
+  full register -> reset -> book -> delete cycle. Confirm neither appears.
+
+━━ 4. CONSENT CORRECTNESS & SUPPRESSION ━━
+- Confirm consent is recorded GRANULARLY (consent_events_at / consent_marketing_at
+  / consent_sponsor_at as distinct timestamps), not one blanket flag.
+- Confirm the migration backfilled consent_events_at ONLY on existing rows and
+  left consent_marketing_at / consent_sponsor_at NULL (the original form text
+  covered events only). Report the row counts.
+- CRITICAL: confirm suppression keys off the NULL consent, not just opt-out. A
+  marketing send must check consent_marketing_at IS NOT NULL before emailing;
+  sponsor cohort export/matching must check consent_sponsor_at IS NOT NULL.
+  Prove that a legacy row with those fields NULL is EXCLUDED from a marketing
+  send and from a sponsor cohort — not just from opted-out members. If
+  suppression only checks opted_out_at, every un-consented legacy row gets
+  marketed to. Show the query the send/export uses.
+
+━━ 5. OUTBOUND WEBHOOK RELIABILITY ━━
+- Confirm firing/retry runs ASYNC off webhook_log — a slow or DOWN endpoint must
+  NOT block or time out a registration.
+- The worker is a setInterval poller inside the API process. Confirm it survives
+  the process idling/sleeping on the current Replit plan (Reserved/Always-On) OR
+  that on startup it RE-DRAINS existing 'pending' and 'failed' rows, not just
+  new ones — otherwise a sleep leaves failed webhooks un-retried until the next
+  request. Point to the startup drain.
+- Point WEBHOOK_URL at a dead endpoint. Register a member. Confirm: sign-up
+  still succeeds, the row is logged, retried up to 3x with back-off, then flagged
+  as failed/dead in the admin view. Confirm the payload is HMAC-signed
+  (X-P3-Signature).
+
+━━ 6. ABUSE & REGRESSION ━━
+- Confirm rate limiting on public endpoints — booking-verify/claim
+  (email-enumeration/spam vector) and POST /api/registrations. THEN confirm the
+  limiter sees the real client IP: behind Replit's proxy, req.ip is the proxy
+  unless app.set('trust proxy', ...) is configured. If it isn't, the limit is
+  keyed wrong and is effectively no protection. Confirm trust proxy is set and
+  the limiter keys on the real IP.
+- Confirm nothing that worked pre-Phase-2 is broken: existing registrations/
+  bookings still readable, web + mobile both consume the same endpoints, events
+  still served from the DB.
+- Confirm the orphaned RegistrationForm.tsx (old consent UI, not imported
+  anywhere) is deleted, so it can't be wired back in with stale single-consent
+  wording by mistake.
+
+━━ REPORT FORMAT ━━
+For every item: PASS or FAIL · file:line · one-line repro · severity
+(blocker / high / medium / low). List blockers first. Then STOP and wait for my
+decision before fixing anything.
