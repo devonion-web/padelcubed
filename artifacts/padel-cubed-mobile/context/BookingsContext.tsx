@@ -19,6 +19,7 @@ interface BookingEntry {
 interface BookingsContextType {
   isBooked: (eventId: string) => boolean;
   getBookingId: (eventId: string) => number | undefined;
+  bookedEventIds: string[];
   book: (eventId: string, bookingId?: number, notificationId?: string) => Promise<void>;
   cancel: (eventId: string) => Promise<string | undefined>;
   isLoading: boolean;
@@ -27,6 +28,7 @@ interface BookingsContextType {
 const BookingsContext = createContext<BookingsContextType>({
   isBooked: () => false,
   getBookingId: () => undefined,
+  bookedEventIds: [],
   book: async () => {},
   cancel: async () => undefined,
   isLoading: true,
@@ -62,6 +64,11 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
     [bookings],
   );
 
+  const bookedEventIds = React.useMemo(
+    () => Object.entries(bookings).filter(([, v]) => v.booked).map(([k]) => k),
+    [bookings],
+  );
+
   const book = useCallback(
     async (eventId: string, bookingId?: number, notificationId?: string) => {
       await persist({
@@ -83,7 +90,7 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <BookingsContext.Provider
-      value={{ isBooked, getBookingId, book, cancel, isLoading }}
+      value={{ isBooked, getBookingId, bookedEventIds, book, cancel, isLoading }}
     >
       {children}
     </BookingsContext.Provider>

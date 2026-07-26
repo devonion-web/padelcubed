@@ -16,9 +16,9 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'calendar', selected: 'calendar.fill' }} />
         <Label>Events</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="register">
-        <Icon sf={{ default: 'person.badge.plus', selected: 'person.badge.plus.fill' }} />
-        <Label>Join</Label>
+      <NativeTabs.Trigger name="my-events">
+        <Icon sf={{ default: 'ticket', selected: 'ticket.fill' }} />
+        <Label>My Events</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} />
@@ -80,15 +80,21 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="register"
+        name="my-events"
         options={{
-          title: 'Join',
+          title: 'My Events',
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="person.badge.plus" tintColor={color} size={24} />
+              <SymbolView name="ticket" tintColor={color} size={24} />
             ) : (
-              <Feather name="user-plus" size={22} color={color} />
+              <Feather name="bookmark" size={22} color={color} />
             ),
+        }}
+      />
+      <Tabs.Screen
+        name="register"
+        options={{
+          href: null, // hide from tab bar but keep route accessible
         }}
       />
       <Tabs.Screen
