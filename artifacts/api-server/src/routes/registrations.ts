@@ -35,11 +35,30 @@ const ExtendedRegistrationBody = SubmitRegistrationBody.extend({
 
 const router: IRouter = Router();
 
+/** Convert a ZodError into a single, user-readable sentence. */
+function friendlyZodError(err: z.ZodError): string {
+  const first = err.errors[0];
+  if (!first) return "Invalid submission.";
+  const fieldLabels: Record<string, string> = {
+    fullName:    "Full name",
+    email:       "Email address",
+    gdprConsent: "Privacy consent",
+  };
+  const label = fieldLabels[String(first.path[0] ?? "")] ?? String(first.path[0] ?? "");
+  if (first.code === "too_small" || first.code === "invalid_string") {
+    return label ? `${label} is required.` : "A required field is missing.";
+  }
+  if (first.code === "invalid_type" && first.received === "undefined") {
+    return label ? `${label} is required.` : "A required field is missing.";
+  }
+  return first.message ?? "Invalid submission.";
+}
+
 // POST /registrations — public registration of interest
 router.post("/registrations", registrationLimiter, async (req, res): Promise<void> => {
   const parsed = ExtendedRegistrationBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: friendlyZodError(parsed.error) });
     return;
   }
 
@@ -130,7 +149,7 @@ router.post("/registrations", registrationLimiter, async (req, res): Promise<voi
 router.post("/admin/registrations", requireAdmin, async (req, res): Promise<void> => {
   const parsed = SubmitRegistrationBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: friendlyZodError(parsed.error) });
     return;
   }
 

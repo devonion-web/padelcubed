@@ -222,6 +222,8 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!f.fullName.trim()) { setError("Please enter your full name."); return; }
+    if (!f.email.trim())    { setError("Please enter your email address."); return; }
     if (!f.gdpr) { setError("Please tick the required privacy checkbox to continue."); return; }
     setLoading(true); setError("");
     try {
