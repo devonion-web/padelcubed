@@ -1,32 +1,36 @@
 ---
 name: Events DB source of truth
-description: Events moved to DB as sole source; no static arrays remain anywhere; attendeeCount is included in list response; admin can create/edit via event-form screen.
+description: Events are DB-only; no static arrays remain; published boolean controls visibility; listing logic is date-ordered.
 ---
 
 ## Rule
-The database is the single source of truth for events. No static `EVENTS` arrays exist in any client. Both web and mobile must fetch from `/api/events`.
+Events are canonical in the database. The API GET /events returns all `published=true` events ordered by `eventDate` asc. No hardcoded event IDs in any frontend component.
 
-**Why:** Spec required admin create/edit without a deploy cycle.
+## EventsSection.tsx (web)
+`FEATURED_IDS` was removed in July 2026. The section now shows `allEvents.slice(0, 2)` — the next two soonest events from the already-sorted API response. Photos and badge text are keyed by **venue name** via `VENUE_META`:
+- `"Racketeer"` → racketeer-hero.jpg / "Members Event"
+- `"Surbiton Racquet Club"` → surbiton-hero.jpg / "Pre-Launch Event"
+- `"Padium"` → padium-hero.webp / "Launch Event"
+Add new entries when new venues are introduced.
 
-## Schema additions
-- `events` table gained `published boolean NOT NULL DEFAULT true` — controls public list visibility.
-- Applied via `drizzle-kit push` (column addition only, safe).
+**Why:** Hardcoded IDs broke whenever test events were added/removed and required code changes to feature different events.
 
-## API behaviour
-- `GET /api/events` — returns published events ordered by `eventDate`, each with `attendeeCount` (confirmed bookings count via GROUP BY subquery, no N+1).
-- `GET /api/events/:id` — returns single event with `attendeeCount`.
-- `POST /admin/events` — create event; requires `id` field (slug); Zod-validated.
-- `PUT /admin/events/:id` — full update; Zod-validated.
+## Seed data (SEED_EVENTS in events.ts)
+Only runs when the events table is empty. After July 2026 clean-up, five real events exist (IDs 1–5). The seed must match DB reality:
+- ID 4: "P³ Launch — People, Padel, Places", Padium, Oct 15 2026, £20, status: "soon"
 
-## Client wiring
-- **Mobile events list** (`app/(tabs)/index.tsx`): `useEvents()` hook.
-- **Mobile event detail** (`app/event/[id].tsx`): `useEvent(id)` hook; loading state renders `ActivityIndicator`; `scheduleReminder` now takes `eventDate` string instead of hardcoded timestamp map.
-- **Mobile admin event detail** (`app/admin/event/[id].tsx`): `useAdminEvent(id, token)` for title/date in header; "Edit Event Details" button navigates to `/admin/event-form/${id}`.
-- **Mobile admin tab** (`app/(tabs)/admin-tab.tsx`): "New" button in header navigates to `/admin/event-form/new`.
-- **Mobile admin event form** (`app/admin/event-form/[id].tsx`): `id=new` → create mode, `id=<slug>` → edit mode.
-- **Web Home** (`artifacts/padel-exchange/src/pages/Home.tsx`): `useQuery` fetches `/api/events`; static array removed; statusConfig lookup has fallback for unknown status values; featured section guarded with `events.length > 0`.
+## Real events (post-cleanup, July 2026)
+| ID | Title | Venue | Date | Status |
+|---|---|---|---|---|
+| 1 | The City Kickoff | Racketeer | 6 Aug 2026 | available |
+| 2 | The Surbiton Exchange | Surbiton Racquet Club | 10 Sep 2026 | available |
+| 3 | The GRC Exchange | Racketeer | 8 Oct 2026 | available |
+| 4 | P³ Launch — People, Padel, Places | Padium | 15 Oct 2026 | soon |
+| 5 | The Year Closer | Racketeer | 3 Dec 2026 | soon |
 
-## How to apply
-- Adding an event: POST to `/admin/events` with `id` (slug), or use the admin event-form screen.
-- Never add events to any static array — the DB is the only source.
-- `attendeeCount` is available on list response; `spotsLeft = maxSpots - attendeeCount`.
+## Status semantics
+- `published: false` → hidden from all listings
+- `published: true, status: "soon"` → visible, CTA is "Register interest →" (no booking)
+- `published: true, status: "available"` → visible, booking open
+
+To open ticket sales for event 4: flip status from `"soon"` to `"available"` via Admin → Events.

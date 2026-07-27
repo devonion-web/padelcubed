@@ -14,23 +14,7 @@ const router: IRouter = Router();
 // Called once at server startup (see index.ts), NOT on every request.
 export const SEED_EVENTS = [
   {
-    id: "1",
-    title: "The City Kickoff",
-    date: "Thursday 6 August 2026",
-    dateShort: "6 Aug",
-    time: "6:30 pm – 9:30 pm",
-    venue: "Racketeer",
-    location: "Acton, London",
-    format: "Americano",
-    sponsor: "Corlytics",
-    price: "Free",
-    status: "available",
-    description:
-      "Our inaugural event — founders, finance professionals and GRC leaders meet on court. Americano format, drinks, and networking.",
-    maxSpots: 16,
-    eventDate: new Date("2026-08-06T17:30:00Z"),
-  },
-  {
+    // Private rehearsal — hidden from public listing until admin flips published=true
     id: "2",
     title: "The Surbiton Exchange",
     date: "Thursday 10 September 2026",
@@ -41,30 +25,16 @@ export const SEED_EVENTS = [
     format: "Americano",
     sponsor: "Risk Rising, Corlytics & Finativ",
     price: "Free",
-    status: "available",
+    pricePence: 0,
+    status: "soon",
+    published: false,
     description:
-      "Risk leaders, RegTech founders and compliance professionals connect on court at one of Surrey's finest clubs. Curated Americano play, peer exchange and post-match drinks — brought to you by Risk Rising, Corlytics and Finativ.",
+      "An evening of padel and peer exchange at one of Surrey's finest clubs. Americano format, drinks, and post-match introductions.",
     maxSpots: 16,
     eventDate: new Date("2026-09-10T17:30:00Z"),
   },
   {
-    id: "3",
-    title: "The GRC Exchange",
-    date: "Thursday 8 October 2026",
-    dateShort: "8 Oct",
-    time: "6:30 pm – 9:30 pm",
-    venue: "Racketeer",
-    location: "Acton, London",
-    format: "Americano",
-    sponsor: "GRC Edge",
-    price: "Free",
-    status: "available",
-    description:
-      "Governance, Risk and Compliance leaders gather for an evening of play, peer exchange and post-match discussion.",
-    maxSpots: 16,
-    eventDate: new Date("2026-10-08T17:30:00Z"),
-  },
-  {
+    // Publicly visible, booking not yet open
     id: "4",
     title: "P³ Launch — People, Padel, Places",
     date: "Thursday 15 October 2026",
@@ -77,28 +47,12 @@ export const SEED_EVENTS = [
     price: "£20",
     pricePence: 2000,
     maxSpots: 16,
-    courtsCount: 2,
+    courtsCount: 4,
     status: "soon",
+    published: true,
     description:
-      "P³'s debut ticketed event — founders, finance and GRC leaders meet on court at Padium, Canary Wharf. Americano format, drinks, and introductions.",
+      "An evening of curated play and new connections at Padium, Canary Wharf. Americano format, drinks, and a room full of founders and senior professionals worth meeting.",
     eventDate: new Date("2026-10-15T17:30:00Z"),
-  },
-  {
-    id: "5",
-    title: "The Year Closer",
-    date: "Thursday 3 December 2026",
-    dateShort: "3 Dec",
-    time: "6:30 pm – 9:30 pm",
-    venue: "Racketeer",
-    location: "Acton, London",
-    format: "Americano",
-    sponsor: "byrne·dean",
-    price: "Free",
-    status: "soon",
-    description:
-      "Close out 2026 on court with the P³ community. Our biggest event of the year — expect a full house.",
-    maxSpots: 16,
-    eventDate: new Date("2026-12-03T18:30:00Z"),
   },
 ];
 

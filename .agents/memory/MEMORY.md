@@ -5,7 +5,8 @@
 - [Americano engine](americano-engine.md) — DB tables, API routes, mobile screens for on-site event management.
 - [Admin easter egg](admin-easter-egg.md) — 5-tap logo trigger navigates to /admin stack; tab routing pitfalls; Pressable vs TouchableOpacity on web.
 - [Admin liveness gate](admin-liveness-gate.md) — never gate admin tools on liveStatus; redesigned event screen shows all tools unconditionally; test event refresh SQL included.
-- [Events DB source of truth](events-db-source.md) — events are DB-only; no static arrays remain; published boolean controls visibility; GET /events includes attendeeCount via grouped subquery.
+- [Events DB source of truth](events-db-source.md) — events are DB-only; FEATURED_IDS removed; EventsSection uses next-2-by-date + VENUE_META; 5 real events remain after July 2026 clean-up.
+- [Branding parity](branding-parity.md) — mobile tokens synced to web CSS; light-only; BlurView tint must be "light"; type scale in constants/typography.ts.
 - [Stripe shop setup](stripe-shop.md) — credential field is `settings.secret` not `settings.secret_key`; syncBackfill requires `{ object: 'all' }`; seed before backfill.
 - [Security audit fixes](security-fixes.md) — 9-fix audit applied; key decisions on iss-check, booking guard, GDPR scrub, claim codes DB, suppression helper.
 - [Test suite setup](test-suite-setup.md) — @workspace/tests; 128 tests green; schema-push not migrate; truncateAll pg_tables pattern; claimLimiter null-eq production bug.
