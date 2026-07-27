@@ -201,30 +201,22 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
 
 export default function Home() {
   const [modalOpen, setModalOpen]   = useState(false);
-  const [liPrefill, setLiPrefill]   = useState<{ name: string; email: string; linkedinVerified: boolean } | null>(null);
   const [bookingEvent, setBookingEvent] = useState<ApiEvent | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const openModal = () => setModalOpen(true);
 
-  // Detect ?booking=success return from Stripe, or ?li_ok=1 return from LinkedIn OAuth
+  // Detect ?booking=success return from Stripe; capture UTM params for attribution
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
     // Capture UTM params into sessionStorage for attribution (read by JoinForm at submit)
-    const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
-    const utms: Record<string, string> = {};
-    for (const key of utmKeys) {
-      const val = params.get(key);
-      if (val) utms[key.replace("_", "")] = val; // e.g. utmSource, utmMedium
-    }
-    // Map to camelCase keys expected by the API
     const utmMap: Record<string, string> = {
       utm_source: "utmSource", utm_medium: "utmMedium",
       utm_campaign: "utmCampaign", utm_content: "utmContent", utm_term: "utmTerm",
     };
     const utmPayload: Record<string, string> = {};
-    for (const key of utmKeys) {
+    for (const key of Object.keys(utmMap)) {
       const val = params.get(key);
       if (val) utmPayload[utmMap[key]] = val;
     }
@@ -235,24 +227,6 @@ export default function Home() {
     if (params.get("booking") === "success") {
       setBookingSuccess(true);
       window.history.replaceState({}, "", window.location.pathname + "#events");
-      return;
-    }
-
-    if (params.get("li_ok") === "1") {
-      setLiPrefill({
-        name:             params.get("li_name")  ?? "",
-        email:            params.get("li_email") ?? "",
-        linkedinVerified: true,
-      });
-      setModalOpen(true);
-      // Remove params from URL without reload
-      window.history.replaceState({}, "", window.location.pathname);
-      return;
-    }
-
-    if (params.get("li_err")) {
-      // LinkedIn returned an error — silently let the user try again manually
-      window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
@@ -813,8 +787,7 @@ export default function Home() {
 
       <IntentModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setLiPrefill(null); }}
-        prefill={liPrefill ?? undefined}
+        onClose={() => setModalOpen(false)}
       />
 
       <BookingModal

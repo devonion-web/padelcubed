@@ -6,12 +6,6 @@ import { X, Users, Briefcase, Handshake, ChevronLeft, Loader2, Check, Linkedin }
 type Intent = "join" | "host" | "partner";
 type Step   = "pick" | "form" | "success";
 
-export interface LinkedInPrefill {
-  name:             string;
-  email:            string;
-  linkedinVerified: boolean;
-}
-
 interface JoinFields {
   fullName:         string;
   email:            string;
@@ -130,32 +124,6 @@ function SuccessScreen({ intent, onClose }: { intent: Intent; onClose: () => voi
   );
 }
 
-// ─── LinkedIn button ──────────────────────────────────────────────────────────
-function LinkedInButton() {
-  return (
-    <a
-      href="/api/auth/linkedin"
-      target="_top"
-      rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2.5 w-full rounded-xl h-11
-                 bg-[#0A66C2] hover:bg-[#0958a8] text-white text-sm font-semibold
-                 transition-colors no-underline"
-    >
-      <Linkedin className="h-4 w-4 fill-white stroke-none" />
-      Continue with LinkedIn
-    </a>
-  );
-}
-
-function OrDivider() {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 h-px bg-border" />
-      <span className="text-xs text-muted-foreground font-medium">or fill in manually</span>
-      <div className="flex-1 h-px bg-border" />
-    </div>
-  );
-}
 
 // ─── Chip selectors ───────────────────────────────────────────────────────────
 function ChipGroup({
@@ -201,10 +169,10 @@ function ChipGroup({
 }
 
 // ─── Join form ────────────────────────────────────────────────────────────────
-function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: LinkedInPrefill }) {
+function JoinForm({ onSuccess }: { onSuccess: () => void }) {
   const [f, setF] = useState<JoinFields>({
-    fullName:         prefill?.name  ?? "",
-    email:            prefill?.email ?? "",
+    fullName:         "",
+    email:            "",
     company:          "",
     jobTitle:         "",
     industry:         "",
@@ -263,39 +231,15 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
 
-      {/* LinkedIn CTA — only shown when not already verified */}
-      {!prefill?.linkedinVerified && (
-        <>
-          <div className="rounded-xl bg-muted/40 border border-border p-4 flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              We'll use your LinkedIn name and email to set up your account — we never post anything, ever.
-            </p>
-            <LinkedInButton />
-          </div>
-          <OrDivider />
-        </>
-      )}
-
-      {/* Verified badge */}
-      {prefill?.linkedinVerified && (
-        <div className="flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-3.5 py-2.5">
-          <Linkedin className="h-4 w-4 text-[#0A66C2] fill-[#0A66C2] stroke-none flex-shrink-0" />
-          <span className="text-xs font-semibold text-blue-700">Verified via LinkedIn</span>
-          <Check className="h-3.5 w-3.5 text-blue-600 ml-auto" />
-        </div>
-      )}
-
       {/* Name + Email */}
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Full name *">
           <input
             required className={inputCls} placeholder="Jane Smith"
             value={f.fullName} onChange={e => setF({ ...f, fullName: e.target.value })}
-            readOnly={prefill?.linkedinVerified}
-            style={prefill?.linkedinVerified ? { opacity: 0.7 } : undefined}
           />
         </Field>
-        <Field label="Work email *" hint={prefill?.linkedinVerified ? "Update if your LinkedIn uses a personal email" : undefined}>
+        <Field label="Work email *">
           <input
             required type="email" className={inputCls} placeholder="jane@company.com"
             value={f.email} onChange={e => setF({ ...f, email: e.target.value })}
@@ -356,18 +300,16 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
         />
       </Field>
 
-      {/* LinkedIn URL — only shown when not verified via OAuth */}
-      {!prefill?.linkedinVerified && (
-        <Field label="LinkedIn profile URL (optional)">
-          <input
-            type="url"
-            className={inputCls}
-            placeholder="https://www.linkedin.com/in/yourname"
-            value={f.linkedinUrl}
-            onChange={e => setF({ ...f, linkedinUrl: e.target.value })}
-          />
-        </Field>
-      )}
+      {/* LinkedIn URL */}
+      <Field label="LinkedIn profile URL (optional)">
+        <input
+          type="url"
+          className={inputCls}
+          placeholder="https://www.linkedin.com/in/yourname"
+          value={f.linkedinUrl}
+          onChange={e => setF({ ...f, linkedinUrl: e.target.value })}
+        />
+      </Field>
 
       {/* ── Consent ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
@@ -576,22 +518,13 @@ function PartnerForm({ onSuccess }: { onSuccess: () => void }) {
 
 // ─── Main modal ───────────────────────────────────────────────────────────────
 interface IntentModalProps {
-  open:     boolean;
-  onClose:  () => void;
-  prefill?: LinkedInPrefill;
+  open:    boolean;
+  onClose: () => void;
 }
 
-export function IntentModal({ open, onClose, prefill }: IntentModalProps) {
+export function IntentModal({ open, onClose }: IntentModalProps) {
   const [step,   setStep]   = useState<Step>("pick");
   const [intent, setIntent] = useState<Intent | null>(null);
-
-  // When prefill arrives (LinkedIn return), jump straight to join form
-  useEffect(() => {
-    if (open && prefill) {
-      setIntent("join");
-      setStep("form");
-    }
-  }, [open, prefill]);
 
   // Reset on close
   useEffect(() => {
@@ -656,7 +589,7 @@ export function IntentModal({ open, onClose, prefill }: IntentModalProps) {
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  {step === "form" && !prefill && (
+                  {step === "form" && (
                     <button
                       onClick={back} aria-label="Back"
                       className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors flex-shrink-0"
@@ -736,7 +669,7 @@ export function IntentModal({ open, onClose, prefill }: IntentModalProps) {
                           <span className="text-xs font-semibold text-primary">{current.sublabel}</span>
                         </div>
                       )}
-                      {intent === "join"    && <JoinForm    onSuccess={success} prefill={prefill} />}
+                      {intent === "join"    && <JoinForm    onSuccess={success} />}
                       {intent === "host"    && <HostForm    onSuccess={success} />}
                       {intent === "partner" && <PartnerForm onSuccess={success} />}
                     </motion.div>
