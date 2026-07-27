@@ -1,0 +1,37 @@
+Read-only AUDIT of P³'s event-running capability. NO code changes — inventory what
+exists and report gaps against running a live 16-player Americano night. Group by
+area; for each, say what EXISTS, how it WORKS, and what's MISSING or fragile. British
+English.
+
+A. TOURNAMENT / AMERICANO ENGINE
+   - Pairing/rotation: how partners + opponents are assigned each round; the spread
+     (does everyone play with/against enough different people); court assignments;
+     rest distribution when players > courts×4.
+   - Scoring: how scores are entered and totalled; individual points → standings.
+   - Round flow: start tournament → generate round → advance → finish.
+   - Edge cases: correct a wrong score, a no-show, a late arrival, a player leaving
+     early, odd/uneven player counts. Which are handled, which aren't.
+
+B. ADMIN — RUNNING THE NIGHT
+   - Check-in on arrival; roster management; add walk-ins; mark paid.
+   - Controls to run the tournament (start / enter scores / advance / finalise) —
+     where they live and how usable they are on a phone or tablet during a live event.
+   - Reveal final leaderboard / prizes.
+
+C. LIVE DATA FOR ATTENDEES
+   - Live leaderboard + standings: where shown, and HOW it updates (manual refresh /
+     polling / real-time) and how current it is.
+   - Can an attendee see their own live standing + the current round/court on their
+     own phone during the event?
+
+D. BIG-SCREEN DISPLAY readiness
+   - Is there any display/kiosk/TV view today? If not, what data is available via the
+     API to build a read-only large-screen view — live leaderboard, current-round
+     court matchups, a round timer? Describe what a "/events/:id/display" view would
+     need (data + a real-time update mechanism; note whether polling or SSE/websocket
+     fits the current stack).
+
+DELIVER
+A structured report: per area — what's built, how it works, the gaps — then ONE
+prioritised list of what's needed to confidently run 16 players on the night, marked
+essential vs nice-to-have. This is a plan input only; make NO changes. Then STOP.
