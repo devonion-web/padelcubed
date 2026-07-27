@@ -86,6 +86,10 @@ export interface RegistrationInput {
   interests?: RegistrationInputInterestsItem[];
   linkedinUrl?: string;
   gdprConsent: boolean;
+  /** Opt-in to newsletter and updates beyond events. */
+  consentMarketing?: boolean;
+  /** Opt-in to identifiable sponsor introductions. */
+  consentSponsor?: boolean;
 }
 
 export interface Registration {

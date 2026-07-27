@@ -23,6 +23,8 @@ import { join, extname, basename } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
+// also used for mobile register check (test 6)
+const MOBILE_REGISTER = join(__dirname, "../../artifacts/padel-cubed-mobile/app/(tabs)/register.tsx");
 const WORKSPACE_ROOT = join(__dirname, "../..");
 const WEB_SRC = join(WORKSPACE_ROOT, "artifacts/padel-exchange/src");
 
@@ -98,5 +100,14 @@ describe("M2 — No orphaned single-consent RegistrationForm", () => {
   // ── Test 5: Source files count sanity check ───────────────────────────────
   it("web app source scan returned files (non-zero)", () => {
     expect(sourceFiles.length).toBeGreaterThan(0);
+  });
+
+  // ── Test 6: Mobile register.tsx has all three consent fields ─────────────
+  it("mobile register.tsx has all three consent fields (gdpr, consentMarketing, consentSponsor)", () => {
+    expect(existsSync(MOBILE_REGISTER), `mobile register.tsx not found at ${MOBILE_REGISTER}`).toBe(true);
+    const content = readFileSync(MOBILE_REGISTER, "utf8");
+    expect(content).toMatch(/gdprConsent/i);
+    expect(content).toMatch(/consentMarketing/i);
+    expect(content).toMatch(/consentSponsor/i);
   });
 });

@@ -128,6 +128,8 @@ export default function RegisterScreen() {
   const [padelLevel, setPadelLevel] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [gdprConsent, setGdprConsent] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
+  const [consentSponsor, setConsentSponsor] = useState(false);
 
   const [pickerField, setPickerField] = useState<string | null>(null);
 
@@ -167,6 +169,8 @@ export default function RegisterScreen() {
           interests: interests.length > 0 ? interests : undefined,
           linkedinUrl: linkedinUrl.trim() || undefined,
           gdprConsent: true,
+          consentMarketing,
+          consentSponsor,
         },
       });
       await saveProfile({
@@ -384,7 +388,7 @@ export default function RegisterScreen() {
           returnKeyType="done"
         />
 
-        {/* GDPR */}
+        {/* Consent — events (required) */}
         <TouchableOpacity
           style={styles.gdprRow}
           onPress={() => { Haptics.selectionAsync(); setGdprConsent((v) => !v); }}
@@ -403,9 +407,59 @@ export default function RegisterScreen() {
           </View>
           <Text style={[styles.gdprText, { color: colors.mutedForeground }]}>
             Keep me posted about P³ events, and store my details so you can.{' '}
-            <Text style={{ color: colors.primary }}>Privacy Notice</Text>
+            <Text style={{ color: colors.primary }}>*</Text>
           </Text>
         </TouchableOpacity>
+
+        {/* Consent — newsletter & updates (optional) */}
+        <TouchableOpacity
+          style={[styles.gdprRow, { marginTop: 12 }]}
+          onPress={() => { Haptics.selectionAsync(); setConsentMarketing((v) => !v); }}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              styles.checkbox,
+              {
+                borderColor: consentMarketing ? colors.primary : colors.border,
+                backgroundColor: consentMarketing ? colors.primary : 'transparent',
+              },
+            ]}
+          >
+            {consentMarketing && <Feather name="check" size={12} color={colors.primaryForeground} />}
+          </View>
+          <Text style={[styles.gdprText, { color: colors.mutedForeground }]}>
+            Send me the occasional newsletter and the odd update beyond events.
+          </Text>
+        </TouchableOpacity>
+
+        {/* Consent — sponsor introductions (optional) */}
+        <TouchableOpacity
+          style={[styles.gdprRow, { marginTop: 12 }]}
+          onPress={() => { Haptics.selectionAsync(); setConsentSponsor((v) => !v); }}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              styles.checkbox,
+              {
+                borderColor: consentSponsor ? colors.primary : colors.border,
+                backgroundColor: consentSponsor ? colors.primary : 'transparent',
+              },
+            ]}
+          >
+            {consentSponsor && <Feather name="check" size={12} color={colors.primaryForeground} />}
+          </View>
+          <Text style={[styles.gdprText, { color: colors.mutedForeground }]}>
+            When a sponsor's a genuine match for someone like me, I'm happy to be introduced.
+          </Text>
+        </TouchableOpacity>
+
+        {/* Reassurance */}
+        <Text style={[styles.gdprText, { color: colors.mutedForeground, marginTop: 10 }]}>
+          We never sell your data, and you can delete it whenever you like.{' '}
+          <Text style={{ color: colors.primary }}>Privacy Notice</Text>
+        </Text>
 
         {/* Submit */}
         <TouchableOpacity
