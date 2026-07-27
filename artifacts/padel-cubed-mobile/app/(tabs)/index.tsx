@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { type as T } from '@/constants/typography';
 import { EventCard } from '@/components/EventCard';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { useEvents } from '@workspace/api-client-react';
@@ -141,18 +142,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   seasonText: {
-    fontFamily: 'Inter_600SemiBold',
+    ...T.label,
     fontSize: 12,
     letterSpacing: 0.2,
   },
   listHeader: { paddingBottom: 16 },
   listTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 22,
+    ...T.title,
     letterSpacing: -0.5,
     marginBottom: 4,
   },
-  listSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 14 },
-  errorText: { fontFamily: 'Inter_400Regular', fontSize: 14, textAlign: 'center' },
+  listSubtitle: { ...T.caption },
+  errorText: { ...T.caption, textAlign: 'center' },
   list: { padding: 20 },
 });

@@ -1,11 +1,12 @@
 /**
  * Web E2E — BookingModal (event checkout).
  *
- * EventsSection filters the /api/events response through FEATURED_IDS = ["2","4"],
- * so mocked events MUST use those IDs to appear on the homepage.
+ * EventsSection shows the next two upcoming events from the /api/events response
+ * (ordered by eventDate asc, first two shown).  The mock returns exactly two
+ * events so both cards appear on the homepage.
  *
  * Flow for each test:
- *   1. Intercept GET /api/events → return mocked events with FEATURED IDs.
+ *   1. Intercept GET /api/events → return two mocked events.
  *   2. Navigate to /.
  *   3. Wait for event cards to render (React Query fetch).
  *   4. Click "Book a spot →" on the appropriate card.

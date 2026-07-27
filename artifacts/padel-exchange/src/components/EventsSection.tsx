@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, MapPin, Users, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface ApiEvent {
   id: string;
@@ -19,28 +18,35 @@ interface ApiEvent {
   attendeeCount?: number;
 }
 
-// Static display metadata keyed by event ID
-const EVENT_META: Record<string, {
+// Display metadata keyed by venue name — no hardcoded event IDs.
+// Add an entry here when a new venue is introduced.
+const VENUE_META: Record<string, {
   badge: string;
   badgeClass: string;
   photo: string;
-  tag: string;
 }> = {
-  "2": {
+  "Racketeer": {
+    badge: "Members Event",
+    badgeClass: "bg-white/15 border-white/20 text-white",
+    photo: "venues/racketeer-hero.jpg",
+  },
+  "Surbiton Racquet Club": {
     badge: "Pre-Launch Event",
     badgeClass: "bg-white/15 border-white/20 text-white",
     photo: "venues/surbiton-hero.jpg",
-    tag: "September 2026",
   },
-  "4": {
+  "Padium": {
     badge: "Launch Event",
     badgeClass: "bg-primary/90 border-primary/60 text-white",
     photo: "venues/padium-hero.webp",
-    tag: "October 2026 · Date TBD",
   },
 };
 
-const FEATURED_IDS = ["2", "4"];
+const DEFAULT_META = {
+  badge: "Upcoming Event",
+  badgeClass: "bg-white/15 border-white/20 text-white",
+  photo: "venues/padium-hero.webp",
+};
 
 interface EventsProps {
   onRegister: () => void;
@@ -56,9 +62,9 @@ export function EventsSection({ onRegister, onBook }: EventsProps) {
     staleTime: 60_000,
   });
 
-  const events = FEATURED_IDS
-    .map((id) => allEvents.find((e) => e.id === id))
-    .filter(Boolean) as ApiEvent[];
+  // Show the next two upcoming events (API already returns events ordered by
+  // eventDate asc, so the first two are always the soonest).
+  const events = allEvents.slice(0, 2);
 
   return (
     <section id="events" className="border-t border-border/40 py-14 md:py-20">
@@ -74,8 +80,8 @@ export function EventsSection({ onRegister, onBook }: EventsProps) {
             </h2>
           </div>
           <p className="text-muted-foreground text-sm max-w-sm md:text-right leading-relaxed">
-            Two chances to play — a Surbiton warm-up in September, then the
-            full P³ launch at Padium Canary Wharf in October.
+            Play, connect, and belong — from a warm-up in Surbiton to the full
+            P³ launch at Padium, Canary Wharf.
           </p>
         </div>
 
@@ -89,7 +95,7 @@ export function EventsSection({ onRegister, onBook }: EventsProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {events.map((event) => {
-              const meta = EVENT_META[event.id];
+              const meta = VENUE_META[event.venue] ?? DEFAULT_META;
               const spotsLeft =
                 event.maxSpots != null && event.attendeeCount != null
                   ? event.maxSpots - event.attendeeCount

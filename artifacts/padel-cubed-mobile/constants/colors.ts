@@ -1,52 +1,63 @@
 /**
  * P³ — People, Padel, Places
- * Design tokens synced from the sibling web artifact (artifacts/padel-exchange/src/index.css)
- * Royal Blue base + Electric Turquoise accent.
+ * Design tokens synced from the sibling web artifact (artifacts/padel-exchange/src/index.css).
+ * Source of truth: CSS custom properties under :root in index.css.
+ * Light-only — the web has no dark mode, so neither does the mobile app.
  */
 const colors = {
   light: {
-    // Legacy aliases
-    text: '#FAFAFA',
-    tint: '#19C3B0',
+    // ── Surfaces ──────────────────────────────────────────────────────────────
+    // web: --background: 0 0% 100%
+    background: '#FFFFFF',
+    // web: --foreground: 222 47% 11%
+    foreground: '#0F172A',
 
-    // Core surfaces
-    background: '#4169E1',
-    foreground: '#FAFAFA',
+    // web: --card: 210 40% 98%
+    card: '#F8FAFC',
+    cardForeground: '#0F172A',
 
-    // Cards / elevated surfaces
-    card: '#3557C8',
-    cardForeground: '#FAFAFA',
+    // ── Brand colour — deep teal ───────────────────────────────────────────────
+    // web: --primary: 175 68% 30%
+    primary: '#178177',
+    // web: --primary-foreground: 0 0% 100%
+    primaryForeground: '#FFFFFF',
 
-    // Primary action — Electric Turquoise
-    primary: '#19C3B0',
-    primaryForeground: '#000000',
+    // ── Secondary / muted surfaces ────────────────────────────────────────────
+    // web: --secondary: 210 40% 96%
+    secondary: '#F1F5F9',
+    secondaryForeground: '#0F172A',
 
-    // Secondary
-    secondary: '#3A52A6',
-    secondaryForeground: '#FAFAFA',
+    // web: --muted: 210 40% 96%
+    muted: '#F1F5F9',
+    // web: --muted-foreground: 215 16% 47%
+    mutedForeground: '#64748B',
 
-    // Muted
-    muted: '#3655B6',
-    mutedForeground: '#C5D2F5',
+    // ── Borders & inputs ──────────────────────────────────────────────────────
+    // web: --border / --input: 214 32% 88%
+    border: '#E2E8F0',
+    input: '#E2E8F0',
 
-    // Borders & inputs
-    border: '#3A52A6',
-    input: '#2F47A0',
+    // ── Accent (light teal wash) ──────────────────────────────────────────────
+    // web: --accent: 175 50% 92%
+    accent: '#E6F6F4',
+    // web: --accent-foreground: 175 68% 20%
+    accentForeground: '#0F564F',
 
-    // Accent (same as primary for this brand)
-    accent: '#19C3B0',
-    accentForeground: '#000000',
-
-    // Destructive
+    // ── Destructive ───────────────────────────────────────────────────────────
+    // web: --destructive: 0 84% 60%
     destructive: '#EF4444',
-    destructiveForeground: '#FAFAFA',
+    destructiveForeground: '#FFFFFF',
 
-    // Deep navy (logo background)
+    // ── Logo gradient stops — DO NOT repurpose ────────────────────────────────
     navy: '#0E1B2C',
     navyLight: '#153052',
+
+    // ── Legacy alias (kept for any remaining direct `.tint` usage) ────────────
+    tint: '#178177',
+    text: '#0F172A',
   },
 
-  // Border radius in px — synced from --radius: 0.75rem → 12px
+  // Border radius in px — synced from --radius: 0.75rem → 12 px
   radius: 12,
 };
 

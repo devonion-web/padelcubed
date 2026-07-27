@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
+import { type as T } from '@/constants/typography';
 import type { ApiEvent } from '@workspace/api-client-react';
 
 interface EventCardProps {
@@ -139,13 +140,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   dateDay: {
-    fontFamily: 'Inter_700Bold',
+    ...T.heading,
     fontSize: 20,
     lineHeight: 22,
   },
   dateMonth: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10,
+    ...T.label,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     lineHeight: 14,
@@ -157,8 +157,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
+    ...T.body,
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
     flex: 1,
     letterSpacing: -0.3,
   },
@@ -169,12 +169,12 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   statusText: {
-    fontFamily: 'Inter_500Medium',
+    ...T.label,
     fontSize: 10,
     letterSpacing: 0.2,
   },
   venueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  venueText: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  venueText: { ...T.caption, fontSize: 12 },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   sponsorBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
-  sponsorText: { fontFamily: 'Inter_500Medium', fontSize: 11 },
+  sponsorText: { ...T.label },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  formatText: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  formatText: { ...T.caption, fontSize: 12 },
 });

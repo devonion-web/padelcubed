@@ -1,3 +1,8 @@
+/**
+ * Legacy static event list — kept only as a fallback type reference.
+ * The mobile app fetches live event data from the API via useEvents().
+ * Do NOT add test or placeholder events here.
+ */
 export interface Event {
   id: string;
   title: string;
@@ -13,89 +18,4 @@ export interface Event {
   description: string;
 }
 
-export const EVENTS: Event[] = [
-  {
-    id: 'test-live',
-    title: '⚡ TEST — Live Event',
-    date: 'Monday 21 July 2026',
-    dateShort: '21 Jul',
-    time: '10:00 am – 2:00 pm',
-    venue: 'Test Venue',
-    location: 'London',
-    format: 'Americano',
-    sponsor: 'Internal',
-    price: '£35 per person',
-    status: 'available',
-    description: 'Test event for verifying the live admin workflow.',
-  },
-  {
-    id: '1',
-    title: 'The City Kickoff',
-    date: 'Thursday 6 August 2026',
-    dateShort: '6 Aug',
-    time: '6:30 pm – 9:30 pm',
-    venue: 'Racketeer',
-    location: 'Acton, London',
-    format: 'Americano',
-    sponsor: 'Corlytics',
-    price: '£35 per person',
-    status: 'available',
-    description: 'Our inaugural event — founders, finance professionals and GRC leaders meet on court. Americano format, drinks, and networking.',
-  },
-  {
-    id: '2',
-    title: 'The Surbiton Exchange',
-    date: 'Thursday 10 September 2026',
-    dateShort: '10 Sep',
-    time: '6:30 pm – 9:30 pm',
-    venue: 'Surbiton Racquet Club',
-    location: 'Surbiton, Surrey',
-    format: 'Americano',
-    sponsor: 'Risk Rising, Corlytics & Finativ',
-    price: '£35 per person',
-    status: 'available',
-    description: 'Risk leaders, RegTech founders and compliance professionals connect on court at one of Surrey\'s finest clubs. Curated Americano play, peer exchange and post-match drinks — brought to you by Risk Rising, Corlytics and Finativ.',
-  },
-  {
-    id: '3',
-    title: 'The GRC Exchange',
-    date: 'Thursday 8 October 2026',
-    dateShort: '8 Oct',
-    time: '6:30 pm – 9:30 pm',
-    venue: 'Racketeer',
-    location: 'Acton, London',
-    format: 'Americano',
-    sponsor: 'GRC Edge',
-    price: '£35 per person',
-    status: 'available',
-    description: 'Governance, Risk and Compliance leaders gather for an evening of play, peer exchange and post-match discussion.',
-  },
-  {
-    id: '4',
-    title: 'The October Smash',
-    date: 'Thursday 29 October 2026',
-    dateShort: '29 Oct',
-    time: '6:30 pm – 9:30 pm',
-    venue: 'Padium',
-    location: 'London',
-    format: 'Americano',
-    sponsor: 'Apollo 1971',
-    price: '£35 per person',
-    status: 'soon',
-    description: 'A high-energy mid-autumn session at one of London\'s premier padel venues. Limited spaces.',
-  },
-  {
-    id: '5',
-    title: 'The Year Closer',
-    date: 'Thursday 3 December 2026',
-    dateShort: '3 Dec',
-    time: '6:30 pm – 9:30 pm',
-    venue: 'Racketeer',
-    location: 'Acton, London',
-    format: 'Americano',
-    sponsor: 'byrne·dean',
-    price: '£35 per person',
-    status: 'soon',
-    description: 'Close out 2026 on court with the P³ community. Our biggest event of the year — expect a full house.',
-  },
-];
+export const EVENTS: Event[] = [];

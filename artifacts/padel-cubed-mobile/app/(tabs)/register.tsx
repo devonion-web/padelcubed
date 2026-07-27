@@ -15,6 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { type as T } from '@/constants/typography';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { useSubmitRegistration } from '@workspace/api-client-react';
 import { useProfile } from '@/context/ProfileContext';
@@ -502,14 +503,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pageTitle: {
-    fontFamily: 'Inter_700Bold',
+    ...T.title,
     fontSize: 26,
     letterSpacing: -0.6,
     marginBottom: 4,
     marginTop: 8,
   },
   pageSubtitle: {
-    fontFamily: 'Inter_400Regular',
+    ...T.body,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 8,
@@ -521,14 +522,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
+    ...T.label,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   label: {
+    ...T.caption,
     fontFamily: 'Inter_500Medium',
-    fontSize: 13,
     marginTop: 8,
     marginBottom: 4,
   },
@@ -537,8 +537,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
+    ...T.body,
   },
   select: {
     height: 46,
@@ -550,8 +549,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   selectText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
+    ...T.body,
     flex: 1,
   },
   chipGrid: {
@@ -567,8 +565,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...T.caption,
   },
   gdprRow: {
     flexDirection: 'row',
@@ -587,7 +584,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   gdprText: {
-    fontFamily: 'Inter_400Regular',
+    ...T.caption,
     fontSize: 12,
     lineHeight: 18,
     flex: 1,
@@ -601,11 +598,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   submitText: {
-    fontFamily: 'Inter_600SemiBold',
+    ...T.heading,
     fontSize: 16,
   },
   freeNote: {
-    fontFamily: 'Inter_400Regular',
+    ...T.caption,
     fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
@@ -630,7 +627,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    fontFamily: 'Inter_600SemiBold',
+    ...T.heading,
     fontSize: 16,
     paddingHorizontal: 20,
     marginBottom: 8,

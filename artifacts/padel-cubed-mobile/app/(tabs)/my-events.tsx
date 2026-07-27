@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
+import { type as T } from '@/constants/typography';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { useProfile } from '@/context/ProfileContext';
 import { useBookings } from '@/context/BookingsContext';
@@ -399,14 +400,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   listTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 22,
+    ...T.title,
     letterSpacing: -0.5,
     marginBottom: 4,
   },
   listSubtitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    ...T.caption,
   },
 
   // ── Event card ──
@@ -423,10 +422,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 17,
+    ...T.heading,
     letterSpacing: -0.3,
-    lineHeight: 22,
   },
   metaRow: {
     flexDirection: 'row',
@@ -434,8 +431,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   metaText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
+    ...T.caption,
   },
   metaDot: {
     fontSize: 13,
@@ -522,7 +518,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   actionBtnText: {
+    ...T.caption,
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
   },
 });
