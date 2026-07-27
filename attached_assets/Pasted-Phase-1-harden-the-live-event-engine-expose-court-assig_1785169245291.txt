@@ -1,0 +1,42 @@
+Phase 1 — harden the live event engine + expose court assignments. Plan first
+(schema / endpoint / UI changes + risks), then WAIT for approval. Ship with tests,
+keep pnpm test:all green, push to GitHub. Do NOT rewrite the Americano engine —
+pairing/scoring/correction are good; extend them. British English.
+
+1. PUBLIC CURRENT-ROUND COURT ASSIGNMENTS
+   - Expose the current round's court matchups on a PUBLIC (unauth) endpoint (extend
+     GET /events/:id/leaderboard or add GET /events/:id/live): per court — number/name,
+     the 4 players by name, teams A/B, current scores; plus round number, roundStartedAt
+     and roundDurationMinutes so a client can compute a countdown.
+   - Show it on the attendee mobile leaderboard screen: "Round N · Court 1: Alice & Bob
+     vs Carol & Dave", so players know where to go without the MC shouting.
+
+2. UNDO / ROLLBACK LAST ROUND (admin)
+   - Reopen/roll back the most recently closed round: reverse the point/win deltas and
+     restore the previous draw, so an accidental "next round" is recoverable without DB
+     surgery. Put a confirm step on it.
+
+3. LATE ARRIVAL — add a player mid-session (admin)
+   - Endpoint + mobile control to add a checked-in/walk-in player to a running session;
+     they join from the NEXT round's draw. No manual DB inserts.
+
+4. NO-SHOW THIS ROUND (soft sit-out, admin)
+   - Mark a player absent for the current/next round only (they sit out) WITHOUT
+     removing them; reinstatable. Distinct from DELETE player.
+
+5. BYE FAIRNESS + SCORE SANITY
+   - Track who has taken a bye and prefer players with fewer byes when choosing who
+     rests on uneven counts, so the same person doesn't sit out repeatedly.
+   - Add a sensible score sanity check (reject clearly invalid entries) without blocking
+     legitimate scores.
+
+TESTS
+   - Public endpoint returns court assignments (unauth) with players + round timing.
+   - Undo restores standings + previous draw exactly (points/wins reversed).
+   - Late-arrival player appears in the next round's draw.
+   - Soft sit-out excludes a player for one round without removing them.
+   - Bye distribution stays even across an uneven-count session.
+
+DELIVER
+Plan → my approval → implement, pnpm test:all green, push to GitHub, show me the
+attendee court view + the new admin controls. Then STOP.
