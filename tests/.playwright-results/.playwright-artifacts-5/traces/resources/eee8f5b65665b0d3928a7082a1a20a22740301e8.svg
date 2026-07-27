@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" fill="none">
+  <!-- Orange square mark -->
+  <rect width="60" height="60" rx="6" fill="#F15A2B"/>
+  <text x="30" y="43" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="white" text-anchor="middle" letter-spacing="-1">bd</text>
+  <!-- Wordmark -->
+  <text x="76" y="38" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="#1a1a1a" letter-spacing="-0.5">byrne<tspan fill="#F15A2B">·</tspan>dean</text>
+</svg>

@@ -1,11 +1,12 @@
 /**
  * E1 — Events inventory
  *
- * After the July 2026 clean-up, exactly TWO events are publicly visible:
+ * Exactly TWO events are publicly visible:
  *   ID 2  — Surbiton Exchange  (published=true, status="soon" → visible, not bookable)
  *   ID 4  — Padium launch      (published=true, status="soon" → visible, not bookable)
  *
- * IDs 1, 3, 5 are published=false (hidden; had real bookings so not hard-deleted).
+ * IDs 3, 5 are published=false (hidden).
+ * ID 1 (City Kickoff, Aug) was hard-deleted.
  * All former test event IDs are gone entirely.
  *
  * GET /api/events returns only published=true rows → 2 events.
@@ -51,7 +52,6 @@ beforeAll(async () => {
   });
 
   // Seed hidden events (published=false) — must NOT appear in public list
-  await seedEvent({ id: "1", title: "The City Kickoff",    published: false, status: "available", eventDate: new Date("2026-08-06T17:30:00Z") });
   await seedEvent({ id: "3", title: "The GRC Exchange",    published: false, status: "available", eventDate: new Date("2026-10-08T17:30:00Z") });
   await seedEvent({ id: "5", title: "The Year Closer",     published: false, status: "soon",      eventDate: new Date("2026-12-03T18:30:00Z") });
 });
@@ -78,7 +78,7 @@ describe("E1 — Events inventory", () => {
     expect(events[1]!.title).toBe("P³ Launch — People, Padel, Places");
   });
 
-  it("hidden events (1, 3, 5) do NOT appear in the public list", () => {
+  it("hidden events (3, 5) do NOT appear in the public list", () => {
     const ids = events.map((e) => e.id);
     expect(ids).not.toContain("1");
     expect(ids).not.toContain("3");
