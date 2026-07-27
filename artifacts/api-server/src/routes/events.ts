@@ -14,7 +14,7 @@ const router: IRouter = Router();
 // Called once at server startup (see index.ts), NOT on every request.
 export const SEED_EVENTS = [
   {
-    // Private rehearsal — hidden from public listing until admin flips published=true
+    // Publicly visible, not yet open for booking
     id: "2",
     title: "The Surbiton Exchange",
     date: "Thursday 10 September 2026",
@@ -27,7 +27,7 @@ export const SEED_EVENTS = [
     price: "Free",
     pricePence: 0,
     status: "soon",
-    published: false,
+    published: true,
     description:
       "An evening of padel and peer exchange at one of Surrey's finest clubs. Americano format, drinks, and post-match introductions.",
     maxSpots: 16,
