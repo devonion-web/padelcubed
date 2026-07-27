@@ -110,6 +110,14 @@ const founders = [
     linkedin: "https://www.linkedin.com/in/lee-edge/",
     bio: "GRC, cyber and AI governance are Lee's world — helping organisations navigate complexity without losing their nerve. On court, he brings the same calm under pressure.",
   },
+  {
+    name: "Tanya Phullar",
+    initials: "TP",
+    role: "Programme Manager, Financial Services",
+    photo: "founders/tanya.jpg",
+    linkedin: "https://www.linkedin.com/in/tanya-phullar-4237333b/",
+    bio: "A results-driven Programme Manager with a track record of delivering complex, strategic projects across financial services. Brings the same precision and client confidence to every rally.",
+  },
 ];
 
 function FounderCard({ founder }: { founder: typeof founders[number] }) {
