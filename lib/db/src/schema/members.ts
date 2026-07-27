@@ -32,6 +32,10 @@ export const membersTable = pgTable("members", {
   consentMarketingAt: timestamp("consent_marketing_at", { withTimezone: true }),
   consentSponsorAt: timestamp("consent_sponsor_at", { withTimezone: true }),
 
+  // Contractual acceptance — 18+ age confirmation + Terms of Use + Terms of Sale
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+  termsVersion:    text("terms_version"),
+
   // Opt-out / soft-delete
   optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
 

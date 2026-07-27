@@ -6,6 +6,8 @@ import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Home from '@/pages/Home';
 import Admin from '@/pages/Admin';
 import Privacy from '@/pages/Privacy';
+import Terms from '@/pages/Terms';
+import TermsOfSale from '@/pages/TermsOfSale';
 import HostAnEvent from '@/pages/HostAnEvent';
 import Shop from '@/pages/Shop';
 import { CookieBanner } from '@/components/CookieBanner';
@@ -25,6 +27,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={Admin} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/terms-of-sale" component={TermsOfSale} />
       <Route path="/host-an-event" component={HostAnEvent} />
       {/* Shop route — hidden until launch: <Route path="/shop" component={Shop} /> */}
       <Route component={NotFound} />

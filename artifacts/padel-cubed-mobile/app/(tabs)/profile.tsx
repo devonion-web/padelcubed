@@ -252,6 +252,41 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Legal */}
+          <View style={[styles.followCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.followTitle, { color: colors.mutedForeground }]}>LEGAL</Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://padelcubed.co.uk/privacy')}
+              activeOpacity={0.7}
+              style={[styles.followRow, { borderBottomColor: colors.border }]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.followPlatform, { color: colors.foreground }]}>Privacy Notice</Text>
+              </View>
+              <Feather name="arrow-up-right" size={15} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://padelcubed.co.uk/terms')}
+              activeOpacity={0.7}
+              style={[styles.followRow, { borderBottomColor: colors.border }]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.followPlatform, { color: colors.foreground }]}>Terms of Use</Text>
+              </View>
+              <Feather name="arrow-up-right" size={15} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://padelcubed.co.uk/terms-of-sale')}
+              activeOpacity={0.7}
+              style={styles.followRow}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.followPlatform, { color: colors.foreground }]}>Terms of Sale</Text>
+              </View>
+              <Feather name="arrow-up-right" size={15} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+
           {/* Clear registration (dev/testing convenience) */}
           <TouchableOpacity onPress={handleClear} activeOpacity={0.7} style={styles.clearButton}>
             <Text style={[styles.clearText, { color: colors.destructive }]}>Remove my registration</Text>

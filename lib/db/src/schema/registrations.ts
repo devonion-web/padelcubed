@@ -51,6 +51,11 @@ export const registrationsTable = pgTable("registrations", {
   consentMarketingAt: timestamp("consent_marketing_at", { withTimezone: true }),
   consentSponsorAt: timestamp("consent_sponsor_at", { withTimezone: true }),
 
+  // Contractual acceptance — 18+ age confirmation + Terms of Use + Terms of Sale
+  // Written at the moment the sign-up checkbox is ticked; never null for post-v1 registrations.
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+  termsVersion:    text("terms_version"),
+
   // Opt-out — set by one-click unsubscribe link; suppresses all further email
   optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
 

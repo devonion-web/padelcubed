@@ -43,7 +43,6 @@ test.describe("UTM capture", () => {
 
     await page.goto("/?utm_source=playwright&utm_campaign=e2e_test&utm_medium=direct");
 
-    // Open modal and navigate to the join form
     await page.getByRole("button", { name: /register your interest/i }).first().click();
     const modal = page.locator('[role="dialog"][aria-modal="true"]');
     await expect(modal).toBeVisible();
@@ -51,14 +50,16 @@ test.describe("UTM capture", () => {
     await modal.getByRole("button", { name: /join the community/i }).click();
     await expect(modal.getByPlaceholder("Jane Smith")).toBeVisible({ timeout: 5000 });
 
-    // Fill minimum required fields
+    // Fill all required fields
     await modal.getByPlaceholder("Jane Smith").fill("UTM Tester");
     await modal.getByPlaceholder("jane@company.com").fill("utm@example.com");
+    await modal.getByPlaceholder("https://www.linkedin.com/in/yourname").fill("https://linkedin.com/in/utm");
 
-    // Check required consent only
-    const [gdprCheckbox] = await modal.getByRole("checkbox").all();
-    await gdprCheckbox.scrollIntoViewIfNeeded();
-    await gdprCheckbox.check();
+    // Tick both required checkboxes: gdpr (0) and termsAccepted (3)
+    const checkboxes = await modal.getByRole("checkbox").all();
+    await checkboxes[0].scrollIntoViewIfNeeded();
+    await checkboxes[0].check();
+    await checkboxes[3].check();
 
     await modal.getByRole("button", { name: /register my interest/i }).click();
 

@@ -774,7 +774,9 @@ export default function Home() {
               <a href="mailto:info@padelcubed.co.uk" className="text-muted-foreground hover:text-foreground transition-colors">Email us</a>
               <a href="https://www.instagram.com/padelcubed" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">Instagram</a>
               <a href="https://www.linkedin.com/company/people-padel-places/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</a>
-              <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
+              <a href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Notice</a>
+              <a href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Use</a>
+              <a href="/terms-of-sale" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Sale</a>
             </div>
           </div>
 

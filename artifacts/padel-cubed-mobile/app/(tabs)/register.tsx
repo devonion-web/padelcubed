@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   FlatList,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -131,6 +132,7 @@ export default function RegisterScreen() {
   const [gdprConsent, setGdprConsent] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
   const [consentSponsor, setConsentSponsor] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [pickerField, setPickerField] = useState<string | null>(null);
 
@@ -159,6 +161,10 @@ export default function RegisterScreen() {
       Alert.alert('Consent required', 'Please agree to the privacy terms to continue.');
       return;
     }
+    if (!termsAccepted) {
+      Alert.alert('Terms required', 'Please confirm you are 18 or over and agree to the Terms of Use and Terms of Sale.');
+      return;
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await mutation.mutateAsync({
@@ -176,6 +182,8 @@ export default function RegisterScreen() {
           gdprConsent: true,
           consentMarketing,
           consentSponsor,
+          termsAccepted: true,
+          termsVersion: '1.0',
         },
       });
       await saveProfile({
@@ -460,10 +468,56 @@ export default function RegisterScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Reassurance */}
+        {/* Required: 18+ age + contractual terms */}
+        <TouchableOpacity
+          style={[styles.gdprRow, { marginTop: 12 }]}
+          onPress={() => { Haptics.selectionAsync(); setTermsAccepted((v) => !v); }}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              styles.checkbox,
+              {
+                borderColor: termsAccepted ? colors.primary : colors.destructive,
+                backgroundColor: termsAccepted ? colors.primary : 'transparent',
+              },
+            ]}
+          >
+            {termsAccepted && <Feather name="check" size={12} color={colors.primaryForeground} />}
+          </View>
+          <Text style={[styles.gdprText, { color: colors.mutedForeground }]}>
+            I'm 18 or over and agree to the{' '}
+            <Text
+              style={{ color: colors.primary }}
+              onPress={() => Linking.openURL('https://padelcubed.co.uk/terms')}
+            >Terms of Use</Text>
+            {' '}and{' '}
+            <Text
+              style={{ color: colors.primary }}
+              onPress={() => Linking.openURL('https://padelcubed.co.uk/terms-of-sale')}
+            >Terms of Sale</Text>
+            .{' '}
+            <Text style={{ color: colors.destructive }}>*</Text>
+          </Text>
+        </TouchableOpacity>
+
+        {/* Reassurance + legal links */}
         <Text style={[styles.gdprText, { color: colors.mutedForeground, marginTop: 10 }]}>
-          We never sell your data, and you can delete it whenever you like.{' '}
-          <Text style={{ color: colors.primary }}>Privacy Notice</Text>
+          We never sell your data.{' '}
+          <Text
+            style={{ color: colors.primary }}
+            onPress={() => Linking.openURL('https://padelcubed.co.uk/privacy')}
+          >Privacy Notice</Text>
+          {' · '}
+          <Text
+            style={{ color: colors.primary }}
+            onPress={() => Linking.openURL('https://padelcubed.co.uk/terms')}
+          >Terms of Use</Text>
+          {' · '}
+          <Text
+            style={{ color: colors.primary }}
+            onPress={() => Linking.openURL('https://padelcubed.co.uk/terms-of-sale')}
+          >Terms of Sale</Text>
         </Text>
 
         {/* Submit */}

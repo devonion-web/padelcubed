@@ -1,0 +1,75 @@
+PAGE 1 — /privacy (Privacy Notice)
+
+Privacy Notice
+
+Last updated: 27 July 2026
+
+Who we are. P³ (Padel Cubed) is operated by Dev AI Limited ("we", "us", "our"), a company registered in England and Wales (company number 15876850), registered office Deb Chartered Accountants, 19 Middlewoods Way, Carlton, Barnsley, S71 3HR, United Kingdom. Dev AI Limited is the data controller for the personal data described here. For anything to do with your data — a copy of it, a correction, deletion, or a complaint — email dev.onion@googlemail.com.
+
+What we collect. When you register: your name and email (required); optionally your company, job title/function, industry, seniority, padel ability, interests and LinkedIn profile. When you sign in with LinkedIn: a stable LinkedIn identifier plus your name and email. When you book and pay: booking details and payment confirmation (card payments are handled by Stripe; we never see or store your full card details). Automatically: the marketing source of your visit (UTM tags) and basic technical/log data needed to run and secure the service.
+
+Your consent choices. At sign-up we ask for three separate, independent consents, and you can change any at any time: Events (store your details and contact you about events — needed to take part); Marketing (newsletter and non-event updates — optional); Sponsor cohorts (share your details with a relevant sponsor where you've opted in — optional). If you registered before we separated these, we recorded your events consent only, and will ask afresh before using your data for marketing or sponsor sharing.
+
+Why we use your data, and our legal basis. Running events (bookings, confirmations, reminders, hosting): to perform our agreement with you and our legitimate interest in running the community. Marketing: only with your consent. Segmentation and sponsor cohorts: legitimate interest for anonymised information; your consent for any identifiable sharing. Payment and financial records: to perform our agreement and meet our legal obligations. Security, fraud prevention and analytics: our legitimate interests, balanced against your rights.
+
+Sponsors — what they see. Our events are supported by cross-sector sponsors. By default, sponsors only ever see anonymised, aggregate information about a cohort (e.g. "around 30 GRC leaders"), which does not identify you. We share your identifiable details with a sponsor only where you have given explicit sponsor consent. We never sell your data, and no single sponsor owns or controls the community.
+
+Who we share data with. A small set of trusted providers who process data on our behalf, under contract and only on our instructions: payment (Stripe), email delivery, our automation/data hub, website and database hosting, and LinkedIn for sign-in. Our current list is available on request. Some providers operate outside the UK; where they do, we rely on UK-approved transfer safeguards (such as the UK International Data Transfer Agreement or the UK Addendum to the EU Standard Contractual Clauses).
+
+How long we keep it. While you're an active member and for about three years after your last activity, after which we delete or anonymise it. If you delete your account, we anonymise your personal data promptly and keep only what we're legally required to (a minimal record that consent was given or withdrawn, and payment records we must retain by law).
+
+Your rights. You can access, correct, delete, restrict or object to how we use your data, ask for portability, and withdraw any consent at any time. Delete your account and data yourself in the app, or email dev.onion@googlemail.com; we'll respond within one month. If you're unhappy with how we've handled your data, you can complain to the Information Commissioner's Office (ICO) at ico.org.uk — though we'd appreciate the chance to put it right first.
+
+Cookies. We use essential cookies to keep you signed in and secure, and we read marketing-source (UTM) tags to understand which channels bring people in. We don't use advertising or tracking cookies.
+
+Changes. We'll update this notice as the community grows and post the date of the latest version at the top.
+
+PAGE 2 — /terms (Terms of Use)
+
+Terms of Use
+
+Last updated: 27 July 2026
+
+About us. P³ (Padel Cubed) is operated by Dev AI Limited, registered in England and Wales (company number 15876850), registered office Deb Chartered Accountants, 19 Middlewoods Way, Carlton, Barnsley, S71 3HR, United Kingdom. These Terms govern your use of the P³ website and app. By creating an account or registering your interest, you accept these terms. Contact: dev.onion@googlemail.com.
+
+Eligibility. You must be 18 or over to create an account, register, or attend a P³ event (our events include alcohol and are aimed at professionals). By using the service you confirm you're 18 or over.
+
+Your account. Give accurate information and keep it up to date. You're responsible for activity under your account; keep your sign-in secure. If you sign in with LinkedIn, we use your LinkedIn name and email only to set up and identify your account — we never post anything. You can delete your account and data at any time in the app.
+
+Acceptable use. Don't misuse the service: no unlawful use, no attempts to break, probe or overload the service or its security, no scraping or harvesting others' data, no impersonation, and nothing that harms other members or the community. We may suspend or remove accounts that break these rules.
+
+Events, bookings and payment. Booking and paying for events is governed by our Terms of Sale (/terms-of-sale), including the refund and cancellation policy. Events are produced social sport events; take part within your own physical limits and follow venue rules and our reasonable instructions.
+
+Our content and brand. The P³ name, logo, content and materials are owned by or licensed to Dev AI Limited. Don't copy, reuse, or pass them off as your own without permission.
+
+Your data. We handle personal data as described in our Privacy Notice (/privacy) — including the consents you choose at sign-up, and your right to opt out or delete your data at any time. We never sell your data.
+
+Availability and changes. We aim to keep the service running but don't guarantee it's always available or error-free. We may change or withdraw features, and may update these terms; if we make material changes we'll take reasonable steps to let you know, and continued use means you accept the updated terms.
+
+Liability. Nothing here limits liability for death or personal injury caused by negligence, fraud, or anything that can't be limited by law. Otherwise, to the extent permitted by law, we're not liable for indirect or unforeseeable loss, and our total liability connected to your use of the service is limited as set out in the Terms of Sale for event purchases.
+
+Governing law. These terms are governed by the law of England and Wales, and its courts have jurisdiction.
+
+PAGE 3 — /terms-of-sale (Terms of Sale & Refund Policy)
+
+Terms of Sale & Refund / Cancellation Policy
+
+Last updated: 27 July 2026
+
+Who you're buying from. Event tickets for P³ (Padel Cubed) are sold by Dev AI Limited, a company registered in England and Wales (company number 15876850), registered office Deb Chartered Accountants, 19 Middlewoods Way, Carlton, Barnsley, S71 3HR, United Kingdom. Contact: dev.onion@googlemail.com.
+
+Buying a ticket. A ticket is a licence for one named person to attend the specified P³ event. When you complete checkout and payment (via Stripe), a contract is formed and your place is confirmed. Prices are in pounds sterling and include any applicable taxes. Payment is taken upfront; your place is secured only once payment succeeds. Tickets are personal to you. Events are for attendees aged 18 or over (they include alcohol).
+
+What's included. Your ticket covers the produced event as described on its page — hosted play (Americano format), equipment provided, and refreshments as stated. Specific timings, venue and inclusions are on the event listing.
+
+Refunds and cancellation. Tickets are non-refundable, because payment secures a limited place and covers the cost of producing the event. However, they are transferable: you may pass your place to another eligible (18+) guest, or release your place through the app, up to 48 hours before the event. If we cancel or reschedule an event, you'll be offered a full refund or a transfer to the new date — your choice. There are no refunds for no-shows or late arrivals. Because these are tickets for leisure events on a specific date, they are exempt from the 14-day "cooling-off" cancellation right under the Consumer Contracts Regulations 2013.
+
+Changes to events. Line-ups, format details and timings may change; we'll tell you if anything material changes. Venue or date changes trigger the refund/transfer option above.
+
+Your responsibilities. Give accurate details at checkout so we can contact you. Arrive fit to play; padel is a physical activity — take part within your own limits. Follow the venue's rules and our reasonable instructions on the night.
+
+Liability. Nothing in these terms limits liability for death or personal injury caused by negligence, fraud, or anything that can't be limited by law. Otherwise, our liability in connection with a ticket is limited to the price paid for it.
+
+Data. We handle your data as set out in our Privacy Notice (/privacy). Payment is processed by Stripe; we never see or store your full card details.
+
+General. These terms are governed by the law of England and Wales, and its courts have jurisdiction. If any part is unenforceable, the rest still applies. We may update these terms; the version shown at the time of your purchase applies to that purchase.

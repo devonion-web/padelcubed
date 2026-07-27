@@ -177,9 +177,17 @@ function BookingForm({ event, onSuccess }: { event: BookableEvent; onSuccess: ()
       </button>
 
       {isPaid && (
-        <p className="text-xs text-center text-muted-foreground">
-          Powered by Stripe · Secure payment · Full refund if event cancelled
-        </p>
+        <>
+          <p className="text-xs text-center text-muted-foreground">
+            Tickets are non-refundable but transferable — see our{" "}
+            <a href="/terms-of-sale" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+              refund policy
+            </a>.
+          </p>
+          <p className="text-xs text-center text-muted-foreground">
+            Powered by Stripe · Secure payment · Full refund if event cancelled by P³
+          </p>
+        </>
       )}
     </form>
   );

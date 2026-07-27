@@ -20,7 +20,10 @@ interface JoinFields {
   gdpr:             boolean; // events consent — required
   consentMarketing: boolean; // marketing email — optional
   consentSponsor:   boolean; // sponsor cohort — optional
+  termsAccepted:    boolean; // 18+ age confirmation + contractual terms — required
 }
+
+const TERMS_VERSION = "1.0";
 
 interface HostFields    { contactName: string; company: string; workEmail: string; eventType: string; headcount: string; gdpr: boolean; }
 interface PartnerFields { contactName: string; company: string; workEmail: string; partnershipType: string; message: string; gdpr: boolean; }
@@ -184,6 +187,7 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
     gdpr:             false,
     consentMarketing: false,
     consentSponsor:   false,
+    termsAccepted:    false,
   });
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
@@ -193,6 +197,7 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
     if (!f.fullName.trim()) { setError("Please enter your full name."); return; }
     if (!f.email.trim())    { setError("Please enter your email address."); return; }
     if (!f.linkedinUrl.trim()) { setError("Please add your LinkedIn profile URL so we can verify your details."); return; }
+    if (!f.termsAccepted) { setError("Please confirm you are 18 or over and agree to the Terms of Use and Terms of Sale."); return; }
     if (!f.gdpr) { setError("Please tick the required privacy checkbox to continue."); return; }
     setLoading(true); setError("");
     try {
@@ -217,6 +222,8 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
           gdprConsent:      f.gdpr,
           consentMarketing: f.consentMarketing,
           consentSponsor:   f.consentSponsor,
+          termsAccepted:    f.termsAccepted,
+          termsVersion:     TERMS_VERSION,
           ...utms,
         }),
       });
@@ -351,6 +358,21 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
             When a sponsor's a genuine match for someone like me, I'm happy to be introduced.
           </span>
         </label>
+
+        {/* Required: 18+ age confirmation + contractual terms acceptance */}
+        <label className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+          <input
+            type="checkbox" className="mt-0.5 h-4 w-4 rounded accent-primary flex-shrink-0"
+            checked={f.termsAccepted} onChange={e => setF({ ...f, termsAccepted: e.target.checked })}
+          />
+          <span className="text-xs text-muted-foreground leading-relaxed">
+            <span className="text-destructive font-medium">Required — </span>
+            I'm 18 or over and agree to the{" "}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Terms of Use</a>
+            {" "}and{" "}
+            <a href="/terms-of-sale" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Terms of Sale</a>.
+          </span>
+        </label>
       </div>
 
       <p className="text-xs text-muted-foreground">
@@ -361,7 +383,7 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
       {error && <p className="text-xs text-destructive">{error}</p>}
 
       <button
-        type="submit" disabled={loading || !f.gdpr}
+        type="submit" disabled={loading || !f.gdpr || !f.termsAccepted}
         className="w-full rounded-xl h-11 bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Submitting…</> : "Register my interest"}

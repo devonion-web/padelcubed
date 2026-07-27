@@ -31,6 +31,9 @@ const ExtendedRegistrationBody = SubmitRegistrationBody.extend({
   // Granular consent beyond the base gdprConsent flag
   consentMarketing: z.boolean().optional().default(false),
   consentSponsor:   z.boolean().optional().default(false),
+  // Contractual acceptance: 18+ age confirmation + Terms of Use + Terms of Sale
+  termsAccepted: z.boolean().optional().default(false),
+  termsVersion:  z.string().optional(),
 });
 
 const router: IRouter = Router();
@@ -40,9 +43,10 @@ function friendlyZodError(err: z.ZodError): string {
   const first = err.errors[0];
   if (!first) return "Invalid submission.";
   const fieldLabels: Record<string, string> = {
-    fullName:    "Full name",
-    email:       "Email address",
-    gdprConsent: "Privacy consent",
+    fullName:      "Full name",
+    email:         "Email address",
+    gdprConsent:   "Privacy consent",
+    termsAccepted: "Terms acceptance",
   };
   const label = fieldLabels[String(first.path[0] ?? "")] ?? String(first.path[0] ?? "");
   if (first.code === "too_small" || first.code === "invalid_string") {
@@ -66,6 +70,8 @@ router.post("/registrations", registrationLimiter, async (req, res): Promise<voi
     gdprConsent,
     consentMarketing,
     consentSponsor,
+    termsAccepted,
+    termsVersion,
     utmSource, utmMedium, utmCampaign, utmContent, utmTerm,
     ...rest
   } = parsed.data;
@@ -92,6 +98,9 @@ router.post("/registrations", registrationLimiter, async (req, res): Promise<voi
       consentEventsAt:    gdprConsent      ? now : undefined,
       consentMarketingAt: consentMarketing ? now : undefined,
       consentSponsorAt:   consentSponsor   ? now : undefined,
+      // Contractual acceptance timestamp + version
+      termsAcceptedAt: termsAccepted ? now          : undefined,
+      termsVersion:    termsAccepted ? (termsVersion ?? "1.0") : undefined,
       // UTM attribution
       utmSource:   utmSource   || undefined,
       utmMedium:   utmMedium   || undefined,

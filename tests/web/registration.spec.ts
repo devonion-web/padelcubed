@@ -2,9 +2,12 @@
  * Web E2E — registration form (IntentModal / join flow).
  *
  * Tests:
- *   1. Happy path: required fields filled, gdpr checked → submit → success state.
+ *   1. Happy path: required fields filled, both required checkboxes ticked → submit → success.
  *   2. Duplicate email (API 409) → error message shown to user.
  *   3. Network error (500) → user-facing error shown.
+ *
+ * Checkbox order: [0]=gdpr (required), [1]=marketing (optional),
+ *                 [2]=sponsor (optional), [3]=termsAccepted (required).
  */
 
 import { test, expect } from "@playwright/test";
@@ -14,21 +17,26 @@ async function openJoinForm(page: import("@playwright/test").Page) {
 
   await page.getByRole("button", { name: /register your interest/i }).first().click();
 
-  // Filter to the IntentModal specifically (CookieBanner also has role="dialog")
   const modal = page.locator('[role="dialog"][aria-modal="true"]');
   await expect(modal).toBeVisible();
 
-  // Pick intent step → click "Join the community" button card
   await modal.getByRole("button", { name: /join the community/i }).click();
 
-  // Wait for the form transition to complete
   await expect(modal.getByPlaceholder("Jane Smith")).toBeVisible({ timeout: 5000 });
 
   return modal;
 }
 
+/** Tick both required checkboxes: gdpr (0) and termsAccepted (3). */
+async function checkRequiredBoxes(modal: import("@playwright/test").Locator) {
+  const checkboxes = await modal.getByRole("checkbox").all();
+  await checkboxes[0].scrollIntoViewIfNeeded();
+  await checkboxes[0].check();  // gdpr — required
+  await checkboxes[3].check();  // termsAccepted — required
+}
+
 test.describe("Registration form", () => {
-  test("happy path: fills form, checks gdpr, submits → success state shown", async ({ page }) => {
+  test("happy path: required fields + both required checkboxes → success", async ({ page }) => {
     await page.route("**/api/registrations", (route) =>
       route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true }) })
     );
@@ -37,10 +45,9 @@ test.describe("Registration form", () => {
 
     await modal.getByPlaceholder("Jane Smith").fill("Playwright User");
     await modal.getByPlaceholder("jane@company.com").fill("playwright@e2e.test");
+    await modal.getByPlaceholder("https://www.linkedin.com/in/yourname").fill("https://linkedin.com/in/playwright");
 
-    const [gdprCheckbox] = await modal.getByRole("checkbox").all();
-    await gdprCheckbox.scrollIntoViewIfNeeded();
-    await gdprCheckbox.check();
+    await checkRequiredBoxes(modal);
 
     await modal.getByRole("button", { name: /register my interest/i }).click();
 
@@ -60,14 +67,12 @@ test.describe("Registration form", () => {
 
     await modal.getByPlaceholder("Jane Smith").fill("Duplicate User");
     await modal.getByPlaceholder("jane@company.com").fill("dup@e2e.test");
+    await modal.getByPlaceholder("https://www.linkedin.com/in/yourname").fill("https://linkedin.com/in/dup");
 
-    const [gdprCheckbox] = await modal.getByRole("checkbox").all();
-    await gdprCheckbox.scrollIntoViewIfNeeded();
-    await gdprCheckbox.check();
+    await checkRequiredBoxes(modal);
 
     await modal.getByRole("button", { name: /register my interest/i }).click();
 
-    // The form surfaces the API error as an inline message
     await expect(modal.getByText(/already registered|submission failed/i)).toBeVisible({ timeout: 6000 });
   });
 
@@ -84,10 +89,9 @@ test.describe("Registration form", () => {
 
     await modal.getByPlaceholder("Jane Smith").fill("Error User");
     await modal.getByPlaceholder("jane@company.com").fill("err@e2e.test");
+    await modal.getByPlaceholder("https://www.linkedin.com/in/yourname").fill("https://linkedin.com/in/err");
 
-    const [gdprCheckbox] = await modal.getByRole("checkbox").all();
-    await gdprCheckbox.scrollIntoViewIfNeeded();
-    await gdprCheckbox.check();
+    await checkRequiredBoxes(modal);
 
     await modal.getByRole("button", { name: /register my interest/i }).click();
 
