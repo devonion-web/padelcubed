@@ -11,7 +11,7 @@ export type RegistrationInputInterestsItem = typeof RegistrationInputInterestsIt
 
 export const RegistrationInputInterestsItem = {
   'Playing_/_fitness': 'Playing / fitness',
-  Meeting_other_founders: 'Meeting other founders',
+  Meeting_other_founders: 'Meeting other professionals',
   'Industry_peers_&_ideas': 'Industry peers & ideas',
   Just_trying_padel: 'Just trying padel',
   'Social_play_(Americano_events)': 'Social play (Americano events)',

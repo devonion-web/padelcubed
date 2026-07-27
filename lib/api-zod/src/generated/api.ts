@@ -32,7 +32,7 @@ export const SubmitRegistrationBody = zod.object({
   "function": zod.enum(['Founder / CEO', 'Risk / Compliance / GRC', 'Security / CISO', 'Product / Engineering', 'Sales / Marketing', 'Operations', 'Investor', 'Other']).optional(),
   "seniority": zod.enum(['Founder / Owner', 'C-suite', 'VP / Head of', 'Director / Manager', 'Other']).optional(),
   "padelLevel": zod.enum(['Never played', 'Beginner', 'Intermediate', 'Advanced']).optional(),
-  "interests": zod.array(zod.enum(['Playing / fitness', 'Meeting other founders', 'Industry peers & ideas', 'Just trying padel', 'Social play (Americano events)'])).optional(),
+  "interests": zod.array(zod.enum(['Playing / fitness', 'Meeting other professionals', 'Industry peers & ideas', 'Just trying padel', 'Social play (Americano events)'])).optional(),
   "linkedinUrl": zod.string().optional(),
   "gdprConsent": zod.boolean()
 })
