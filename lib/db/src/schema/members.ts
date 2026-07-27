@@ -6,9 +6,11 @@ import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
  *
  * Consent fields are stored as timestamps (null = not given).
  * Three independent consents per GDPR granularity requirements:
- *   a) events  — storing details, contacting about events (operations)
- *   b) marketing — broader marketing communications
- *   c) sponsor  — sharing anonymised cohort data with sponsors
+ *   a) events  — "Keep me posted about P³ events, and store my details so you can."
+ *   b) marketing — "Send me the occasional newsletter and the odd update beyond events."
+ *   c) sponsor  — "When a sponsor's a genuine match for someone like me, I'm happy to
+ *                  be introduced." IDENTIFIABLE personal introduction consent ONLY.
+ *                  Anonymised cohort sharing is disclosed separately — no tick required.
  *
  * Original registrations (pre-accounts) backfill:
  *   consent_events_at  = registration.created_at  (original checkbox covered this)

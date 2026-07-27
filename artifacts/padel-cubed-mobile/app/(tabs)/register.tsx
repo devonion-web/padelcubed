@@ -255,7 +255,7 @@ export default function RegisterScreen() {
       >
         <Text style={[styles.pageTitle, { color: colors.foreground }]}>Join P³</Text>
         <Text style={[styles.pageSubtitle, { color: colors.mutedForeground }]}>
-          Free to join. We'll let you know when the next event drops.
+          Tell us a bit about yourself — we'll be in touch when the next event opens up.
         </Text>
 
         {/* Basic Info */}
@@ -402,8 +402,8 @@ export default function RegisterScreen() {
             {gdprConsent && <Feather name="check" size={12} color={colors.primaryForeground} />}
           </View>
           <Text style={[styles.gdprText, { color: colors.mutedForeground }]}>
-            I agree to Dev AI Ltd (operating P³) storing my details and contacting me about P³ events.{' '}
-            <Text style={{ color: colors.primary }}>Privacy policy</Text>
+            Keep me posted about P³ events, and store my details so you can.{' '}
+            <Text style={{ color: colors.primary }}>Privacy Notice</Text>
           </Text>
         </TouchableOpacity>
 
@@ -427,7 +427,7 @@ export default function RegisterScreen() {
         </TouchableOpacity>
 
         <Text style={[styles.freeNote, { color: colors.mutedForeground }]}>
-          Registration is free — no commitment required.
+          No commitment required.
         </Text>
       </ScrollView>
     </View>

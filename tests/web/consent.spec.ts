@@ -55,15 +55,15 @@ test.describe("Registration consent checkboxes", () => {
     // Scroll to the consent section at the bottom of the form
     await modal.getByRole("checkbox").first().scrollIntoViewIfNeeded();
 
-    // 1. Required — events operations (contains "Required — ")
+    // 1. Required — events consent (new wording)
     await expect(modal.getByText("Required", { exact: false }).first()).toBeVisible();
-    await expect(modal.getByText(/contacting me about P³ events/i)).toBeVisible();
+    await expect(modal.getByText(/keep me posted about P³ events/i)).toBeVisible();
 
-    // 2. Optional — marketing communications
-    await expect(modal.getByText(/broader marketing communications/i)).toBeVisible();
+    // 2. Optional — newsletter / updates
+    await expect(modal.getByText(/occasional newsletter/i)).toBeVisible();
 
-    // 3. Optional — sponsor cohort
-    await expect(modal.getByText(/anonymised attendee cohort/i)).toBeVisible();
+    // 3. Optional — sponsor introductions
+    await expect(modal.getByText(/genuine match.*happy to be introduced/i)).toBeVisible();
   });
 
   test("submit button is disabled until required (gdpr) checkbox is checked", async ({ page }) => {

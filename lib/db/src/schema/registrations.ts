@@ -40,11 +40,19 @@ export const registrationsTable = pgTable("registrations", {
   utmTerm: text("utm_term"),
 
   // Consent — granular timestamps
-  // Original form text: "storing my details and contacting me about events"
-  // → covers event operations; marketing + sponsor require explicit new consent
+  // consentEventsAt    — "Keep me posted about P³ events, and store my details so you can."
+  // consentMarketingAt — "Send me the occasional newsletter and the odd update beyond events."
+  // consentSponsorAt   — "When a sponsor's a genuine match for someone like me, I'm happy to
+  //                       be introduced." IDENTIFIABLE personal introduction consent ONLY.
+  //                       Does NOT cover anonymised cohort sharing (disclosed, no tick needed).
+  //                       Do NOT treat pre-2025 consent_sponsor_at rows (if any) as covering
+  //                       personal intros — check created_at against the label-change date.
   consentEventsAt: timestamp("consent_events_at", { withTimezone: true }),
   consentMarketingAt: timestamp("consent_marketing_at", { withTimezone: true }),
   consentSponsorAt: timestamp("consent_sponsor_at", { withTimezone: true }),
+
+  // Opt-out — set by one-click unsubscribe link; suppresses all further email
+  optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
 
   // Legacy boolean kept for backwards-compat read; new rows use timestamp fields
   gdprConsent: boolean("gdpr_consent").notNull().default(false),

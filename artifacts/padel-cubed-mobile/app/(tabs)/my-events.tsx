@@ -256,7 +256,7 @@ export default function MyEventsScreen() {
             activeOpacity={0.8}
             style={[styles.cta, { backgroundColor: colors.primary, borderRadius: colors.radius }]}
           >
-            <Text style={[styles.ctaText, { color: colors.primaryForeground }]}>Create profile</Text>
+            <Text style={[styles.ctaText, { color: colors.primaryForeground }]}>Register your interest</Text>
             <Feather name="arrow-right" size={16} color={colors.primaryForeground} />
           </TouchableOpacity>
         </View>

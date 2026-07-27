@@ -51,10 +51,10 @@ const PARTNER_TYPES    = ["Sponsor an event", "Co-brand with P³", "Become a ven
 
 const GDPR_TEXT = (
   <span className="text-xs text-muted-foreground leading-relaxed">
-    I consent to Dev AI Ltd (operating P³) processing my data to respond to this enquiry.
+    I consent to P³ (Padel Cubed) processing my details to respond to this enquiry.
     Read our{" "}
     <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
-      Privacy Policy
+      Privacy Notice
     </a>.
   </span>
 );
@@ -115,7 +115,7 @@ function SuccessScreen({ intent, onClose }: { intent: Intent; onClose: () => voi
                        transition-colors no-underline"
           >
             <Linkedin className="h-4 w-4 fill-white stroke-none" />
-            Follow Padelcubed on LinkedIn
+            Follow P³ on LinkedIn
           </a>
         </div>
       )}
@@ -266,8 +266,7 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
         <>
           <div className="rounded-xl bg-muted/40 border border-border p-4 flex flex-col gap-3">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-foreground">Faster with LinkedIn</span>
-              {" "}— we'll pre-fill your name and email automatically, and your profile stays linked to your account.
+              We'll use your LinkedIn name and email to set up your account — we never post anything, ever.
             </p>
             <LinkedInButton />
           </div>
@@ -378,8 +377,8 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
             <span className="text-destructive font-medium">Required — </span>
-            I agree to Dev AI Ltd (operating P³) storing my details and contacting me about P³ events.{" "}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Policy</a>.
+            Keep me posted about P³ events, and store my details so you can.{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Notice</a>.
           </span>
         </label>
 
@@ -391,7 +390,7 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
             <span className="font-medium text-foreground/70">Optional — </span>
-            I'd like to receive broader marketing communications from Dev AI / P³ (e.g. news, offers, community updates).
+            Send me the occasional newsletter and the odd update beyond events.
           </span>
         </label>
 
@@ -403,10 +402,15 @@ function JoinForm({ onSuccess, prefill }: { onSuccess: () => void; prefill?: Lin
           />
           <span className="text-xs text-muted-foreground leading-relaxed">
             <span className="font-medium text-foreground/70">Optional — </span>
-            I'm happy for anonymised attendee cohort data (e.g. seniority, industry mix) to be shared with P³ event sponsors for matching purposes. No personal data is shared.
+            When a sponsor's a genuine match for someone like me, I'm happy to be introduced.
           </span>
         </label>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        We never sell your data, and you can delete it whenever you like.{" "}
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Notice</a>.
+      </p>
 
       {error && <p className="text-xs text-destructive">{error}</p>}
 

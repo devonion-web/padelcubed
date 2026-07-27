@@ -68,7 +68,7 @@ const founders = [
     role: "Director, Risk Rising",
     photo: "founders/dev.jpg",
     linkedin: "https://www.linkedin.com/in/devairr",
-    bio: "The spark behind the Exchange. Dev builds technology that moves GRC forward — and started this community because the best introductions happen mid-rally, not across a boardroom.",
+    bio: "The spark behind P³. Dev builds technology that moves GRC forward — and started this community because the best introductions happen mid-rally, not across a boardroom.",
   },
   {
     name: "Rash Phullar",
@@ -329,7 +329,7 @@ export default function Home() {
                   <span className="text-[#13D4DB]">Places.</span>
                 </h1>
                 <p className="text-xl md:text-2xl text-white/70 font-medium max-w-2xl mb-10 leading-relaxed">
-                  Curated padel events for senior professionals and founders — premium venues, top-level play, real connections.
+                  Arrive solo. Rotate partners. Leave having met the room. All levels welcome — kit provided, no pitch required.
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <Button size="lg" onClick={openModal} className="rounded-full px-8 h-14 text-base font-semibold w-full sm:w-auto group bg-[#0F9090] hover:bg-[#0d7f7f] text-white border-0">
@@ -340,7 +340,7 @@ export default function Home() {
                     How it works
                   </Button>
                 </div>
-                <p className="text-sm text-white/50 mt-3 text-center">Get in touch — no commitment required.</p>
+                <p className="text-sm text-white/50 mt-3 text-center">No commitment required.</p>
               </motion.div>
             </div>
           </div>
@@ -392,7 +392,7 @@ export default function Home() {
             <div className="max-w-4xl mx-auto text-center">
               <FadeIn>
                 <p className="text-3xl md:text-5xl font-medium tracking-tight leading-tight text-foreground">
-                  People, Padel, Places runs curated social padel events for founders and senior professionals. Using rotating formats like the Americano, you play with and against everyone in the room over 1.5–3 hours — so a single evening turns into a dozen real connections.
+                  P³ runs curated social padel events for founders and senior professionals. Using rotating formats like the Americano, you play with and against everyone in the room over 1.5–3 hours — so a single evening turns into a dozen real connections.
                 </p>
                 <p className="mt-8 text-xl md:text-2xl text-muted-foreground leading-relaxed">
                   It's an exchange: of ideas, perspectives, introductions, energy and a good game. All levels welcome — starting in London and growing across the UK.
@@ -437,8 +437,8 @@ export default function Home() {
                 },
                 {
                   icon: Shield,
-                  title: "Curated & subsidised",
-                  desc: "Padel is an expensive sport. Sponsor backing means you access top-tier venues at a fraction of the walk-in rate — you pay for a produced event, not court hire."
+                  title: "Partner-backed events",
+                  desc: "Our partners sponsor the evening so the focus stays on who's in the room. You get great venues, a great format, and a great crowd — without having to sort any of it yourself."
                 },
                 {
                   icon: Zap,
@@ -470,10 +470,10 @@ export default function Home() {
                   <span className="text-primary text-sm font-semibold tracking-widest uppercase">Why this matters</span>
                 </div>
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6 max-w-3xl">
-                  Padel is one of the UK's fastest-growing sports. It's also one of the most expensive.
+                  Padel is one of the UK's fastest-growing sports. P³ brings it to you the right way.
                 </h2>
                 <p className="text-xl text-muted-foreground max-w-3xl leading-relaxed mb-16">
-                  Premium court time at the best venues in London can cost £60–£100 an hour. Add a quality experience on top — an MC, a format, a leaderboard, drinks — and you're looking at serious money. People, Padel, Places changes that through sponsor backing. You get access to the best facilities at a fraction of the real cost, and sponsors get access to a room full of exactly the right people.
+                  Every P³ evening is produced from start to finish — a proper venue, an MC, an Americano format, a live leaderboard, and time for a drink at the end. Our partners make it happen. You just show up and play.
                 </p>
               </FadeIn>
 
@@ -487,7 +487,7 @@ export default function Home() {
                   {
                     icon: BadgePercent,
                     title: "More than a game.",
-                    desc: "One ticket, the whole night — hosted play, a live leaderboard, prizes and drinks. Our partners help us put it on, so it stays a proper experience and keeps everyone on court."
+                    desc: "One ticket, the whole evening — hosted play, a live leaderboard, prizes and drinks. Produced end to end so you can focus on the people, not the logistics."
                   },
                   {
                     icon: Trophy,
@@ -586,7 +586,7 @@ export default function Home() {
               {[
                 { step: "01", title: "Get in touch", desc: "Drop us a message — we'll come back to you quickly." },
                 { step: "02", title: "We match you", desc: "We match you to events that fit your level and interests." },
-                { step: "03", title: "Reserve your spot", desc: "A small upfront payment secures your place — you're booking a produced event, not a court." },
+                { step: "03", title: "Reserve your spot", desc: "Reserve your spot — you're booking a produced evening, not a court." },
                 { step: "04", title: "Turn up & connect", desc: "Play with everyone, trade ideas, leave with new connections." }
               ].map((item, i) => (
                 <FadeIn key={i} delay={i * 0.1} className="relative">
@@ -610,7 +610,7 @@ export default function Home() {
               <FadeIn>
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">Who is this for?</h2>
                 <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-90">
-                  Founders, operators, and senior leaders who want to expand their network outside their immediate industry bubble — while breaking a sweat. Starting in London and growing across the UK, People, Padel, Places is open to anyone who values real connection over forced small talk.
+                  Founders, operators, and senior leaders who want to meet great people outside their immediate industry bubble — while breaking a sweat. All levels welcome. Starting in London and growing across the UK, P³ is for anyone who values real connection over forced small talk.
                 </p>
               </FadeIn>
             </div>
@@ -625,7 +625,7 @@ export default function Home() {
               <div className="mb-16 text-center max-w-2xl mx-auto">
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">The ambassadors</h2>
                 <p className="text-lg text-muted-foreground">
-                  Six people who'd rather make the introduction on court than across a boardroom. This is who you're playing with.
+                  Seven people who'd rather make the introduction on court than across a boardroom. This is who you're playing with.
                 </p>
               </div>
             </FadeIn>
@@ -702,7 +702,7 @@ export default function Home() {
                   <AccordionItem value="item-2" className="border-border">
                     <AccordionTrigger className="text-lg hover:text-primary transition-colors">What is the cost?</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground text-base">
-                      Registering your interest is free. You only pay when you reserve a spot at an event. Costs are kept competitive thanks to sponsor support — you're paying for a produced social event, not just court hire.
+                      Registering your interest is free. You only pay when you reserve a spot at an event — you're booking a produced social evening, not court hire.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-3" className="border-border">

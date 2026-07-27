@@ -12,6 +12,7 @@ import adminAmericanoRouter from "./admin-americano.js";
 import adminChargeRouter from "./admin-charge.js";
 import shopRouter from "./shop.js";
 import adminInsightsRouter from "./admin-insights.js";
+import unsubscribeRouter from "./unsubscribe.js";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(adminAmericanoRouter);
 router.use(adminChargeRouter);
 router.use(shopRouter);
 router.use(adminInsightsRouter);
+router.use(unsubscribeRouter);
 
 export default router;

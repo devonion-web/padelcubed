@@ -1,9 +1,11 @@
 import { Resend } from "resend";
 import QRCode from "qrcode";
+import { createHmac } from "crypto";
 import { findVenue, FORMAT_INFO } from "./venues.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM ?? "P³ <onboarding@resend.dev>";
+const SITE = process.env.SITE_URL ?? "https://www.padelcubed.co.uk";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
 const B = {
@@ -66,8 +68,17 @@ function baseEmail(opts: {
   headline:     string;
   subline:      string;
   body:         string;
+  /** Recipient email — used to generate a signed one-click unsubscribe link in the footer. */
+  to?:          string;
 }): string {
-  const { preheader, badgeEmoji, badgeText, headline, subline, body } = opts;
+  const { preheader, badgeEmoji, badgeText, headline, subline, body, to } = opts;
+  const unsubToken = to
+    ? createHmac("sha256", process.env.SESSION_SECRET ?? "").update(`unsub:${to.toLowerCase()}`).digest("hex")
+    : "";
+  const unsubUrl = to
+    ? `${SITE}/api/unsubscribe?email=${encodeURIComponent(to)}&tok=${unsubToken}`
+    : `${SITE}/privacy`;
+  const prefsUrl = `${SITE}/privacy`;
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -101,7 +112,7 @@ function baseEmail(opts: {
                    style="display:block;border-radius:11px;box-shadow:0 4px 12px rgba(0,0,0,0.35);"/>
             </td>
             <td style="vertical-align:middle;padding-left:12px;">
-              <span style="font-size:14px;font-weight:800;color:${B.textLight};letter-spacing:0.4px;">THE PADEL EXCHANGE</span>
+              <span style="font-size:14px;font-weight:800;color:${B.textLight};letter-spacing:0.4px;">P3 &middot; PADEL CUBED</span>
             </td>
             <td align="right" style="vertical-align:middle;">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
@@ -144,11 +155,19 @@ function baseEmail(opts: {
               <p style="margin:0 0 4px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
                          font-size:11px;color:${B.mutedFg};text-transform:uppercase;
                          letter-spacing:0.8px;font-weight:700;">
-                The Padel Exchange &middot; London
+                P&#179; (Padel Cubed) &middot; London
+              </p>
+              <p style="margin:0 0 8px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+                         font-size:11px;color:${B.mutedFg};">
+                You&#39;re getting this because you joined P&#179; (Padel Cubed).
               </p>
               <p style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
                          font-size:11px;color:${B.mutedFg};">
-                Questions? Reply to this email and we&#39;ll get back to you.
+                <a href="${prefsUrl}" style="color:${B.mutedFg};text-decoration:underline;">Update preferences</a>
+                &nbsp;&middot;&nbsp;
+                <a href="${unsubUrl}" style="color:${B.mutedFg};text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="${SITE}/privacy" style="color:${B.mutedFg};text-decoration:underline;">Privacy Notice</a>
               </p>
             </td>
           </tr></table>
@@ -495,7 +514,7 @@ function qrTicketBlock(qrDataUri: string, bookingId: number): string {
             <p style="margin:0;font-size:10px;font-weight:800;color:rgba(255,255,255,0.5);
                        text-transform:uppercase;letter-spacing:1.2px;">Entry Ticket</p>
             <p style="margin:4px 0 0;font-size:15px;font-weight:900;color:${B.textLight};">
-              P&#179; The Padel Exchange
+              P&#179;
             </p>
           </td>
           <td align="right" style="vertical-align:top;">
@@ -561,6 +580,7 @@ export async function sendBookingConfirmation(params: BookingConfirmationParams)
 
   const html = baseEmail({
     subject:    `You're booked — ${eventTitle}`,
+    to,
     preheader:  `${firstName}, your spot at ${eventTitle} is confirmed. QR entry ticket + venue info inside.`,
     badgeEmoji: "✅",
     badgeText:  "Booking Confirmed",
@@ -606,6 +626,7 @@ export async function sendPasswordResetEmail(params: {
 
   const html = baseEmail({
     subject:    "P³ Admin — password reset code",
+    to,
     preheader:  `Your 6-digit reset code is ${code}. It expires in 30 minutes.`,
     badgeEmoji: "🔑",
     badgeText:  "Password Reset",
@@ -671,11 +692,12 @@ export async function sendRegistrationWelcome(params: RegistrationWelcomeParams)
 
   const html = baseEmail({
     subject:    "You're on the P³ list — welcome",
-    preheader:  `${firstName}, you're registered. We'll be in touch about the October launch event.`,
+    to,
+    preheader:  `${firstName}, you're on the list. We'll be in touch when the next event opens up.`,
     badgeEmoji: "🎾",
     badgeText:  "You're on the list",
     headline:   `Welcome to P³, ${firstName}.`,
-    subline:    "People, Padel, Places is a curated padel community for founders and senior professionals. You&rsquo;ve secured your spot — we&rsquo;ll be in touch as the October launch event takes shape.",
+    subline:    "P&#179; is a curated padel community for founders and senior professionals. You&rsquo;re on the list — we&rsquo;ll be in touch when the next event opens up.",
     body: `
   <!-- ══ WHAT HAPPENS NEXT ══ -->
   <tr><td style="padding:0 36px 24px;">
@@ -686,7 +708,7 @@ export async function sendRegistrationWelcome(params: RegistrationWelcomeParams)
                    text-transform:uppercase;letter-spacing:1px;">What happens next</p>
       </td></tr>
       ${[
-        ["📣", "Launch event announcement", "We'll email you first when the October event goes on sale — members get priority access before public release."],
+        ["📣", "Early access to events", "We'll email you first when the next event opens up — members get priority access before public release."],
         ["🎾", "Curated events, not open courts", "Every P³ event uses a rotating format (Americano) so you play with everyone in the room. One evening, a dozen real connections."],
         ["📱", "Get the app", "Download the P³ app before the day — it holds your entry ticket, live scores, and leaderboard position in real time."],
       ].map(([icon, title, body]) => `
@@ -734,7 +756,7 @@ export async function sendRegistrationWelcome(params: RegistrationWelcomeParams)
            style="display:inline-block;background:#0A66C2;color:#fff;
                   font-size:13px;font-weight:700;text-decoration:none;
                   padding:10px 24px;border-radius:10px;">
-          Follow Padelcubed on LinkedIn
+          Follow P&#179; on LinkedIn
         </a>
       </td></tr>
     </table>
@@ -891,6 +913,7 @@ export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise
 
   const html = baseEmail({
     subject:    `You're registered — ${eventTitle}`,
+    to,
     preheader:  `${firstName}, you're on the list for ${eventTitle}. Venue details + what to expect inside.`,
     badgeEmoji: "🎾",
     badgeText:  "Walk-in Registered",
@@ -925,11 +948,12 @@ export async function sendClaimCode({ to, code, suppressionData }: { to: string;
   }
   const html = baseEmail({
     subject:    "Link your P³ registration — verification code",
+    to,
     preheader:  `Your code is ${code} — valid for 10 minutes.`,
     badgeEmoji: "🔗",
     badgeText:  "Account linking",
     headline:   "Link your registration",
-    subline:    "You asked to link an existing P³ registration to your Dev AI account.",
+    subline:    "You asked to link an existing P³ registration to your account.",
     body: `
       <tr><td style="padding:24px 32px 0;">
         <p style="margin:0 0 16px;font-size:15px;color:${B.bodyText};line-height:1.65;">
