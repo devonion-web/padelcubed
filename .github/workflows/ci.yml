@@ -82,6 +82,12 @@ jobs:
       # Same import-time dummy as api-mobile job.
       RESEND_API_KEY: re_test_00000000000000000000000000000000
 
+      # Dummy LinkedIn credentials — real values not needed; the tests only
+      # check that the API builds a valid 302 redirect to linkedin.com.
+      # The callback tests never exchange a real code, so these are safe to fake.
+      LINKEDIN_CLIENT_ID: ci_dummy_linkedin_client_id
+      LINKEDIN_CLIENT_SECRET: ci_dummy_linkedin_client_secret
+
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
