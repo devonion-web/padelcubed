@@ -7,6 +7,32 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM ?? "P³ <onboarding@resend.dev>";
 const SITE = process.env.SITE_URL ?? "https://www.padelcubed.co.uk";
 
+// ── Unsubscribe token / header helpers ────────────────────────────────────────
+
+/** Compute the HMAC-signed unsubscribe URL for a recipient. */
+function makeUnsubUrl(email: string): string {
+  const token = createHmac("sha256", process.env.SESSION_SECRET ?? "")
+    .update(`unsub:${email.toLowerCase()}`)
+    .digest("hex");
+  return `${SITE}/api/unsubscribe?email=${encodeURIComponent(email)}&tok=${token}`;
+}
+
+/**
+ * Returns RFC 8058 List-Unsubscribe headers to attach to any outbound email
+ * that a recipient might want to opt out of.
+ *
+ * List-Unsubscribe-Post tells RFC 8058-capable clients (Gmail, Apple Mail, …)
+ * to POST to the URL automatically when the user clicks "Unsubscribe" in their
+ * mail client — no link scanner interaction needed.
+ */
+export function makeUnsubHeaders(email: string): Record<string, string> {
+  const url = makeUnsubUrl(email);
+  return {
+    "List-Unsubscribe":      `<${url}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
 const B = {
   royalBlue:   "#4169E1",
@@ -72,12 +98,7 @@ function baseEmail(opts: {
   to?:          string;
 }): string {
   const { preheader, badgeEmoji, badgeText, headline, subline, body, to } = opts;
-  const unsubToken = to
-    ? createHmac("sha256", process.env.SESSION_SECRET ?? "").update(`unsub:${to.toLowerCase()}`).digest("hex")
-    : "";
-  const unsubUrl = to
-    ? `${SITE}/api/unsubscribe?email=${encodeURIComponent(to)}&tok=${unsubToken}`
-    : `${SITE}/privacy`;
+  const unsubUrl = to ? makeUnsubUrl(to) : `${SITE}/privacy`;
   const prefsUrl = `${SITE}/privacy`;
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -599,8 +620,9 @@ export async function sendBookingConfirmation(params: BookingConfirmationParams)
 
   const { error } = await resend.emails.send({
     from: FROM, to,
-    subject: `You're booked — ${eventTitle}`,
+    subject:  `You're booked — ${eventTitle}`,
     html,
+    headers:  makeUnsubHeaders(to),
   });
 
   if (error) console.error("[email] Resend error (booking confirmation):", error);
@@ -774,8 +796,9 @@ export async function sendRegistrationWelcome(params: RegistrationWelcomeParams)
 
   const { error } = await resend.emails.send({
     from: FROM, to,
-    subject: "You're on the P³ list — welcome",
+    subject:  "You're on the P³ list — welcome",
     html,
+    headers:  makeUnsubHeaders(to),
   });
 
   if (error) console.error("[email] Resend error (registration welcome):", error);
@@ -932,8 +955,9 @@ export async function sendWalkinConfirmation(params: WalkinEmailParams): Promise
 
   const { error } = await resend.emails.send({
     from: FROM, to,
-    subject: `You're registered — ${eventTitle}`,
+    subject:  `You're registered — ${eventTitle}`,
     html,
+    headers:  makeUnsubHeaders(to),
   });
 
   if (error) console.error("[email] Resend error (walk-in confirmation):", error);
