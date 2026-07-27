@@ -80,4 +80,9 @@ describe("Mobile static: no deprecated API endpoints", () => {
   it("total mobile source files scanned is non-zero", () => {
     expect(sourceFiles.length).toBeGreaterThan(0);
   });
+
+  // ⚠️  INTENTIONALLY BROKEN — demo branch only, never merge
+  it("[CI GATE DEMO] deliberately failing assertion", () => {
+    expect(1 + 1).toBe(999); // This will always fail
+  });
 });
