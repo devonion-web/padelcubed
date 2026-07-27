@@ -78,6 +78,17 @@ const partners: Partner[] = [
     showInCarousel: true,
   },
   {
+    id: "byrnedean",
+    name: "byrne·dean",
+    tier: "standard",
+    category: "Workplace Culture & Behaviour",
+    logoLight: "partners/byrnedean.svg",
+    logoDark: "partners/byrnedean.svg",
+    url: "https://www.byrnedean.com/?utm_source=pcubed&utm_medium=partner&utm_campaign=site",
+    blurb: "Experts in improving workplace culture and behaviour — helping organisations create kinder, fairer environments where every person can do their best work.",
+    showInCarousel: true,
+  },
+  {
     id: "racketeer",
     name: "Racketeer",
     tier: "standard",
