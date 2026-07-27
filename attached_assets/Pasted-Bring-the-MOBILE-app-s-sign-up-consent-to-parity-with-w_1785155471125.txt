@@ -1,0 +1,41 @@
+Bring the MOBILE app's sign-up consent to parity with web — capture all THREE
+granular consents, not just events. Plan first: give me a short plan (fields, API
+changes, storage) and WAIT for my approval before coding. Ship with tests and keep
+pnpm test:all green. British English.
+
+CONTEXT
+- Web (IntentModal) captures 3 unbundled consents → consent_events_at,
+  consent_marketing_at, consent_sponsor_at. Mobile register.tsx currently captures
+  only the events consent.
+
+CHANGES
+1. Mobile register.tsx: add two more checkboxes below the existing events one —
+   unbundled, none pre-ticked, events required to proceed, the other two optional.
+   Use this exact wording (match web):
+   - Events (required): "Keep me posted about P³ events, and store my details so
+     you can."
+   - Newsletter & updates (optional): "Send me the occasional newsletter and the
+     odd update beyond events."
+   - Sponsor introductions (optional): "When a sponsor's a genuine match for
+     someone like me, I'm happy to be introduced."
+   Add the reassurance line + a Privacy Notice link: "We never sell your data, and
+   you can delete it whenever you like."
+2. Send all three consent booleans from mobile to the registration API.
+3. API: confirm the registration endpoint accepts and stores consent_marketing_at
+   and consent_sponsor_at from the mobile payload exactly as it does for web (same
+   columns, same meaning — sponsor = identifiable-introduction consent, per the
+   schema comment). If mobile currently only sends the events consent, extend the
+   payload + mapping. Do NOT change what the fields mean.
+4. Do not pre-tick anything; do not bundle; keep events as the only required tick.
+
+TESTS
+- Mobile: a component test asserting all three checkboxes render, none pre-ticked,
+  and submit is gated on the events tick.
+- API: a registration submitted with marketing + sponsor consent sets
+  consent_marketing_at and consent_sponsor_at; one with only events leaves the
+  other two NULL (so suppression still excludes them).
+- Update any existing mobile register test.
+
+DELIVER
+Plan first → on approval, implement, run pnpm test:all green, and show me the
+mobile screen plus the DB row proving all three consents stored. Then STOP.
