@@ -34,7 +34,7 @@ const SENIORITY_OPTIONS = [
 const PADEL_OPTIONS = ['Never played', 'Beginner', 'Intermediate', 'Advanced'];
 const INTEREST_OPTIONS = [
   'Playing / fitness',
-  'Meeting other founders',
+  'Meeting other professionals',
   'Industry peers & ideas',
   'Just trying padel',
   'Social play (Americano events)',
