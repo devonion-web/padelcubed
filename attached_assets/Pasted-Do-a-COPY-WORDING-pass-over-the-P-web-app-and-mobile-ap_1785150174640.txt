@@ -1,0 +1,50 @@
+Do a COPY/WORDING pass over the P³ web app and mobile app. This is COPY ONLY —
+no behaviour, logic, schema or route changes. Plan first: produce a before→after
+table of every proposed change, grouped by surface, and WAIT for my approval
+before editing anything. Some web E2E specs assert on-screen text — after
+approval, update those assertions to match and re-run the full suite until green.
+British English throughout.
+
+━━ BRAND ━━
+- Name is P³ (Padel Cubed). Strapline: People, Padel, Places.
+- Find and replace every stale name ("The Padel Exchange", "Padel Exchange", any
+  old working name) across UI text, emails, page <title>, meta description, Open
+  Graph tags, PWA manifest, and the mobile app name / store strings.
+- Voice: confident, warm, a little playful — never corporate or salesy. Short
+  sentences. All levels welcome; beginner-friendly; kit provided.
+
+━━ POSITIONING (important — get this right) ━━
+- Sell the produced evening and the PEOPLE, not price. Do NOT describe P³ as
+  cheap, discounted, or cheaper than court hire. Remove any "save money" /
+  "cheaper padel" / discount framing anywhere it appears.
+- These ideas should read through the copy: arrive solo, rotate partners, leave
+  having met the room · all levels welcome, kit provided · no pitch, no slides ·
+  People · Padel · Places.
+
+━━ CONSENT / LEGAL WORDING (must match our privacy stack) ━━
+The three sign-up consent checkboxes must read exactly like this — unbundled,
+none pre-ticked:
+- Events (needed to join): "Keep me posted about P³ events, and store my details
+  so you can."
+- Newsletter & updates (optional): "Send me the occasional newsletter and the odd
+  update beyond events."
+- Sponsor introductions (optional): "When a sponsor's a genuine match for someone
+  like me, I'm happy to be introduced."
+Reassurance line near the form: "We never sell your data, and you can delete it
+whenever you like." Link the Privacy Notice at the point of sign-up. LinkedIn
+button note: "We'll use your LinkedIn name and email to set up your account — we
+never post anything, ever." Email footer: "You're getting this because you joined
+P³ (Padel Cubed)." + Update preferences · Unsubscribe · Privacy Notice.
+
+━━ SURFACES TO CHECK ━━
+- Landing / hero + any "what happens at an event" section
+- Registration form + the 3 consent checkboxes + reassurance line
+- Booking / checkout copy; success screens; confirmation + reminder emails
+- Mobile app screens, onboarding text, empty states, error messages
+- Page title, meta description, OG tags, PWA manifest, app name/store strings
+
+━━ DELIVER ━━
+1. A before→after table of every change, grouped by surface. Then STOP for my
+   approval.
+2. On approval: apply the copy, update any test assertions that check on-screen
+   text, run the FULL suite (pnpm test:all) green, and report what changed.
