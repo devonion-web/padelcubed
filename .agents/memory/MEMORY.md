@@ -9,4 +9,5 @@
 - [Branding parity](branding-parity.md) — mobile tokens synced to web CSS; light-only; BlurView tint must be "light"; type scale in constants/typography.ts.
 - [Stripe shop setup](stripe-shop.md) — credential field is `settings.secret` not `settings.secret_key`; syncBackfill requires `{ object: 'all' }`; seed before backfill.
 - [Security audit fixes](security-fixes.md) — 9-fix audit applied; key decisions on iss-check, booking guard, GDPR scrub, claim codes DB, suppression helper.
-- [Test suite setup](test-suite-setup.md) — @workspace/tests; 128 tests green; schema-push not migrate; truncateAll pg_tables pattern; claimLimiter null-eq production bug.
+- [Test suite setup](test-suite-setup.md) — @workspace/tests; 144 tests green; schema-push not migrate; truncateAll pg_tables pattern; claimLimiter null-eq production bug.
+- [Legal pages](legal-pages.md) — /privacy /terms /terms-of-sale; LegalLayout shared component; terms_accepted_at+terms_version in DB; 4th required checkbox in IntentModal + mobile register.
