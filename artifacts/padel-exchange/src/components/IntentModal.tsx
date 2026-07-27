@@ -192,6 +192,7 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
     e.preventDefault();
     if (!f.fullName.trim()) { setError("Please enter your full name."); return; }
     if (!f.email.trim())    { setError("Please enter your email address."); return; }
+    if (!f.linkedinUrl.trim()) { setError("Please add your LinkedIn profile URL so we can verify your details."); return; }
     if (!f.gdpr) { setError("Please tick the required privacy checkbox to continue."); return; }
     setLoading(true); setError("");
     try {
@@ -300,9 +301,10 @@ function JoinForm({ onSuccess }: { onSuccess: () => void }) {
         />
       </Field>
 
-      {/* LinkedIn URL */}
-      <Field label="LinkedIn profile URL (optional)">
+      {/* LinkedIn URL — required for verification */}
+      <Field label="Verify your LinkedIn *">
         <input
+          required
           type="url"
           className={inputCls}
           placeholder="https://www.linkedin.com/in/yourname"

@@ -151,6 +151,10 @@ export default function RegisterScreen() {
       Alert.alert('Required fields', 'Please enter your name and email.');
       return;
     }
+    if (!linkedinUrl.trim()) {
+      Alert.alert('LinkedIn required', 'Please add your LinkedIn profile URL so we can verify your details.');
+      return;
+    }
     if (!gdprConsent) {
       Alert.alert('Consent required', 'Please agree to the privacy terms to continue.');
       return;
@@ -375,9 +379,9 @@ export default function RegisterScreen() {
           })}
         </View>
 
-        {/* Optional */}
-        <SectionHeader title="Optional" />
-        <FormLabel label="LinkedIn URL" />
+        {/* LinkedIn verification */}
+        <SectionHeader title="Verify your LinkedIn" />
+        <FormLabel label="LinkedIn profile URL" required />
         <TextInput
           style={inputStyle}
           value={linkedinUrl}
