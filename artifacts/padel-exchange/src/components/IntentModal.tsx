@@ -645,9 +645,13 @@ export function IntentModal({ open, onClose, prefill }: IntentModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
-            className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none"
+            className="fixed inset-0 z-[101] flex items-center justify-center p-4"
+            onClick={onClose}
           >
-            <div className={`pointer-events-auto w-full bg-card border border-border rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${step === "pick" ? "max-w-2xl" : "max-w-lg"}`}>
+            <div
+              className={`w-full bg-card border border-border rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${step === "pick" ? "max-w-2xl" : "max-w-lg"}`}
+              onClick={e => e.stopPropagation()}
+            >
 
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/60">
