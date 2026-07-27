@@ -14,7 +14,7 @@ import {
   walkinsTable,
   registrationsTable,
 } from "@workspace/db/schema";
-import { eq, and, isNull, isNotNull, ne, or } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, ne, or, desc } from "drizzle-orm";
 import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router = Router();
@@ -30,46 +30,76 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-type PlayerRow = { id: number; totalPoints: number; eliminated: boolean };
+type PlayerRow = {
+  id: number;
+  totalPoints: number;
+  eliminated: boolean;
+  byeCount?: number;
+  sittingOutNextRound?: boolean;
+};
 
 /**
  * Build court assignments for a round.
  * All formats pair 4 players per court: Team A = [1st, 4th] vs Team B = [2nd, 3rd]
  * (balances strength across courts).
+ *
+ * Bye fairness: when the player count leaves a remainder, players with the fewest
+ * prior byes are chosen to sit out first. Forced sit-outs (sittingOutNextRound)
+ * are always excluded.
+ *
+ * Returns both the court draw and the IDs of all players sitting out this round,
+ * so callers can increment their byeCount and reset sittingOutNextRound.
  */
 export function buildDraw(
   players: PlayerRow[],
   roundNumber: number,
   format: string,
-): Array<{ p1: number; p2: number; p3: number; p4: number }> {
+): { courts: Array<{ p1: number; p2: number; p3: number; p4: number }>; sittingOutIds: number[] } {
   // Knockout: only non-eliminated players participate
-  const active = players.filter((p) => !p.eliminated);
+  const nonEliminated = players.filter((p) => !p.eliminated);
 
+  // Forced sit-outs toggled by admin for this round
+  const forcedSitOut = nonEliminated.filter((p) => p.sittingOutNextRound);
+  const pool = nonEliminated.filter((p) => !p.sittingOutNextRound);
+
+  // Order pool by format
   let ordered: PlayerRow[];
   if (format === "americano" || format === "round_robin") {
-    // Pure random every round
-    ordered = shuffle(active);
-  } else if (format === "mexicano") {
-    // Round 1 random; subsequent rounds sort by points desc
+    ordered = shuffle(pool);
+  } else if (format === "mexicano" || format === "knockout") {
     ordered = roundNumber === 1
-      ? shuffle(active)
-      : [...active].sort((a, b) => b.totalPoints - a.totalPoints);
-  } else if (format === "knockout") {
-    // Round 1 random; subsequent rounds sort by points desc (eliminated already filtered)
-    ordered = roundNumber === 1
-      ? shuffle(active)
-      : [...active].sort((a, b) => b.totalPoints - a.totalPoints);
+      ? shuffle(pool)
+      : [...pool].sort((a, b) => b.totalPoints - a.totalPoints);
   } else {
-    ordered = shuffle(active);
+    ordered = shuffle(pool);
+  }
+
+  // Bye fairness: choose who sits out from the natural remainder
+  const remainder = ordered.length % 4;
+  const sittingOutIds: number[] = forcedSitOut.map((p) => p.id);
+
+  let playingPlayers: PlayerRow[];
+  if (remainder === 0) {
+    playingPlayers = ordered;
+  } else {
+    // Prefer lowest byeCount; break ties by lowest totalPoints (sit out the player already behind)
+    const sorted = [...ordered].sort(
+      (a, b) => (a.byeCount ?? 0) - (b.byeCount ?? 0) || a.totalPoints - b.totalPoints,
+    );
+    const extraSitOut = sorted.slice(0, remainder);
+    sittingOutIds.push(...extraSitOut.map((p) => p.id));
+    const sittingOutSet = new Set(extraSitOut.map((p) => p.id));
+    // Keep original format order for the playing pool
+    playingPlayers = ordered.filter((p) => !sittingOutSet.has(p.id));
   }
 
   const courts: Array<{ p1: number; p2: number; p3: number; p4: number }> = [];
-  for (let i = 0; i + 3 < ordered.length; i += 4) {
-    const [a, b, c, d] = ordered.slice(i, i + 4);
+  for (let i = 0; i + 3 < playingPlayers.length; i += 4) {
+    const [a, b, c, d] = playingPlayers.slice(i, i + 4);
     // Team A = [strongest, weakest]; Team B = [2nd, 3rd] — balances courts
     courts.push({ p1: a.id, p2: d.id, p3: b.id, p4: c.id });
   }
-  return courts;
+  return { courts, sittingOutIds };
 }
 
 async function getSession(eventId: string) {
@@ -90,13 +120,6 @@ function gcd(a: number, b: number): number {
 /**
  * Calculate how many rounds to plan given format, player count, courts, round duration,
  * and the total event time budget.
- *
- * - Knockout:      ceil(log2(players)) — elimination tree depth
- * - Everything else:
- *     maxByTime     = floor(totalEventMinutes / (roundDuration + CHANGEOVER))
- *     maxByRotation = if everyone plays every round: N−1 (full partner rotation)
- *                     if there are sitouts: cycle length × 2  (2 fair rotation cycles)
- *     plannedRounds = min(maxByTime, maxByRotation)
  */
 export function calcPlannedRounds(
   format: string,
@@ -117,13 +140,11 @@ export function calcPlannedRounds(
   // Rotation fairness cap
   let maxByRotation: number;
   if (numPlayers <= seats) {
-    // Everyone plays every round — N−1 gives each player one match against every partner combo
     maxByRotation = Math.max(1, numPlayers - 1);
   } else {
-    // Some players sit out each round; calculate fair cycle length
     const g = gcd(numPlayers, seats);
-    const cycleLength = numPlayers / g; // rounds until each player has played equal times
-    maxByRotation = cycleLength * 2;    // 2 full fair cycles
+    const cycleLength = numPlayers / g;
+    maxByRotation = cycleLength * 2;
   }
 
   return Math.max(1, Math.min(maxByTime, maxByRotation));
@@ -157,6 +178,42 @@ async function getFullState(sessionId: number) {
     totalRounds: allRounds.length,
     plannedRounds,
   };
+}
+
+// ── Helper: insert courts + increment byeCount + reset sittingOutNextRound ────
+
+async function insertCourtsAndUpdateByes(
+  roundId: number,
+  sessionId: number,
+  courts: Array<{ p1: number; p2: number; p3: number; p4: number }>,
+  sittingOutIds: number[],
+) {
+  if (courts.length > 0) {
+    await db.insert(americanoCourtsTable).values(
+      courts.map((c, i) => ({
+        roundId,
+        courtNumber: i + 1,
+        player1Id: c.p1,
+        player2Id: c.p2,
+        player3Id: c.p3,
+        player4Id: c.p4,
+      })),
+    );
+  }
+  // Increment byeCount for players sitting out
+  for (const pid of sittingOutIds) {
+    const [cur] = await db.select({ bc: americanoPlayersTable.byeCount })
+      .from(americanoPlayersTable).where(eq(americanoPlayersTable.id, pid));
+    if (cur) {
+      await db.update(americanoPlayersTable)
+        .set({ byeCount: cur.bc + 1 })
+        .where(eq(americanoPlayersTable.id, pid));
+    }
+  }
+  // Reset sittingOutNextRound for all players in this session
+  await db.update(americanoPlayersTable)
+    .set({ sittingOutNextRound: false })
+    .where(eq(americanoPlayersTable.sessionId, sessionId));
 }
 
 // ── GET /admin/events/:eventId/americano ──────────────────────────────────────
@@ -218,6 +275,8 @@ router.post("/admin/events/:eventId/americano", requireAdmin, async (req, res) =
       roundsPlayed: 0,
       wins: 0,
       eliminated: false,
+      byeCount: 0,
+      sittingOutNextRound: false,
     })),
     ...walkins.map((w) => ({
       sessionId: session.id,
@@ -229,31 +288,23 @@ router.post("/admin/events/:eventId/americano", requireAdmin, async (req, res) =
       roundsPlayed: 0,
       wins: 0,
       eliminated: false,
+      byeCount: 0,
+      sittingOutNextRound: false,
     })),
   ];
 
   await db.insert(americanoPlayersTable).values(playerValues);
 
-  // Generate round 1 draw (no startedAt yet — admin taps Start Round to sync timer)
+  // Generate round 1 draw
   const players = await db.select().from(americanoPlayersTable).where(eq(americanoPlayersTable.sessionId, session.id));
-  const draw = buildDraw(players, 1, format);
+  const { courts, sittingOutIds } = buildDraw(players, 1, format);
 
   const [round] = await db
     .insert(americanoRoundsTable)
     .values({ sessionId: session.id, roundNumber: 1 })
     .returning();
 
-  await db.insert(americanoCourtsTable).values(
-    draw.map((c, i) => ({
-      roundId: round.id,
-      courtNumber: i + 1,
-      player1Id: c.p1,
-      player2Id: c.p2,
-      player3Id: c.p3,
-      player4Id: c.p4,
-    })),
-  );
-
+  await insertCourtsAndUpdateByes(round.id, session.id, courts, sittingOutIds);
   await db.update(americanoSessionsTable).set({ currentRound: 1 }).where(eq(americanoSessionsTable.id, session.id));
 
   res.status(201).json(await getFullState(session.id));
@@ -278,7 +329,6 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
   const session = await getSession(req.params.eventId);
   if (!session) { res.status(404).json({ error: "No session" }); return; }
 
-  // Verify all courts from current round are scored
   const allRounds = await db
     .select()
     .from(americanoRoundsTable)
@@ -298,7 +348,7 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
   // Close last round
   await db.update(americanoRoundsTable).set({ endedAt: new Date() }).where(eq(americanoRoundsTable.id, lastRound.id));
 
-  // Knockout: eliminate the losing team players from each court in last round
+  // Knockout: eliminate the losing team players
   if (session.format === "knockout") {
     const eliminatedIds: number[] = [];
     for (const c of courts) {
@@ -308,7 +358,6 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
         } else if (c.teamBScore < c.teamAScore) {
           eliminatedIds.push(c.player3Id, c.player4Id);
         }
-        // Tie: nobody eliminated on this court
       }
     }
     for (const pid of eliminatedIds) {
@@ -320,35 +369,239 @@ router.post("/admin/events/:eventId/americano/rounds", requireAdmin, async (req,
   const players = await db.select().from(americanoPlayersTable).where(eq(americanoPlayersTable.sessionId, session.id));
 
   const active = players.filter((p) => !p.eliminated);
-  // Auto-complete only for knockout when there are too few players left for a court.
-  // Americano / Mexicano / Round Robin never auto-complete — the admin ends them explicitly.
   if (session.format === "knockout" && active.length < 4) {
     await db.update(americanoSessionsTable).set({ status: "complete" }).where(eq(americanoSessionsTable.id, session.id));
     res.json(await getFullState(session.id));
     return;
   }
 
-  const draw = buildDraw(players, nextRoundNumber, session.format);
+  const { courts: draw, sittingOutIds } = buildDraw(players, nextRoundNumber, session.format);
 
   const [round] = await db
     .insert(americanoRoundsTable)
     .values({ sessionId: session.id, roundNumber: nextRoundNumber })
     .returning();
 
-  await db.insert(americanoCourtsTable).values(
-    draw.map((c, i) => ({
-      roundId: round.id,
-      courtNumber: i + 1,
-      player1Id: c.p1,
-      player2Id: c.p2,
-      player3Id: c.p3,
-      player4Id: c.p4,
-    })),
-  );
-
+  await insertCourtsAndUpdateByes(round.id, session.id, draw, sittingOutIds);
   await db.update(americanoSessionsTable).set({ currentRound: nextRoundNumber }).where(eq(americanoSessionsTable.id, session.id));
 
   res.status(201).json(await getFullState(session.id));
+});
+
+// ── POST /admin/events/:eventId/americano/undo — rollback last round ──────────
+
+router.post("/admin/events/:eventId/americano/undo", requireAdmin, async (req, res) => {
+  const session = await getSession(req.params.eventId);
+  if (!session) { res.status(404).json({ error: "No session" }); return; }
+
+  const allRounds = await db
+    .select()
+    .from(americanoRoundsTable)
+    .where(eq(americanoRoundsTable.sessionId, session.id))
+    .orderBy(americanoRoundsTable.roundNumber);
+
+  const openRound = allRounds.find((r) => r.endedAt === null) ?? null;
+  const closedRounds = allRounds.filter((r) => r.endedAt !== null);
+  const lastClosedRound = closedRounds[closedRounds.length - 1] ?? null;
+
+  if (!openRound || !lastClosedRound) {
+    res.status(400).json({ error: "Nothing to undo — no completed round to roll back to" });
+    return;
+  }
+
+  // Guard: if the new open round already has scores, it's too late to undo cleanly
+  const openCourts = await db
+    .select()
+    .from(americanoCourtsTable)
+    .where(eq(americanoCourtsTable.roundId, openRound.id));
+
+  const hasScores = openCourts.some((c) => c.teamAScore !== null || c.teamBScore !== null);
+  if (hasScores) {
+    res.status(409).json({ error: "Cannot undo — scores have already been entered for the new round" });
+    return;
+  }
+
+  // Get the closed round's courts so we can reverse their deltas
+  const closedCourts = await db
+    .select()
+    .from(americanoCourtsTable)
+    .where(eq(americanoCourtsTable.roundId, lastClosedRound.id));
+
+  await db.transaction(async (tx) => {
+    // 1. Delete the open round (and its courts via cascade)
+    await tx.delete(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, openRound.id));
+    await tx.delete(americanoRoundsTable).where(eq(americanoRoundsTable.id, openRound.id));
+
+    // 2. Reopen the closed round
+    await tx.update(americanoRoundsTable)
+      .set({ endedAt: null })
+      .where(eq(americanoRoundsTable.id, lastClosedRound.id));
+
+    // 3. Reverse point / win / roundsPlayed deltas from the closed round's scored courts
+    for (const court of closedCourts) {
+      if (court.teamAScore === null || court.teamBScore === null) continue;
+      const aWin = court.teamAScore > court.teamBScore ? 1 : 0;
+      const bWin = court.teamBScore > court.teamAScore ? 1 : 0;
+      const reversals: [number, number, number][] = [
+        [court.player1Id, -court.teamAScore, -aWin],
+        [court.player2Id, -court.teamAScore, -aWin],
+        [court.player3Id, -court.teamBScore, -bWin],
+        [court.player4Id, -court.teamBScore, -bWin],
+      ];
+      for (const [pid, deltaPts, deltaWins] of reversals) {
+        const [cur] = await tx
+          .select({ tp: americanoPlayersTable.totalPoints, rp: americanoPlayersTable.roundsPlayed, w: americanoPlayersTable.wins })
+          .from(americanoPlayersTable)
+          .where(eq(americanoPlayersTable.id, pid));
+        if (cur) {
+          await tx.update(americanoPlayersTable).set({
+            totalPoints: Math.max(0, cur.tp + deltaPts),
+            roundsPlayed: Math.max(0, cur.rp - 1),
+            wins: Math.max(0, cur.w + deltaWins),
+          }).where(eq(americanoPlayersTable.id, pid));
+        }
+      }
+    }
+
+    // 4. Decrement byeCount for players who sat out the closed round
+    const playingIds = new Set(
+      closedCourts.flatMap((c) => [c.player1Id, c.player2Id, c.player3Id, c.player4Id]),
+    );
+    const allPlayers = await tx
+      .select({ id: americanoPlayersTable.id, byeCount: americanoPlayersTable.byeCount, eliminated: americanoPlayersTable.eliminated })
+      .from(americanoPlayersTable)
+      .where(eq(americanoPlayersTable.sessionId, session.id));
+
+    for (const p of allPlayers) {
+      if (!p.eliminated && !playingIds.has(p.id)) {
+        await tx.update(americanoPlayersTable)
+          .set({ byeCount: Math.max(0, p.byeCount - 1) })
+          .where(eq(americanoPlayersTable.id, p.id));
+      }
+    }
+
+    // 5. Un-eliminate losers from the closed round (knockout only)
+    if (session.format === "knockout") {
+      for (const court of closedCourts) {
+        if (court.teamAScore === null || court.teamBScore === null) continue;
+        const loserIds: number[] = [];
+        if (court.teamAScore < court.teamBScore) {
+          loserIds.push(court.player1Id, court.player2Id);
+        } else if (court.teamBScore < court.teamAScore) {
+          loserIds.push(court.player3Id, court.player4Id);
+        }
+        for (const pid of loserIds) {
+          await tx.update(americanoPlayersTable)
+            .set({ eliminated: false })
+            .where(eq(americanoPlayersTable.id, pid));
+        }
+      }
+    }
+
+    // 6. Decrement session.currentRound back to the reopened round
+    await tx.update(americanoSessionsTable)
+      .set({ currentRound: lastClosedRound.roundNumber })
+      .where(eq(americanoSessionsTable.id, session.id));
+  });
+
+  res.json(await getFullState(session.id));
+});
+
+// ── POST /admin/events/:eventId/americano/players — add a late-arrival ────────
+
+const LateArrivalSchema = z.object({
+  bookingId: z.number().int().positive().optional(),
+  walkinId: z.number().int().positive().optional(),
+}).refine((d) => d.bookingId !== undefined || d.walkinId !== undefined, {
+  message: "bookingId or walkinId is required",
+});
+
+router.post("/admin/events/:eventId/americano/players", requireAdmin, async (req, res) => {
+  const { eventId } = req.params;
+  const parsed = LateArrivalSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
+
+  const session = await getSession(eventId);
+  if (!session || session.status !== "active") {
+    res.status(400).json({ error: "No active session for this event" });
+    return;
+  }
+
+  let name: string;
+  let email: string | null;
+
+  if (parsed.data.bookingId !== undefined) {
+    const [booking] = await db
+      .select({ fullName: bookingsTable.fullName, email: bookingsTable.email })
+      .from(bookingsTable)
+      .where(eq(bookingsTable.id, parsed.data.bookingId))
+      .limit(1);
+    if (!booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    name = booking.fullName ?? `Booking #${parsed.data.bookingId}`;
+    email = booking.email ?? null;
+
+    const existing = await db
+      .select({ id: americanoPlayersTable.id })
+      .from(americanoPlayersTable)
+      .where(and(eq(americanoPlayersTable.sessionId, session.id), eq(americanoPlayersTable.bookingId, parsed.data.bookingId)))
+      .limit(1);
+    if (existing.length > 0) { res.status(409).json({ error: "Player already in session" }); return; }
+  } else {
+    const walkinId = parsed.data.walkinId!;
+    const [walkin] = await db
+      .select()
+      .from(walkinsTable)
+      .where(eq(walkinsTable.id, walkinId))
+      .limit(1);
+    if (!walkin) { res.status(404).json({ error: "Walk-in not found" }); return; }
+    name = walkin.name;
+    email = walkin.email ?? null;
+
+    const existing = await db
+      .select({ id: americanoPlayersTable.id })
+      .from(americanoPlayersTable)
+      .where(and(eq(americanoPlayersTable.sessionId, session.id), eq(americanoPlayersTable.walkinId, walkinId)))
+      .limit(1);
+    if (existing.length > 0) { res.status(409).json({ error: "Player already in session" }); return; }
+  }
+
+  await db.insert(americanoPlayersTable).values({
+    sessionId: session.id,
+    name,
+    email,
+    bookingId: parsed.data.bookingId ?? null,
+    walkinId: parsed.data.walkinId ?? null,
+    totalPoints: 0,
+    roundsPlayed: 0,
+    wins: 0,
+    eliminated: false,
+    byeCount: 0,
+    sittingOutNextRound: false,
+  });
+
+  res.status(201).json(await getFullState(session.id));
+});
+
+// ── PATCH /admin/americano/players/:playerId/sit-out — soft sit-out toggle ────
+
+router.patch("/admin/americano/players/:playerId/sit-out", requireAdmin, async (req, res) => {
+  const playerId = parseInt(req.params.playerId, 10);
+  if (isNaN(playerId)) { res.status(400).json({ error: "Invalid playerId" }); return; }
+
+  const [player] = await db
+    .select()
+    .from(americanoPlayersTable)
+    .where(eq(americanoPlayersTable.id, playerId))
+    .limit(1);
+  if (!player) { res.status(404).json({ error: "Player not found" }); return; }
+
+  const [updated] = await db
+    .update(americanoPlayersTable)
+    .set({ sittingOutNextRound: !player.sittingOutNextRound })
+    .where(eq(americanoPlayersTable.id, playerId))
+    .returning();
+
+  res.json(updated);
 });
 
 // ── PUT /admin/events/:eventId/americano/end — end session early ──────────────
@@ -358,13 +611,11 @@ router.put("/admin/events/:eventId/americano/end", requireAdmin, async (req, res
   if (!session) { res.status(404).json({ error: "No session" }); return; }
   if (session.status === "complete") { res.status(400).json({ error: "Session already complete" }); return; }
 
-  // Mark any in-progress round as ended
   await db
     .update(americanoRoundsTable)
     .set({ endedAt: new Date() })
     .where(and(eq(americanoRoundsTable.sessionId, session.id), isNull(americanoRoundsTable.endedAt)));
 
-  // Mark session complete
   await db
     .update(americanoSessionsTable)
     .set({ status: "complete" })
@@ -398,10 +649,8 @@ router.delete("/admin/americano/players/:playerId", requireAdmin, async (req, re
       const isCurrentUnstarted = currentRound?.id === round.id && !currentRound?.startedAt;
 
       if (isCurrentUnstarted) {
-        // Round hasn't begun — wipe ALL courts and we'll regenerate below
         await db.delete(americanoCourtsTable).where(eq(americanoCourtsTable.roundId, round.id));
       } else {
-        // Round in progress or finished — only remove unscored courts containing this player
         const affectedCourts = await db
           .select()
           .from(americanoCourtsTable)
@@ -424,29 +673,16 @@ router.delete("/admin/americano/players/:playerId", requireAdmin, async (req, re
       }
     }
 
-    // Remove the player
     await db.delete(americanoPlayersTable).where(eq(americanoPlayersTable.id, playerId));
 
-    // If the current round hasn't started, regenerate its draw with the remaining players
     if (currentRound && !currentRound.startedAt) {
       const remainingPlayers = await db
         .select()
         .from(americanoPlayersTable)
         .where(eq(americanoPlayersTable.sessionId, player.sessionId));
 
-      const draw = buildDraw(remainingPlayers, currentRound.roundNumber, session.format);
-      if (draw.length > 0) {
-        await db.insert(americanoCourtsTable).values(
-          draw.map((c, i) => ({
-            roundId: currentRound.id,
-            courtNumber: i + 1,
-            player1Id: c.p1,
-            player2Id: c.p2,
-            player3Id: c.p3,
-            player4Id: c.p4,
-          })),
-        );
-      }
+      const { courts, sittingOutIds } = buildDraw(remainingPlayers, currentRound.roundNumber, session.format);
+      await insertCourtsAndUpdateByes(currentRound.id, player.sessionId, courts, sittingOutIds);
     }
 
     res.json(await getFullState(player.sessionId));
@@ -456,13 +692,12 @@ router.delete("/admin/americano/players/:playerId", requireAdmin, async (req, re
   }
 });
 
-// ── DELETE /admin/events/:eventId/americano — reset session (wipe & restart) ──
+// ── DELETE /admin/events/:eventId/americano — reset session ───────────────────
 
 router.delete("/admin/events/:eventId/americano", requireAdmin, async (req, res) => {
   const session = await getSession(req.params.eventId);
   if (!session) { res.status(404).json({ error: "No session" }); return; }
 
-  // Delete in dependency order
   const rounds = await db.select({ id: americanoRoundsTable.id })
     .from(americanoRoundsTable)
     .where(eq(americanoRoundsTable.sessionId, session.id));
@@ -476,17 +711,20 @@ router.delete("/admin/events/:eventId/americano", requireAdmin, async (req, res)
   res.status(204).end();
 });
 
-// ── POST /admin/americano/courts/:courtId/score — one-team entry ──────────────
+// ── POST /admin/americano/courts/:courtId/score ───────────────────────────────
 
 const ScoreSchema = z.object({
-  teamAScore: z.number().int().min(0),
-  teamBScore: z.number().int().min(0),
+  teamAScore: z.number().int().min(0).max(99),
+  teamBScore: z.number().int().min(0).max(99),
 });
 
 router.post("/admin/americano/courts/:courtId/score", requireAdmin, async (req, res) => {
   const courtId = Number(req.params.courtId);
   const parsed = ScoreSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
+  if (!parsed.success) {
+    res.status(422).json({ error: parsed.error.flatten() });
+    return;
+  }
 
   const { teamAScore, teamBScore } = parsed.data;
 
@@ -515,10 +753,8 @@ router.post("/admin/americano/courts/:courtId/score", requireAdmin, async (req, 
     }
   }
 
-  // Apply new scores
   await db.update(americanoCourtsTable).set({ teamAScore, teamBScore }).where(eq(americanoCourtsTable.id, courtId));
 
-  // Update player totals and rounds played
   const aWin = teamAScore > teamBScore ? 1 : 0;
   const bWin = teamBScore > teamAScore ? 1 : 0;
   const playerUpdates: [number, number, number][] = [
@@ -550,7 +786,7 @@ router.get("/admin/events/:eventId/leaderboard", requireAdmin, async (req, res) 
   res.json({ session, players: [...players].sort((a, b) => b.totalPoints - a.totalPoints || a.id - b.id) });
 });
 
-// ── GET /admin/events/:eventId/export (kept for backward compat) ──────────────
+// ── GET /admin/events/:eventId/export ─────────────────────────────────────────
 
 router.get("/admin/events/:eventId/export", requireAdmin, async (req, res) => {
   const { eventId } = req.params;

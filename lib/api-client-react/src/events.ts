@@ -135,17 +135,32 @@ export interface LeaderboardPlayer {
   isMe:         boolean;
 }
 
+/** One court assignment in the current round (public view — first name + last initial) */
+export interface PublicCourtAssignment {
+  courtNumber: number;
+  teamA:       [string, string];
+  teamB:       [string, string];
+  teamAScore:  number | null;
+  teamBScore:  number | null;
+}
+
 export interface LeaderboardSession {
-  id:           number;
-  status:       "setup" | "active" | "complete";
-  currentRound: number;
-  format:       string;
+  id:                   number;
+  status:               "setup" | "active" | "complete";
+  currentRound:         number;
+  format:               string;
+  /** ISO timestamp of when the current round was started (null if not yet started) */
+  roundStartedAt:       string | null;
+  /** Duration in minutes — lets clients compute a countdown */
+  roundDurationMinutes: number;
 }
 
 export interface LeaderboardData {
   session:       LeaderboardSession | null;
   plannedRounds: number;
   players:       LeaderboardPlayer[];
+  /** Court matchups for the current active round (empty when session is not active) */
+  currentCourts: PublicCourtAssignment[];
 }
 
 export const getLeaderboardUrl = (id: string, email?: string) =>

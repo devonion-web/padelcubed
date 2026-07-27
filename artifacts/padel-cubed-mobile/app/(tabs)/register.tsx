@@ -503,7 +503,7 @@ export default function RegisterScreen() {
 
         {/* Reassurance + legal links */}
         <Text style={[styles.gdprText, { color: colors.mutedForeground, marginTop: 10 }]}>
-          We never sell your data.{' '}
+          We never sell your data, and you can delete it whenever you like.{' '}
           <Text
             style={{ color: colors.primary }}
             onPress={() => Linking.openURL('https://padelcubed.co.uk/privacy')}

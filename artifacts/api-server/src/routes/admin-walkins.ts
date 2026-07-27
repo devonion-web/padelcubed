@@ -59,18 +59,17 @@ async function addWalkinToActiveSession(walkinId: number, name: string, email: s
   if (!pendingRound) return; // Round already started — new player sits out this round
 
   const allPlayers = await db
-    .select({ id: americanoPlayersTable.id, totalPoints: americanoPlayersTable.totalPoints, eliminated: americanoPlayersTable.eliminated })
+    .select({
+      id: americanoPlayersTable.id,
+      totalPoints: americanoPlayersTable.totalPoints,
+      eliminated: americanoPlayersTable.eliminated,
+      byeCount: americanoPlayersTable.byeCount,
+      sittingOutNextRound: americanoPlayersTable.sittingOutNextRound,
+    })
     .from(americanoPlayersTable)
     .where(eq(americanoPlayersTable.sessionId, session.id));
 
-  const active = allPlayers.filter((p) => !p.eliminated);
-  const ordered = shuffle(active);
-
-  const courts: Array<{ p1: number; p2: number; p3: number; p4: number }> = [];
-  for (let i = 0; i + 3 < ordered.length; i += 4) {
-    const [a, b, c, d] = ordered.slice(i, i + 4);
-    courts.push({ p1: a.id, p2: d.id, p3: b.id, p4: c.id });
-  }
+  const { courts, sittingOutIds } = buildDraw(allPlayers, pendingRound.roundNumber, session.format);
 
   if (courts.length === 0) return;
 
@@ -86,6 +85,19 @@ async function addWalkinToActiveSession(walkinId: number, name: string, email: s
       player4Id: c.p4,
     })),
   );
+  // Increment byeCount for sitting-out players and reset sittingOutNextRound
+  for (const pid of sittingOutIds) {
+    const [cur] = await db.select({ bc: americanoPlayersTable.byeCount })
+      .from(americanoPlayersTable).where(eq(americanoPlayersTable.id, pid));
+    if (cur) {
+      await db.update(americanoPlayersTable)
+        .set({ byeCount: cur.bc + 1 })
+        .where(eq(americanoPlayersTable.id, pid));
+    }
+  }
+  await db.update(americanoPlayersTable)
+    .set({ sittingOutNextRound: false })
+    .where(eq(americanoPlayersTable.sessionId, session.id));
 }
 
 const router = Router();

@@ -17,6 +17,10 @@ export const americanoPlayersTable = pgTable('americano_players', {
   wins: integer('wins').notNull().default(0),
   /** Knockout: player is out of the tournament */
   eliminated: boolean('eliminated').notNull().default(false),
+  /** Total number of rounds this player has sat out (bye fairness tracking) */
+  byeCount: integer('bye_count').notNull().default(0),
+  /** Admin-flagged: sit this player out of the NEXT draw only; auto-resets after draw */
+  sittingOutNextRound: boolean('sitting_out_next_round').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

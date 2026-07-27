@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -19,15 +19,15 @@ import {
   usePublicLeaderboard,
   type LeaderboardPlayer,
   type LeaderboardData,
+  type PublicCourtAssignment,
 } from '@workspace/api-client-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MEDAL_COLOR  = ['#F59E0B', '#9CA3AF', '#B08A52'] as const; // gold / silver / bronze
+const MEDAL_COLOR  = ['#F59E0B', '#9CA3AF', '#B08A52'] as const;
 const MEDAL_BG     = ['#FEF3C7', '#F3F4F6', '#FEF0D4'] as const;
 const MEDAL_LABEL  = ['1st', '2nd', '3rd'] as const;
 const MEDAL_EMOJI  = ['🥇', '🥈', '🥉'] as const;
-// Podium slot order: 2nd (left), 1st (center), 3rd (right)
 const PODIUM_ORDER = [1, 0, 2] as const;
 const PODIUM_HEIGHT = [72, 100, 56] as const;
 
@@ -37,6 +37,31 @@ const FORMAT_LABEL: Record<string, string> = {
   round_robin: 'Round Robin',
   knockout:    'Knockout',
 };
+
+// ─── Countdown hook ───────────────────────────────────────────────────────────
+
+function useCountdown(startedAt: string | null, durationMinutes: number) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!startedAt) { setRemaining(null); return; }
+    const durationMs = durationMinutes * 60_000;
+    const tick = () => {
+      const elapsed = Date.now() - new Date(startedAt).getTime();
+      const rem = Math.max(0, durationMs - elapsed);
+      setRemaining(Math.floor(rem / 1000));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [startedAt, durationMinutes]);
+
+  if (remaining === null) return null;
+  if (remaining === 0) return 'Time up';
+  const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+  const ss = String(remaining % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -105,24 +130,20 @@ function PodiumSlot({
 
   return (
     <View style={styles.podiumSlot}>
-      {/* Medal emoji above name */}
       <Text style={[styles.podiumEmoji, isFirst && { fontSize: 28 }]}>
         {MEDAL_EMOJI[rank]}
       </Text>
-      {/* Name */}
       <Text
         style={[styles.podiumName, { color: colors.foreground }, isFirst && styles.podiumNameFirst]}
         numberOfLines={1}
       >
         {player.name.split(' ')[0]}
       </Text>
-      {/* Points pill */}
       <View style={[styles.podiumPts, { backgroundColor: medalBg, borderColor: medalColor + '66' }]}>
         <Text style={[styles.podiumPtsText, { color: medalColor }]}>
           {player.totalPoints} pts
         </Text>
       </View>
-      {/* Platform block */}
       <View
         style={[
           styles.podiumPlatform,
@@ -156,14 +177,12 @@ function PlayerRow({
         },
       ]}
     >
-      {/* Rank */}
       <View style={[styles.rankBadge, { backgroundColor: isMe ? `${colors.primary}20` : `${colors.muted}80` }]}>
         <Text style={[styles.rankText, { color: isMe ? colors.primary : colors.mutedForeground }]}>
           {rank}
         </Text>
       </View>
 
-      {/* Name + subtitle */}
       <View style={styles.playerInfo}>
         <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
           {player.name}{isMe ? ' (you)' : ''}
@@ -173,11 +192,111 @@ function PlayerRow({
         </Text>
       </View>
 
-      {/* Points */}
       <Text style={[styles.playerPts, { color: isMe ? colors.primary : colors.foreground }]}>
         {player.totalPoints}
         <Text style={[styles.playerPtsSuffix, { color: colors.mutedForeground }]}> pts</Text>
       </Text>
+    </View>
+  );
+}
+
+// ─── Court assignments section ────────────────────────────────────────────────
+
+function CourtsSection({
+  courts,
+  roundStartedAt,
+  roundDurationMinutes,
+  currentRound,
+  colors,
+}: {
+  courts: PublicCourtAssignment[];
+  roundStartedAt: string | null;
+  roundDurationMinutes: number;
+  currentRound: number;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const countdown = useCountdown(roundStartedAt, roundDurationMinutes);
+
+  if (courts.length === 0) return null;
+
+  const timerColor = countdown === 'Time up' ? '#ef4444' : countdown ? colors.primary : colors.mutedForeground;
+
+  return (
+    <View style={[styles.courtsSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Section header */}
+      <View style={styles.courtsSectionHeader}>
+        <View style={[styles.liveDotSmall, { backgroundColor: '#19C3B0' }]} />
+        <Text style={[styles.courtsSectionTitle, { color: colors.foreground }]}>
+          Round {currentRound} · Courts
+        </Text>
+        {countdown !== null && (
+          <View style={[styles.countdownChip, { backgroundColor: `${timerColor}18`, borderColor: `${timerColor}40` }]}>
+            <Feather name="clock" size={11} color={timerColor} />
+            <Text style={[styles.countdownText, { color: timerColor }]}>{countdown}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Court cards */}
+      {courts.map((court) => {
+        const aScored = court.teamAScore !== null;
+        const bScored = court.teamBScore !== null;
+        const scored = aScored && bScored;
+
+        return (
+          <View
+            key={court.courtNumber}
+            style={[
+              styles.courtCard,
+              {
+                backgroundColor: colors.background,
+                borderColor: scored ? `${colors.primary}44` : colors.border,
+              },
+            ]}
+          >
+            <View style={styles.courtCardHeader}>
+              <View style={[styles.courtBadge, { backgroundColor: `${colors.primary}1a` }]}>
+                <Text style={[styles.courtBadgeText, { color: colors.primary }]}>
+                  Court {court.courtNumber}
+                </Text>
+              </View>
+              {scored && (
+                <Text style={[styles.courtScore, { color: colors.foreground }]}>
+                  <Text style={{ color: colors.primary, fontWeight: '800' }}>{court.teamAScore}</Text>
+                  <Text style={{ color: colors.mutedForeground }}> – </Text>
+                  <Text style={{ color: '#6366f1', fontWeight: '800' }}>{court.teamBScore}</Text>
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.courtTeams}>
+              {/* Team A */}
+              <View style={[styles.courtTeam, { borderColor: `${colors.primary}44` }]}>
+                <View style={[styles.teamBar, { backgroundColor: colors.primary }]} />
+                <Text style={[styles.courtTeamLabel, { color: colors.mutedForeground }]}>Team A</Text>
+                {court.teamA.map((name, i) => (
+                  <Text key={i} style={[styles.courtPlayerName, { color: colors.foreground }]} numberOfLines={1}>
+                    {name}
+                  </Text>
+                ))}
+              </View>
+
+              <Text style={[styles.courtVs, { color: colors.mutedForeground }]}>vs</Text>
+
+              {/* Team B */}
+              <View style={[styles.courtTeam, { borderColor: '#6366f144' }]}>
+                <View style={[styles.teamBar, { backgroundColor: '#6366f1' }]} />
+                <Text style={[styles.courtTeamLabel, { color: colors.mutedForeground }]}>Team B</Text>
+                {court.teamB.map((name, i) => (
+                  <Text key={i} style={[styles.courtPlayerName, { color: colors.foreground }]} numberOfLines={1}>
+                    {name}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -200,6 +319,7 @@ export default function LeaderboardScreen() {
   const session       = data?.session ?? null;
   const players       = data?.players ?? [];
   const plannedRounds = data?.plannedRounds ?? 0;
+  const currentCourts = data?.currentCourts ?? [];
   const sessionStatus: 'setup' | 'active' | 'complete' | null =
     (session?.status as 'setup' | 'active' | 'complete') ?? null;
   const isActive   = sessionStatus === 'active';
@@ -233,7 +353,6 @@ export default function LeaderboardScreen() {
           <Text style={styles.headerTitle}>Leaderboard</Text>
         </View>
 
-        {/* Refresh button — only shown when not auto-polling (i.e. complete) */}
         {isComplete && (
           <TouchableOpacity
             onPress={() => { Haptics.selectionAsync(); refetch(); }}
@@ -269,6 +388,17 @@ export default function LeaderboardScreen() {
             format={session?.format ?? ''}
             colors={colors}
           />
+
+          {/* Court assignments — shown during active session */}
+          {isActive && currentCourts.length > 0 && (
+            <CourtsSection
+              courts={currentCourts}
+              roundStartedAt={session?.roundStartedAt ?? null}
+              roundDurationMinutes={session?.roundDurationMinutes ?? 15}
+              currentRound={session?.currentRound ?? 0}
+              colors={colors}
+            />
+          )}
 
           {/* Empty / waiting state */}
           {!hasResults || players.length === 0 ? (
@@ -386,6 +516,56 @@ const styles = StyleSheet.create({
   liveDot: {
     width: 7, height: 7, borderRadius: 3.5,
     backgroundColor: '#19C3B0',
+  },
+
+  // Courts section
+  courtsSection: {
+    borderRadius: 14, borderWidth: 1,
+    padding: 14, gap: 10,
+  },
+  courtsSectionHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2,
+  },
+  liveDotSmall: {
+    width: 7, height: 7, borderRadius: 3.5,
+  },
+  courtsSectionTitle: {
+    flex: 1,
+    fontSize: 13, fontWeight: '700', letterSpacing: 0.3,
+  },
+  countdownChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 100, borderWidth: 1,
+  },
+  countdownText: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+
+  courtCard: {
+    borderRadius: 10, borderWidth: 1,
+    padding: 12, gap: 10,
+  },
+  courtCardHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  courtBadge: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+  },
+  courtBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
+  courtScore: { fontSize: 16 },
+
+  courtTeams: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  courtTeam: {
+    flex: 1, gap: 3, borderRadius: 8, borderWidth: 1, padding: 8,
+  },
+  teamBar: {
+    height: 3, borderRadius: 2, marginBottom: 4,
+  },
+  courtTeamLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
+  courtPlayerName: { fontSize: 13, fontWeight: '600' },
+  courtVs: {
+    width: 24, textAlign: 'center', fontSize: 12, fontWeight: '700',
   },
 
   // Empty state

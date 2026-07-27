@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { db, eventsTable, bookingsTable, americanoSessionsTable, americanoPlayersTable } from "@workspace/db";
+import { db, eventsTable, bookingsTable, americanoSessionsTable, americanoPlayersTable, americanoRoundsTable, americanoCourtsTable } from "@workspace/db";
 import { sendBookingConfirmation } from "../email.js";
 import { calcPlannedRounds } from "./admin-americano.js";
 import { getUncachableStripeClient } from "../stripeClient.js";
@@ -453,6 +453,14 @@ router.post("/events/:id/checkout", optionalMember, async (req, res): Promise<vo
 
 // ── GET /events/:eventId/leaderboard — public, no auth ────────────────────────
 
+/** Returns "First L." for privacy-friendly display on public / big-screen views */
+function firstNameLastInitial(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length <= 1) return parts[0] ?? fullName;
+  const lastInitial = parts[parts.length - 1][0]?.toUpperCase() ?? '';
+  return lastInitial ? `${parts[0]} ${lastInitial}.` : parts[0];
+}
+
 router.get("/events/:eventId/leaderboard", async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -467,7 +475,7 @@ router.get("/events/:eventId/leaderboard", async (req, res) => {
     const session = sessions[sessions.length - 1] ?? null;
 
     if (!session) {
-      res.json({ session: null, players: [], plannedRounds: 0 });
+      res.json({ session: null, players: [], plannedRounds: 0, currentCourts: [] });
       return;
     }
 
@@ -504,15 +512,60 @@ router.get("/events/:eventId/leaderboard", async (req, res) => {
       isMe:         myEmail ? r.email?.toLowerCase() === myEmail : false,
     }));
 
+    // ── Court assignments for the current active round ────────────────────────
+    let currentCourts: Array<{
+      courtNumber: number;
+      teamA: [string, string];
+      teamB: [string, string];
+      teamAScore: number | null;
+      teamBScore: number | null;
+    }> = [];
+
+    let roundStartedAt: string | null = null;
+
+    if (session.status === "active") {
+      const openRound = await db
+        .select()
+        .from(americanoRoundsTable)
+        .where(and(eq(americanoRoundsTable.sessionId, session.id), isNull(americanoRoundsTable.endedAt)))
+        .orderBy(desc(americanoRoundsTable.roundNumber))
+        .limit(1)
+        .then((r) => r[0] ?? null);
+
+      if (openRound) {
+        roundStartedAt = openRound.startedAt ? openRound.startedAt.toISOString() : null;
+
+        const courts = await db
+          .select()
+          .from(americanoCourtsTable)
+          .where(eq(americanoCourtsTable.roundId, openRound.id))
+          .orderBy(americanoCourtsTable.courtNumber);
+
+        // Build id → abbreviated name map
+        const nameMap = new Map(rows.map((r) => [r.id, firstNameLastInitial(r.name)]));
+
+        currentCourts = courts.map((c) => ({
+          courtNumber: c.courtNumber,
+          teamA: [nameMap.get(c.player1Id) ?? '?', nameMap.get(c.player2Id) ?? '?'],
+          teamB: [nameMap.get(c.player3Id) ?? '?', nameMap.get(c.player4Id) ?? '?'],
+          teamAScore: c.teamAScore,
+          teamBScore: c.teamBScore,
+        }));
+      }
+    }
+
     res.json({
       session: {
-        id:           session.id,
-        status:       session.status,
-        currentRound: session.currentRound,
-        format:       session.format,
+        id:                   session.id,
+        status:               session.status,
+        currentRound:         session.currentRound,
+        format:               session.format,
+        roundStartedAt,
+        roundDurationMinutes: session.roundDurationMinutes,
       },
       plannedRounds,
       players,
+      currentCourts,
     });
   } catch (err) {
     console.error(err);

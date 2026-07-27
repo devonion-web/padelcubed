@@ -13,6 +13,8 @@ export interface AmericanoPlayer {
   roundsPlayed: number;
   wins: number;
   eliminated: boolean;
+  byeCount: number;
+  sittingOutNextRound: boolean;
 }
 
 export interface AmericanoRound {
@@ -162,6 +164,37 @@ export function useRemoveAmericanoPlayer(token: string) {
     mutationFn: ({ playerId }) =>
       apiFetch<AmericanoState>(`/api/admin/americano/players/${playerId}`, token, { method: 'DELETE' }),
     onSuccess: (data, { eventId }) => qc.setQueryData(getAmericanoQueryKey(eventId), data),
+  });
+}
+
+/** Rollback the most recently completed round. Returns the restored session state. */
+export function useUndoRound(eventId: string, token: string) {
+  const qc = useQueryClient();
+  return useMutation<AmericanoState, Error>({
+    mutationFn: () =>
+      apiFetch<AmericanoState>(`/api/admin/events/${eventId}/americano/undo`, token, { method: 'POST' }),
+    onSuccess: (data) => qc.setQueryData(getAmericanoQueryKey(eventId), data),
+  });
+}
+
+/** Add a late-arriving checked-in player to a running session (they join from the next draw). */
+export function useAddLatePlayer(eventId: string, token: string) {
+  const qc = useQueryClient();
+  return useMutation<AmericanoState, Error, { bookingId?: number; walkinId?: number }>({
+    mutationFn: (body) =>
+      apiFetch<AmericanoState>(`/api/admin/events/${eventId}/americano/players`, token, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (data) => qc.setQueryData(getAmericanoQueryKey(eventId), data),
+  });
+}
+
+/** Toggle sittingOutNextRound for a player. */
+export function useSitOut(token: string) {
+  return useMutation<AmericanoPlayer, Error, { playerId: number }>({
+    mutationFn: ({ playerId }) =>
+      apiFetch<AmericanoPlayer>(`/api/admin/americano/players/${playerId}/sit-out`, token, { method: 'PATCH' }),
   });
 }
 

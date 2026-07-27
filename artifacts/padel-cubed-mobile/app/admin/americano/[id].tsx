@@ -30,6 +30,8 @@ import {
   useEndSession,
   useResetSession,
   useRemoveAmericanoPlayer,
+  useUndoRound,
+  useSitOut,
   useAdminEvent,
   getAmericanoQueryKey,
 } from '@workspace/api-client-react';
@@ -172,13 +174,13 @@ function CourtCard({
   players,
   eventId,
   token,
-  onRemovePlayer,
+  onPlayerAction,
 }: {
   court: AmericanoCourt;
   players: AmericanoPlayer[];
   eventId: string;
   token: string;
-  onRemovePlayer: (p: AmericanoPlayer) => void;
+  onPlayerAction: (p: AmericanoPlayer) => void;
 }) {
   const colors = useColors();
   const enterScore = useEnterScore(token);
@@ -189,7 +191,6 @@ function CourtCard({
   const [saved, setSaved] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep in sync when parent refetches
   useEffect(() => {
     setScoreA(court.teamAScore);
     setScoreB(court.teamBScore);
@@ -211,7 +212,6 @@ function CourtCard({
     }
   }, [court.id, enterScore, eventId, qc]);
 
-  // Auto-save 0.8s after either score changes (when both are set)
   const handleChangeA = (v: number) => {
     setScoreA(v);
     if (scoreB !== null) scheduleAutoSave(v, scoreB);
@@ -232,7 +232,6 @@ function CourtCard({
 
   return (
     <View style={[styles.courtCard, { backgroundColor: colors.card, borderColor, borderRadius: colors.radius }]}>
-      {/* Court header */}
       <View style={styles.courtHeader}>
         <View style={[styles.courtBadge, { backgroundColor: `${colors.primary}22` }]}>
           <Text style={[styles.courtBadgeText, { color: colors.primary }]}>Court {court.courtNumber}</Text>
@@ -252,18 +251,17 @@ function CourtCard({
         ) : null}
       </View>
 
-      {/* Scores row — steppers side by side */}
       <View style={styles.scoresRow}>
         {/* Team A */}
         <View style={styles.teamCol}>
           <View style={[styles.teamABar, { backgroundColor: colors.primary, width: '100%', height: 3, borderRadius: 2, marginBottom: 8 }]} />
           <Text style={[styles.teamLabel, { color: colors.mutedForeground, textAlign: 'center', marginBottom: 4 }]}>Team A</Text>
-          <TouchableOpacity onPress={() => { const p = pObj(court.player1Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player1Id); if (p) onPlayerAction(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
             <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
               {pName(court.player1Id)}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { const p = pObj(court.player2Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player2Id); if (p) onPlayerAction(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
             <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
               {pName(court.player2Id)}
             </Text>
@@ -280,12 +278,12 @@ function CourtCard({
         <View style={styles.teamCol}>
           <View style={[styles.teamBBar, { backgroundColor: '#6366f1', width: '100%', height: 3, borderRadius: 2, marginBottom: 8 }]} />
           <Text style={[styles.teamLabel, { color: colors.mutedForeground, textAlign: 'center', marginBottom: 4 }]}>Team B</Text>
-          <TouchableOpacity onPress={() => { const p = pObj(court.player3Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player3Id); if (p) onPlayerAction(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
             <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center' }]} numberOfLines={1}>
               {pName(court.player3Id)}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { const p = pObj(court.player4Id); if (p) onRemovePlayer(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+          <TouchableOpacity onPress={() => { const p = pObj(court.player4Id); if (p) onPlayerAction(p); }} activeOpacity={0.6} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
             <Text style={[styles.playerName, { color: colors.foreground, textAlign: 'center', marginBottom: 10 }]} numberOfLines={1}>
               {pName(court.player4Id)}
             </Text>
@@ -294,7 +292,6 @@ function CourtCard({
         </View>
       </View>
 
-      {/* Manual save for edge cases — shown only if scores changed from server but not yet auto-saved */}
       {bothSet && !enterScore.isPending && (
         <TouchableOpacity
           onPress={() => doSave(scoreA!, scoreB!)}
@@ -351,6 +348,8 @@ export default function FormatManagerScreen() {
   const endSession = useEndSession(id ?? '', token);
   const resetSession = useResetSession(id ?? '', token);
   const removePlayer = useRemoveAmericanoPlayer(token);
+  const undoRound = useUndoRound(id ?? '', token);
+  const sitOut = useSitOut(token);
 
   const session = state?.session;
   const currentRound = state?.currentRound ?? null;
@@ -362,6 +361,9 @@ export default function FormatManagerScreen() {
   const allScored = courts.length > 0 && courts.every((c) => c.teamAScore !== null && c.teamBScore !== null);
   const roundEnded = Boolean(currentRound?.endedAt);
   const isLastRound = plannedRounds !== null && (session?.currentRound ?? 0) >= plannedRounds;
+  // Whether the current open round has any scores (blocks undo)
+  const currentRoundHasScores = courts.some((c) => c.teamAScore !== null || c.teamBScore !== null);
+  const canUndo = (session?.currentRound ?? 0) > 1 && !currentRoundHasScores;
 
   const timer = useServerTimer(
     currentRound?.startedAt ?? null,
@@ -373,9 +375,7 @@ export default function FormatManagerScreen() {
   useEffect(() => {
     if (timer.expired && !prevExpired.current) {
       prevExpired.current = true;
-      // Heavy haptic burst
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      // Play alarm sound (non-blocking)
       (async () => {
         try {
           await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
@@ -383,14 +383,13 @@ export default function FormatManagerScreen() {
             require('../../assets/sounds/round-end.wav'),
           );
           await sound.playAsync();
-          // Unload once playback finishes to free memory
           sound.setOnPlaybackStatusUpdate((status) => {
             if ('didJustFinish' in status && status.didJustFinish) {
               sound.unloadAsync();
             }
           });
         } catch {
-          // Silently ignore — alarm is a nice-to-have, not critical
+          // Silently ignore — alarm is a nice-to-have
         }
       })();
     }
@@ -439,25 +438,77 @@ export default function FormatManagerScreen() {
     );
   };
 
-  const handleRemovePlayer = (player: AmericanoPlayer) => {
+  const handleUndoRound = () => {
+    const roundNum = session?.currentRound ?? 0;
     Alert.alert(
-      player.name,
-      'Remove this player from the session? Their past scores will be kept.',
+      `Undo Round ${roundNum}?`,
+      `This will reverse all scores from Round ${roundNum} and re-open it for re-entry. The draw for Round ${roundNum + 1} will be deleted.`,
       [
         { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Undo Round',
+          style: 'destructive',
+          onPress: async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            try {
+              await undoRound.mutateAsync();
+            } catch (err: any) {
+              Alert.alert('Cannot Undo', err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  /** Tapping a player name — options: sit out next round or remove */
+  const handlePlayerAction = (player: AmericanoPlayer) => {
+    const isSittingOut = player.sittingOutNextRound;
+    Alert.alert(
+      player.name,
+      isSittingOut
+        ? 'This player is flagged to sit out the next round.'
+        : 'Choose an action for this player.',
+      [
+        {
+          text: isSittingOut ? '▶ Reinstate for next round' : '☕ Sit out next round',
+          onPress: async () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            try {
+              await sitOut.mutateAsync({ playerId: player.id });
+              qc.invalidateQueries({ queryKey: getAmericanoQueryKey(id ?? '') });
+            } catch (err: any) {
+              Alert.alert('Error', err.message ?? 'Could not update player');
+            }
+          },
+        },
         {
           text: 'Remove from session',
           style: 'destructive',
           onPress: async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            try {
-              await removePlayer.mutateAsync({ playerId: player.id, eventId: id ?? '' });
-              qc.invalidateQueries({ queryKey: getAmericanoQueryKey(id ?? '') });
-            } catch (err: any) {
-              Alert.alert('Error', err.message ?? 'Could not remove player');
-            }
+            Alert.alert(
+              `Remove ${player.name}?`,
+              'Their past scores will be kept.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Remove',
+                  style: 'destructive',
+                  onPress: async () => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    try {
+                      await removePlayer.mutateAsync({ playerId: player.id, eventId: id ?? '' });
+                      qc.invalidateQueries({ queryKey: getAmericanoQueryKey(id ?? '') });
+                    } catch (err: any) {
+                      Alert.alert('Error', err.message ?? 'Could not remove player');
+                    }
+                  },
+                },
+              ],
+            );
           },
         },
+        { text: 'Cancel', style: 'cancel' },
       ],
     );
   };
@@ -548,7 +599,6 @@ export default function FormatManagerScreen() {
           <View style={[styles.formatPill, { backgroundColor: `${colors.primary}22`, borderColor: `${colors.primary}44` }]}>
             <Text style={[styles.formatPillText, { color: colors.primary }]}>{formatLabel}</Text>
           </View>
-          {/* Leaderboard shortcut */}
           <TouchableOpacity
             onPress={() => router.push(`/admin/leaderboard/${id}` as never)}
             style={styles.lbBtn}
@@ -571,19 +621,17 @@ export default function FormatManagerScreen() {
             : ''}
         </Text>
 
-        {/* Timer */}
         <TimerRing display={timer.display} expired={timer.expired} progress={timer.progress} />
       </LinearGradient>
 
       {/* Court list */}
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 130 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 150 }]}
         showsVerticalScrollIndicator={false}
       >
         {sessionComplete ? (
           <>
             <MiniLeaderboard players={players} />
-            {/* Reset escape hatch */}
             <TouchableOpacity
               onPress={handleResetSession}
               disabled={resetSession.isPending}
@@ -601,7 +649,7 @@ export default function FormatManagerScreen() {
           </>
         ) : (
           <>
-            {/* Court draw notice if round not started */}
+            {/* Draw notice if round not started */}
             {!roundStarted && (
               <View style={[styles.notice, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }]}>
                 <Feather name="info" size={14} color={colors.primary} />
@@ -618,33 +666,59 @@ export default function FormatManagerScreen() {
                 players={players}
                 eventId={id ?? ''}
                 token={token}
-                onRemovePlayer={handleRemovePlayer}
+                onPlayerAction={handlePlayerAction}
               />
             ))}
 
-            {/* Sitting-out players (derived: active players not on any court) */}
+            {/* Sitting-out players */}
             {(() => {
               const onCourt = new Set(courts.flatMap((c) => [c.player1Id, c.player2Id, c.player3Id, c.player4Id]));
               const sittingOut = players.filter((p) => !p.eliminated && !onCourt.has(p.id));
-              if (sittingOut.length === 0) return null;
+              const sittingOutNext = players.filter((p) => !p.eliminated && p.sittingOutNextRound && onCourt.has(p.id));
+              if (sittingOut.length === 0 && sittingOutNext.length === 0) return null;
               return (
                 <View style={[styles.sitoutBox, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}>
-                  <View style={styles.sitoutHeader}>
-                    <Feather name="coffee" size={13} color={colors.mutedForeground} />
-                    <Text style={[styles.sitoutTitle, { color: colors.mutedForeground }]}>Sitting out this round</Text>
-                  </View>
-                  <View style={styles.sitoutNames}>
-                    {sittingOut.map((p) => (
-                      <TouchableOpacity
-                        key={p.id}
-                        onPress={() => handleRemovePlayer(p)}
-                        activeOpacity={0.65}
-                        style={[styles.sitoutChip, { backgroundColor: colors.background, borderColor: colors.border }]}
-                      >
-                        <Text style={[styles.sitoutName, { color: colors.foreground }]}>{p.name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  {sittingOut.length > 0 && (
+                    <>
+                      <View style={styles.sitoutHeader}>
+                        <Feather name="coffee" size={13} color={colors.mutedForeground} />
+                        <Text style={[styles.sitoutTitle, { color: colors.mutedForeground }]}>Sitting out this round</Text>
+                      </View>
+                      <View style={styles.sitoutNames}>
+                        {sittingOut.map((p) => (
+                          <TouchableOpacity
+                            key={p.id}
+                            onPress={() => handlePlayerAction(p)}
+                            activeOpacity={0.65}
+                            style={[styles.sitoutChip, { backgroundColor: colors.background, borderColor: colors.border }]}
+                          >
+                            <Text style={[styles.sitoutName, { color: colors.foreground }]}>{p.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </>
+                  )}
+                  {sittingOutNext.length > 0 && (
+                    <>
+                      <View style={[styles.sitoutHeader, { marginTop: sittingOut.length > 0 ? 8 : 0 }]}>
+                        <Feather name="moon" size={13} color={colors.mutedForeground} />
+                        <Text style={[styles.sitoutTitle, { color: colors.mutedForeground }]}>Flagged — sitting out next round</Text>
+                      </View>
+                      <View style={styles.sitoutNames}>
+                        {sittingOutNext.map((p) => (
+                          <TouchableOpacity
+                            key={p.id}
+                            onPress={() => handlePlayerAction(p)}
+                            activeOpacity={0.65}
+                            style={[styles.sitoutChip, { backgroundColor: '#f59e0b14', borderColor: '#f59e0b44' }]}
+                          >
+                            <Feather name="moon" size={11} color="#f59e0b" />
+                            <Text style={[styles.sitoutName, { color: '#f59e0b' }]}>{p.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </>
+                  )}
                 </View>
               );
             })()}
@@ -659,7 +733,7 @@ export default function FormatManagerScreen() {
               </View>
             )}
 
-            {/* Mini leaderboard (if any rounds played) */}
+            {/* Mini leaderboard */}
             {players.some((p) => p.roundsPlayed > 0) && (
               <MiniLeaderboard players={players} />
             )}
@@ -671,7 +745,6 @@ export default function FormatManagerScreen() {
       {!sessionComplete && (
         <View style={[styles.actionBar, { bottom: insets.bottom + 16 }]}>
           {!roundStarted ? (
-            /* DRAW READY — START ROUND */
             <TouchableOpacity
               onPress={handleStartRound}
               disabled={startRound.isPending}
@@ -688,10 +761,8 @@ export default function FormatManagerScreen() {
               )}
             </TouchableOpacity>
           ) : allScored ? (
-            /* ALL SCORED */
             <>
               {isLastRound ? (
-                /* LAST ROUND — Finish Tournament */
                 <TouchableOpacity
                   onPress={handleEndSession}
                   disabled={endSession.isPending}
@@ -708,7 +779,6 @@ export default function FormatManagerScreen() {
                   )}
                 </TouchableOpacity>
               ) : (
-                /* MORE ROUNDS TO GO — Next Round + subtle end link */
                 <>
                   <TouchableOpacity
                     onPress={handleNextRound}
@@ -738,7 +808,6 @@ export default function FormatManagerScreen() {
               )}
             </>
           ) : (
-            /* WAITING FOR SCORES */
             <>
               {timer.expired && (
                 <View style={[styles.timeUpBanner, { backgroundColor: '#ef444415', borderColor: '#ef444440' }]}>
@@ -756,6 +825,26 @@ export default function FormatManagerScreen() {
                 </Text>
               </View>
             </>
+          )}
+
+          {/* Undo last round — shown when no scores in new round and we're past round 1 */}
+          {canUndo && (
+            <TouchableOpacity
+              onPress={handleUndoRound}
+              disabled={undoRound.isPending}
+              activeOpacity={0.7}
+              style={styles.undoLink}
+            >
+              {undoRound.isPending
+                ? <ActivityIndicator size="small" color={colors.mutedForeground} />
+                : <>
+                    <Feather name="corner-left-up" size={13} color={colors.mutedForeground} />
+                    <Text style={[styles.undoText, { color: colors.mutedForeground }]}>
+                      Undo last round
+                    </Text>
+                  </>
+              }
+            </TouchableOpacity>
           )}
         </View>
       )}
@@ -796,7 +885,6 @@ const styles = StyleSheet.create({
   scoredBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   scoredBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
 
-  // Two-column team layout
   scoresRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   teamCol: { flex: 1, alignItems: 'center' },
   vsCol: { width: 32, alignItems: 'center', justifyContent: 'center', paddingTop: 52 },
@@ -806,7 +894,6 @@ const styles = StyleSheet.create({
   playerName: { fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 18 },
   vsText: { fontFamily: 'Inter_700Bold', fontSize: 13 },
 
-  // Stepper
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   stepBtn: { width: 38, height: 38, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   stepDisplay: { width: 52, height: 44, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
@@ -820,7 +907,7 @@ const styles = StyleSheet.create({
   sitoutHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sitoutTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.3 },
   sitoutNames: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  sitoutChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  sitoutChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   sitoutName: { fontFamily: 'Inter_500Medium', fontSize: 13 },
 
   eliminatedBox: { borderWidth: 1, borderRadius: 12, padding: 14, gap: 4 },
@@ -847,6 +934,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6,
   },
   endTournamentText: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#ef444488' },
+  undoLink: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6,
+  },
+  undoText: { fontFamily: 'Inter_400Regular', fontSize: 12 },
   timeUpBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
